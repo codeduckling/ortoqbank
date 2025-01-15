@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import QuizCard from "./quiz-card";
+import Link from "next/link";
 
 export default function Hero() {
   return (
@@ -12,9 +13,11 @@ export default function Hero() {
           <p className="text-xl mb-8 text-[#2196F3]">
             Seu banco de questões abrangente para estudos em ortopedia
           </p>
-          <Button className="bg-[#2196F3] text-white hover:bg-opacity-90">
-            Comece Agora
-          </Button>
+          <Link href="/ortoqbank">
+            <Button className="bg-[#2196F3] text-white hover:bg-opacity-90">
+              Comece Agora
+            </Button>
+          </Link>
         </div>
         <div className="lg:w-1/2 w-full">
           <QuizCard />

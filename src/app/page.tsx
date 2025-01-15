@@ -5,7 +5,7 @@ import Hero from "./components/hero";
 import About from "./components/about";
 import Pricing from "./components/pricing";
 import FAQ from "./components/faq";
-
+import StaffSection from "./components/staff-section";
 export default function Home() {
   return (
     <div className="min-h-screen flex flex-col">
@@ -13,6 +13,7 @@ export default function Home() {
       <main>
         <Hero />
         <About />
+        <StaffSection />
         <Pricing />
         <FAQ />
       </main>
