@@ -1,10 +1,10 @@
-import Link from "next/link";
-import Image from "next/image";
+import Image from 'next/image';
+import Link from 'next/link';
 
 export default function Header() {
   return (
     <header className="bg-[#2196F3] text-white">
-      <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+      <div className="container mx-auto flex items-center justify-between px-4 py-4">
         <Link href="/" className="flex items-center space-x-2">
           <Image
             src="/logo.png"

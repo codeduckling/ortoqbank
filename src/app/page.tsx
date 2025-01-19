@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import Header from "./components/header";
-import Hero from "./components/hero";
-import About from "./components/about";
-import Pricing from "./components/pricing";
-import FAQ from "./components/faq";
-import StaffSection from "./components/staff-section";
+import About from './components/about';
+import FAQ from './components/faq';
+import Header from './components/header';
+import Hero from './components/hero';
+import Pricing from './components/pricing';
+import StaffSection from './components/staff-section';
 export default function Home() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="flex min-h-screen flex-col">
       <Header />
       <main>
         <Hero />
@@ -17,7 +17,7 @@ export default function Home() {
         <Pricing />
         <FAQ />
       </main>
-      <footer className="bg-[#2196F3] text-white py-4 mt-auto">
+      <footer className="mt-auto bg-[#2196F3] py-4 text-white">
         <div className="container mx-auto px-4 text-center">
           <p>&copy; 2025 OrtoQBank. Todos os direitos reservados.</p>
         </div>

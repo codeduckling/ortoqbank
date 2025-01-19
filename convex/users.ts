@@ -1,10 +1,10 @@
-import { UserJSON } from "@clerk/backend";
-import { internalMutation, query, QueryCtx } from "./_generated/server";
-import { ConvexError, v, Validator } from "convex/values";
+import { UserJSON } from '@clerk/backend';
+import { internalMutation, query, QueryCtx } from './_generated/server';
+import { ConvexError, v, Validator } from 'convex/values';
 
 export const current = query({
   args: {},
-  handler: async (ctx) => {
+  handler: async ctx => {
     return await getCurrentUser(ctx);
   },
 });
@@ -12,7 +12,7 @@ export const current = query({
 export async function getCurrentUser(ctx: QueryCtx) {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) {
-    console.log("no user info found", identity);
+    console.log('no user info found', identity);
     return null;
   }
   return await userByClerkUserId(ctx, identity.subject);
@@ -26,9 +26,9 @@ export async function getCurrentUserOrThrow(ctx: QueryCtx) {
 
 async function userByClerkUserId(ctx: QueryCtx, clerkUserId: string) {
   return await ctx.db
-    .query("users")
-    .withIndex("by_clerkUserId")
-    .filter((q) => q.eq(q.field("clerkUserId"), clerkUserId))
+    .query('users')
+    .withIndex('by_clerkUserId')
+    .filter(q => q.eq(q.field('clerkUserId'), clerkUserId))
     .unique();
 }
 
@@ -45,7 +45,7 @@ export const upsertFromClerk = internalMutation({
 
     const user = await userByClerkUserId(ctx, data.id);
     if (user === null) {
-      const newUser = await ctx.db.insert("users", userAttributes);
+      const newUser = await ctx.db.insert('users', userAttributes);
       return newUser;
     } else {
       await ctx.db.patch(user._id, userAttributes);
@@ -63,7 +63,7 @@ export const deleteFromClerk = internalMutation({
     if (user) {
       await ctx.db.delete(user._id);
     } else {
-      throw new ConvexError("User not found");
+      throw new ConvexError('User not found');
     }
   },
 });
