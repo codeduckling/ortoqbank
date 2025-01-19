@@ -63,10 +63,11 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NEXT_PUBLIC_CONVEX_URL: ${{ secrets.NEXT_PUBLIC_CONVEX_URL }}
-      CONVEX_DEPLOYMENT: ${{ secrets.CONVEX_DEPLOYMENT }}
+      CONVEX_DEPLOYMENT: test
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
         ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
       CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+      NODE_ENV: test
 
     steps:
       - name: ⬇️ Checkout repo
