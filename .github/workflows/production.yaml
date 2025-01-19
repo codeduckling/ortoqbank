@@ -11,7 +11,29 @@ on:
 
 jobs:
   Test-Lint:
-    uses: ./.github/workflows/pull-request.yml
+    name: Test and Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: bahmutov/npm-install@v1
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run type-check --if-present
+
+      - name: Test
+        run: npm run test -- --coverage
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps
+
+      - name: Playwright tests
+        run: npx playwright test
 
   Deploy-Production:
     needs: Test-Lint
