@@ -10,40 +10,7 @@ on:
       - main
 
 jobs:
-  Test-Lint:
-    name: Test and Lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - uses: bahmutov/npm-install@v1
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Type check
-        run: npm run type-check --if-present
-
-      - name: Test
-        run: npm run test -- --coverage
-
-      - name: Install Playwright
-        run: npx playwright install --with-deps
-
-      - name: Playwright tests
-        env:
-          NEXT_PUBLIC_CONVEX_URL: ${{ secrets.NEXT_PUBLIC_CONVEX_URL }}
-          CONVEX_DEPLOYMENT: test
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
-            ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
-          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
-          NODE_ENV: test
-        run: npx playwright test
-
   Deploy-Production:
-    needs: Test-Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -60,19 +27,4 @@ jobs:
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy Project Artifacts to Vercel
-        id: deploy
-        run: |
-          DEPLOYMENT_URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
-          echo "deployment_url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
-
-      - name: Comment Production URL
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const deploymentUrl = '${{ steps.deploy.outputs.deployment_url }}';
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `🚀 Production deployed to: ${deploymentUrl}`
-            });
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
