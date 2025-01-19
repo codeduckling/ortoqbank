@@ -4,13 +4,13 @@ import { render } from '@testing-library/react';
 import type { ReactElement } from 'react';
 
 const customRender = (
-    ui: ReactElement,
-    options?: Omit<RenderOptions, 'queries'>,
+  ui: ReactElement,
+  options?: Omit<RenderOptions, 'queries'>,
 ) =>
-    render(ui, {
-        wrapper: ({ children }) => <>{children}</>,
-        ...options,
-    });
+  render(ui, {
+    wrapper: ({ children }) => <>{children}</>,
+    ...options,
+  });
 
 // re-export everything
 export * from '@testing-library/react';

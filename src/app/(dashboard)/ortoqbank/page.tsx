@@ -1,3 +1,3 @@
 export default function OrtoQBankPage() {
-  return (<div>OrtoQBankPage</div>);
+  return <div>OrtoQBankPage</div>;
 }

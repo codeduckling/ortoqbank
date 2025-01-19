@@ -1,11 +1,11 @@
 export default function About() {
   return (
-    <section id="sobre" className="py-16 bg-gray-100">
+    <section id="sobre" className="bg-gray-100 py-16">
       <div className="container mx-auto px-4">
-        <h2 className="text-3xl font-bold text-[#2196F3] mb-8">
+        <h2 className="mb-8 text-3xl font-bold text-[#2196F3]">
           Sobre o OrtoQBank
         </h2>
-        <p className="text-lg mb-4">
+        <p className="mb-4 text-lg">
           O OrtoQBank é um banco de questões abrangente para estudos em
           ortopedia, projetado para ajudar estudantes e profissionais a
           aprimorarem seus conhecimentos e se prepararem para exames e desafios
