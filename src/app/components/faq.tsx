@@ -8,29 +8,29 @@ import {
 export default function FAQ() {
   const faqs = [
     {
-      question: 'Quanto tempo dura a consulta?',
+      question: 'Como funciona o OrtoQBank?',
       answer:
-        'A primeira consulta tem duração média de 40 minutos, tempo necessário para uma avaliação completa e detalhada.',
+        'O OrtoQBank é uma plataforma de estudos com milhares de questões em ortopedia, permitindo que você pratique com questões específicas, faça simulados e acompanhe seu progresso através de análises detalhadas.',
     },
     {
-      question: 'Preciso trazer exames anteriores?',
+      question: 'As questões são atualizadas com frequência?',
       answer:
-        'Sim, é importante trazer todos os exames relacionados ao problema, incluindo raio-x, ressonância magnética ou tomografia, para uma avaliação mais precisa.',
+        'Sim, nossa equipe de especialistas adiciona novas questões mensalmente, mantendo o conteúdo atualizado com as últimas diretrizes e tendências em ortopedia.',
     },
     {
-      question: 'O plano de saúde é aceito?',
+      question: 'Posso acessar em diferentes dispositivos?',
       answer:
-        'Sim, trabalhamos com os principais planos de saúde. Entre em contato conosco para verificar se o seu plano está na nossa lista de convênios.',
+        'Sim, o OrtoQBank é totalmente responsivo e pode ser acessado em qualquer dispositivo - computador, tablet ou smartphone, mantendo seu progresso sincronizado.',
     },
     {
-      question: 'Qual o prazo para retorno?',
+      question: 'Como são elaboradas as questões?',
       answer:
-        'O retorno geralmente é agendado em 30 dias após a primeira consulta, mas pode variar de acordo com o tratamento específico.',
+        'Nossas questões são elaboradas por uma equipe de especialistas em ortopedia, seguindo o padrão das principais provas de residência, títulos de especialista e concursos da área.',
     },
     {
-      question: 'Realizam cirurgias?',
+      question: 'Existe suporte para dúvidas?',
       answer:
-        'Sim, realizamos diversos procedimentos cirúrgicos ortopédicos. O tipo de cirurgia será determinado após avaliação completa do seu caso.',
+        'Sim, além das explicações detalhadas para cada questão, oferecemos suporte técnico e acadêmico para esclarecer suas dúvidas sobre o conteúdo.',
     },
   ];
 
