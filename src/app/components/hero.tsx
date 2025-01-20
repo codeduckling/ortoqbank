@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
+import EmailCollectionForm from './email-collection-form';
 import QuizCard from './quiz-card';
 
 export default function Hero() {
@@ -13,15 +14,10 @@ export default function Hero() {
           <h1 className="mb-6 text-4xl font-bold text-[#2196F3] md:text-6xl">
             OrtoQBank
           </h1>
-          <p className="mb-8 text-xl text-[#2196F3]">
+          <p className="mb-8 text-lg text-gray-600">
             Seu banco de questões abrangente para estudos em ortopedia
           </p>
-          <div className="flex flex-col gap-4">
-            <Input type="email" placeholder="Enter your email" />
-            <Button className="bg-[#2196F3] text-white hover:bg-opacity-90">
-              Join Waitlist
-            </Button>
-          </div>
+          <EmailCollectionForm />
         </div>
         <div className="w-full lg:w-1/2">
           <QuizCard />

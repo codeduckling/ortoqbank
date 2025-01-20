@@ -1,6 +1,5 @@
 'use client';
 
-import { AnimatePresence, motion } from 'framer-motion';
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -23,93 +22,100 @@ const questions = [
   },
 ];
 
+const getButtonStyle = (isActive: boolean, isCorrect: boolean | undefined) => {
+  if (!isActive) return 'bg-white text-[#2196F3] hover:bg-gray-100';
+  if (isCorrect) return 'bg-green-500 text-white hover:bg-green-600';
+  return 'bg-red-500 text-white hover:bg-red-600';
+};
+
 export default function QuizCard() {
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [answeredQuestions, setAnsweredQuestions] = useState<number[]>([]);
   const [selectedAnswer, setSelectedAnswer] = useState<number | undefined>();
   const [isCorrect, setIsCorrect] = useState<boolean | undefined>();
 
+  const remainingQuestions = questions.filter(
+    (_, index) => !answeredQuestions.includes(index),
+  );
+  const isCompleted = remainingQuestions.length === 0;
+
   const handleAnswer = (index: number) => {
+    const currentQuestion = remainingQuestions[0];
+    const correct = index === currentQuestion.correctAnswer;
     setSelectedAnswer(index);
-    setIsCorrect(index === questions[currentQuestionIndex].correctAnswer);
+    setIsCorrect(correct);
+
+    if (correct) {
+      const questionIndex = questions.indexOf(currentQuestion);
+      setAnsweredQuestions([...answeredQuestions, questionIndex]);
+      setSelectedAnswer(undefined);
+      setIsCorrect(undefined);
+    }
   };
 
-  const cycleToNextCard = () => {
-    setCurrentQuestionIndex(
-      previousIndex => (previousIndex + 1) % questions.length,
+  if (isCompleted) {
+    return (
+      <div className="flex min-h-[300px] w-full items-center justify-center rounded-3xl border border-[#2196F3] bg-white p-4 shadow-lg">
+        <div className="text-center">
+          <h3 className="mb-3 text-xl font-bold text-[#2196F3]">
+            Excelente trabalho! 🎉
+          </h3>
+          <p className="mb-4 text-base text-gray-600">
+            Você demonstrou um ótimo conhecimento em ortopedia.
+          </p>
+          <div className="space-y-3 text-sm text-gray-600">
+            <p>No OrtoQBank, você encontrará:</p>
+            <ul className="mb-4 space-y-2">
+              <li>✓ Mais de 1.000 questões especializadas</li>
+              <li>✓ Análise detalhada do seu desempenho</li>
+              <li>✓ Simulados personalizados</li>
+              <li>✓ Explicações completas de cada questão</li>
+            </ul>
+            <p className="text-[#2196F3]">
+              Cadastre-se agora para elevar seus estudos ao próximo nível!
+            </p>
+          </div>
+        </div>
+      </div>
     );
-    setSelectedAnswer(undefined);
-    setIsCorrect(undefined);
-  };
+  }
 
   return (
     <div className="relative min-h-[300px] w-full">
-      <div className="absolute inset-0">
-        <AnimatePresence initial={false}>
-          {questions.map((question, index) => {
-            const offset =
-              (index - currentQuestionIndex + questions.length) %
-              questions.length;
-            if (offset > 2) return;
-
-            return (
-              <motion.div
-                key={index}
-                className="absolute inset-0 cursor-grab rounded-3xl border border-[#2196F3] bg-white p-4 shadow-lg active:cursor-grabbing"
-
-                initial={{
-                  opacity: 1,
-                  x: offset * 8,
-                  y: offset * 8,
-                }}
-                animate={{
-                  opacity: 1 - offset * 0.15,
-                  x: offset * 8,
-                  y: offset * 8,
-                }}
-                exit={{
-                  x: -250,
-                  opacity: 0,
-                  transition: { duration: 0.2 },
-                }}
-                drag="x"
-                dragConstraints={{ left: 0, right: 0 }}
-                dragElastic={1}
-                onDragEnd={(event, { offset, velocity }) => {
-                  const swipe = Math.abs(offset.x) * velocity.x;
-                  if (Math.abs(swipe) > 10_000) {
-                    cycleToNextCard();
+      {remainingQuestions.slice(0, 3).map((question, index) => {
+        return (
+          <div
+            key={questions.indexOf(question)}
+            className={`absolute inset-0 w-full rounded-3xl border border-[#2196F3] bg-white p-4 shadow-lg transition-all duration-300 ${
+              {
+                0: 'z-20',
+                1: 'z-10 translate-y-2',
+                2: 'z-0 translate-y-4',
+              }[index] || ''
+            }`}
+          >
+            <h3 className="mb-3 text-xl font-semibold text-[#2196F3]">
+              {question.question}
+            </h3>
+            <div className="space-y-1.5">
+              {question.options.map((option, optionIndex) => (
+                <Button
+                  key={optionIndex}
+                  className={`w-full justify-start ${getButtonStyle(
+                    index === 0 && selectedAnswer === optionIndex,
+                    isCorrect,
+                  )} border border-[#2196F3]`}
+                  onClick={() => index === 0 && handleAnswer(optionIndex)}
+                  disabled={
+                    index !== 0 || (selectedAnswer === optionIndex && isCorrect)
                   }
-                }}
-              >
-                <h3 className="mb-3 text-lg font-semibold text-[#2196F3]">
-                  {question.question}
-                </h3>
-                <div className="space-y-1.5">
-                  {question.options.map((option, optionIndex) => (
-                    <Button
-                      key={optionIndex}
-                      className={`w-full justify-start ${index === currentQuestionIndex &&
-                        selectedAnswer === optionIndex
-                        ? (isCorrect
-                          ? 'bg-green-500 hover:bg-green-600'
-                          : 'bg-red-500 hover:bg-red-600')
-                        : 'bg-white hover:bg-gray-100'
-                        } ${index === currentQuestionIndex && selectedAnswer === optionIndex
-                          ? 'text-white'
-                          : 'text-[#2196F3]'
-                        } border border-[#2196F3]`}
-                      onClick={() => index === currentQuestionIndex && handleAnswer(optionIndex)}
-                      disabled={index !== currentQuestionIndex}
-                    >
-                      {option}
-                    </Button>
-                  ))}
-                </div>
-              </motion.div>
-            );
-          })}
-        </AnimatePresence>
-      </div>
+                >
+                  {option}
+                </Button>
+              ))}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

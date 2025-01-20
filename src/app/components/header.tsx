@@ -7,7 +7,7 @@ export default function Header() {
       <div className="container mx-auto flex items-center justify-between px-4 py-4">
         <Link href="/" className="flex items-center space-x-2">
           <Image
-            src="/logo.png"
+            src="/logo.webp"
             alt="OrtoQBank Logo"
             width={40}
             height={40}
@@ -18,7 +18,10 @@ export default function Header() {
         <nav>
           <ul className="flex space-x-4">
             <li>
-              <Link href="#sobre" className="hover:text-opacity-80">
+              <Link
+                href="#sobre"
+                className="text-base transition-opacity hover:opacity-80"
+              >
                 Sobre
               </Link>
             </li>
