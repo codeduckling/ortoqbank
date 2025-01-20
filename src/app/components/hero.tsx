@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 import QuizCard from './quiz-card';
 
@@ -15,11 +16,12 @@ export default function Hero() {
           <p className="mb-8 text-xl text-[#2196F3]">
             Seu banco de questões abrangente para estudos em ortopedia
           </p>
-          <Link href="/ortoqbank">
+          <div className="flex flex-col gap-4">
+            <Input type="email" placeholder="Enter your email" />
             <Button className="bg-[#2196F3] text-white hover:bg-opacity-90">
-              Comece Agora
+              Join Waitlist
             </Button>
-          </Link>
+          </div>
         </div>
         <div className="w-full lg:w-1/2">
           <QuizCard />
