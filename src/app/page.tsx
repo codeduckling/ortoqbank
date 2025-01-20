@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+
 import About from './components/about';
 import FAQ from './components/faq';
 import Header from './components/header';
@@ -12,8 +13,8 @@ export default function Home() {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
 
-  const handleEmailRegistration = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleEmailRegistration = async (event: React.FormEvent) => {
+    event.preventDefault();
     // Add your email registration logic here
     setMessage('Thank you for joining the waitlist!');
   };
@@ -33,7 +34,7 @@ export default function Home() {
                 type="email"
                 placeholder="Enter your email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(event) => setEmail(event.target.value)}
                 className="rounded-md border border-gray-300 p-2"
                 required
               />
