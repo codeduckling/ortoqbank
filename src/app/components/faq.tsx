@@ -1,35 +1,60 @@
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+
 export default function FAQ() {
   const faqs = [
     {
-      question: 'O que é o OrtoQBank?',
+      question: 'Como funciona o OrtoQBank?',
       answer:
-        'O OrtoQBank é um banco de quest��es abrangente para estudos em ortopedia.',
+        'O OrtoQBank é uma plataforma de estudos com milhares de questões em ortopedia, permitindo que você pratique com questões específicas, faça simulados e acompanhe seu progresso através de análises detalhadas.',
     },
     {
-      question: 'Como posso acessar o OrtoQBank?',
+      question: 'As questões são atualizadas com frequência?',
       answer:
-        'Você pode acessar o OrtoQBank através do nosso site após criar uma conta e escolher um plano.',
+        'Sim, nossa equipe de especialistas adiciona novas questões mensalmente, mantendo o conteúdo atualizado com as últimas diretrizes e tendências em ortopedia.',
     },
     {
-      question: 'As questões são atualizadas regularmente?',
+      question: 'Posso acessar em diferentes dispositivos?',
       answer:
-        'Sim, nossas questões são atualizadas regularmente para refletir as últimas tendências e conhecimentos em ortopedia.',
+        'Sim, o OrtoQBank é totalmente responsivo e pode ser acessado em qualquer dispositivo - computador, tablet ou smartphone, mantendo seu progresso sincronizado.',
+    },
+    {
+      question: 'Como são elaboradas as questões?',
+      answer:
+        'Nossas questões são elaboradas por uma equipe de especialistas em ortopedia, seguindo o padrão das principais provas de residência, títulos de especialista e concursos da área.',
+    },
+    {
+      question: 'Existe suporte para dúvidas?',
+      answer:
+        'Sim, além das explicações detalhadas para cada questão, oferecemos suporte técnico e acadêmico para esclarecer suas dúvidas sobre o conteúdo.',
     },
   ];
 
   return (
-    <section id="faq" className="bg-gray-100 py-16">
+    <section id="faq" className="bg-white py-12 md:py-16">
       <div className="container mx-auto px-4">
-        <h2 className="mb-8 text-center text-3xl font-bold text-[#2196F3]">
+        <h2 className="mb-8 text-center text-3xl font-bold text-[#2196F3] md:text-4xl">
           Perguntas Frequentes
         </h2>
-        <div className="space-y-6">
-          {faqs.map((faq, index) => (
-            <div key={index} className="rounded-lg bg-white p-6 shadow">
-              <h3 className="mb-2 text-xl font-bold">{faq.question}</h3>
-              <p>{faq.answer}</p>
-            </div>
-          ))}
+        <div className="mx-auto max-w-3xl">
+          <Accordion type="single" collapsible className="w-full">
+            {faqs.map((faq, index) => (
+              <AccordionItem
+                key={index}
+                value={`item-${index}`}
+                className="border-b border-blue-100"
+              >
+                <AccordionTrigger className="hover:text-[#2196F3]">
+                  {faq.question}
+                </AccordionTrigger>
+                <AccordionContent>{faq.answer}</AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         </div>
       </div>
     </section>

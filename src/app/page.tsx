@@ -1,11 +1,10 @@
-'use client';
-
 import About from './components/about';
 import FAQ from './components/faq';
 import Header from './components/header';
 import Hero from './components/hero';
 import Pricing from './components/pricing';
 import StaffSection from './components/staff-section';
+
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
