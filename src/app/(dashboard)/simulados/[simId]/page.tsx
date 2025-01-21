@@ -47,7 +47,7 @@ const question: Question = {
 export default function SimulationPage({
   params,
 }: {
-  params: { topicId: string };
+  params: Promise<{ simId: string }>;
 }) {
   const [selectedAnswer, setSelectedAnswer] = useState<string>('');
   const [showAnswer, setShowAnswer] = useState(false);
