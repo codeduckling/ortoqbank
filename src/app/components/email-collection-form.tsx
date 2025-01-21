@@ -17,15 +17,15 @@ export default function EmailCollectionForm() {
 
   return (
     <form onSubmit={handleEmailRegistration} className="flex flex-col gap-4">
-      <Input 
-        type="email" 
+      <Input
+        type="email"
         placeholder="Digite seu email"
         value={email}
-        onChange={(event) => setEmail(event.target.value)}
+        onChange={event => setEmail(event.target.value)}
         aria-label="Email address"
         required
       />
-      <Button 
+      <Button
         type="submit"
         className="bg-[#2196F3] text-white hover:bg-opacity-90"
       >
@@ -34,4 +34,4 @@ export default function EmailCollectionForm() {
       {message && <p className="text-green-500">{message}</p>}
     </form>
   );
-} 
+}
