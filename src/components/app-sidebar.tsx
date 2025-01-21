@@ -1,5 +1,12 @@
-import { BookOpen, FileText, PenSquare, UserCircle } from 'lucide-react';
+import {
+  BookOpen,
+  FileText,
+  type LucideIcon,
+  PenSquare,
+  UserCircle,
+} from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 import {
   Sidebar,
@@ -14,8 +21,14 @@ import {
 
 import { Separator } from './ui/separator';
 
+interface MenuItem {
+  title: string;
+  url: string;
+  icon: LucideIcon;
+}
+
 // Menu items.
-const items = [
+const items: MenuItem[] = [
   {
     title: 'Meu Perfil',
     url: '/perfil',
@@ -45,7 +58,7 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <a href="#">
+              <Link href="/">
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg">
                   <Image
                     src="/logo.webp"
@@ -60,7 +73,7 @@ export function AppSidebar() {
                     OrtoQBank
                   </span>
                 </div>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <Separator />
@@ -73,10 +86,13 @@ export function AppSidebar() {
               {items.map(item => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <a href={item.url} className="flex items-center gap-3 py-5">
+                    <Link
+                      href={item.url}
+                      className="flex items-center gap-3 py-5"
+                    >
                       <item.icon className="size-5" />
                       <span className="text-base">{item.title}</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
