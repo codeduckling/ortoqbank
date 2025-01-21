@@ -15,28 +15,36 @@ export default function Header() {
           />
           <span className="text-2xl font-bold">OrtoQBank</span>
         </Link>
-        <nav>
-          <ul className="flex space-x-4">
-            <li>
-              <Link
-                href="#sobre"
-                className="text-base transition-opacity hover:opacity-80"
-              >
-                Sobre
-              </Link>
-            </li>
-            <li>
-              <Link href="#precos" className="hover:text-opacity-80">
-                Preços
-              </Link>
-            </li>
-            <li>
-              <Link href="#faq" className="hover:text-opacity-80">
-                FAQ
-              </Link>
-            </li>
-          </ul>
-        </nav>
+        <div className="flex items-center gap-8">
+          <nav>
+            <ul className="flex space-x-4">
+              <li>
+                <Link
+                  href="#sobre"
+                  className="text-base transition-opacity hover:opacity-80"
+                >
+                  Sobre
+                </Link>
+              </li>
+              <li>
+                <Link href="#precos" className="hover:text-opacity-80">
+                  Preços
+                </Link>
+              </li>
+              <li>
+                <Link href="#faq" className="hover:text-opacity-80">
+                  FAQ
+                </Link>
+              </li>
+            </ul>
+          </nav>
+          <Link
+            href="/criar-teste"
+            className="rounded-full border border-white px-4 py-1.5 text-sm font-medium transition-colors hover:bg-white hover:text-[#2196F3]"
+          >
+            Entrar
+          </Link>
+        </div>
       </div>
     </header>
   );
