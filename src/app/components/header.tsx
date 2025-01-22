@@ -13,7 +13,7 @@ export default function Header() {
             height={40}
             className="rounded-sm"
           />
-          <span className="text-2xl font-bold">OrtoQBank</span>
+          <span className="font-sifonn text-2xl font-bold">OrtoQBank</span>
         </Link>
         <div className="flex items-center gap-8">
           <nav>

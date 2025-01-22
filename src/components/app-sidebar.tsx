@@ -58,7 +58,7 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link href="/">
+              <Link href="/" className="hover:text-blue-500">
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg">
                   <Image
                     src="/logo.webp"
@@ -69,9 +69,7 @@ export function AppSidebar() {
                   />
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="text-xl font-medium text-[#2196F3]">
-                    OrtoQBank
-                  </span>
+                  <span className="text-xl font-medium">OrtoQBank</span>
                 </div>
               </Link>
             </SidebarMenuButton>
