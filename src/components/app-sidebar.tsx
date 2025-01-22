@@ -11,14 +11,17 @@ import Link from 'next/link';
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarRail,
 } from '@/components/ui/sidebar';
 
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Separator } from './ui/separator';
 
 interface MenuItem {
@@ -49,16 +52,26 @@ const items: MenuItem[] = [
     url: '/criar-teste',
     icon: PenSquare,
   },
+  {
+    title: 'Testes Prévios',
+    url: '/testes-previos',
+    icon: PenSquare,
+  },
+  {
+    title: 'Suporte',
+    url: '/suporte',
+    icon: PenSquare,
+  },
 ];
 
-export function AppSidebar() {
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
-    <Sidebar>
+    <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <Link href="/" className="hover:text-blue-500">
+            <SidebarMenuButton variant="logo" size="lg" asChild>
+              <Link href="/">
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg">
                   <Image
                     src="/logo.webp"
@@ -69,7 +82,9 @@ export function AppSidebar() {
                   />
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="text-xl font-medium">OrtoQBank</span>
+                  <span className="font-sifonn text-xl font-medium">
+                    OrtoQBank
+                  </span>
                 </div>
               </Link>
             </SidebarMenuButton>
@@ -98,6 +113,17 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter>
+        <Card className="group-data-[collapsible=icon]:hidden">
+          <CardHeader>
+            <CardTitle className="truncate">Data de Validade</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="truncate">21/01/206</p>
+          </CardContent>
+        </Card>
+      </SidebarFooter>
+      <SidebarRail />
     </Sidebar>
   );
 }
