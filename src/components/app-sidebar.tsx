@@ -1,9 +1,11 @@
 import {
-  BookOpen,
-  FileText,
+  BookOpenIcon,
+  FileClockIcon,
+  FileTextIcon,
+  HeadsetIcon,
   type LucideIcon,
-  PenSquare,
-  UserCircle,
+  PenSquareIcon,
+  UserCircleIcon,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -11,14 +13,17 @@ import Link from 'next/link';
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarRail,
 } from '@/components/ui/sidebar';
 
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Separator } from './ui/separator';
 
 interface MenuItem {
@@ -32,32 +37,42 @@ const items: MenuItem[] = [
   {
     title: 'Meu Perfil',
     url: '/perfil',
-    icon: UserCircle,
+    icon: UserCircleIcon,
   },
   {
     title: 'Temas',
     url: '/temas',
-    icon: BookOpen,
+    icon: BookOpenIcon,
   },
   {
     title: 'Simulados',
     url: '/simulados',
-    icon: FileText,
+    icon: FileTextIcon,
   },
   {
     title: 'Criar Teste',
     url: '/criar-teste',
-    icon: PenSquare,
+    icon: PenSquareIcon,
+  },
+  {
+    title: 'Testes Prévios',
+    url: '/testes-previos',
+    icon: FileClockIcon,
+  },
+  {
+    title: 'Suporte',
+    url: '/suporte',
+    icon: HeadsetIcon,
   },
 ];
 
-export function AppSidebar() {
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
-    <Sidebar>
+    <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
+            <SidebarMenuButton variant="logo" size="lg" asChild>
               <Link href="/">
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg">
                   <Image
@@ -69,7 +84,7 @@ export function AppSidebar() {
                   />
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="text-xl font-medium text-[#2196F3]">
+                  <span className="font-sifonn text-xl font-medium">
                     OrtoQBank
                   </span>
                 </div>
@@ -100,6 +115,17 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter>
+        <Card className="group-data-[collapsible=icon]:hidden">
+          <CardHeader>
+            <CardTitle className="truncate">Data de Validade</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="truncate">21/01/2026</p>
+          </CardContent>
+        </Card>
+      </SidebarFooter>
+      <SidebarRail />
     </Sidebar>
   );
 }
