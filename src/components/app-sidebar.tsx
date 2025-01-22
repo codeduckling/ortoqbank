@@ -121,7 +121,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <CardTitle className="truncate">Data de Validade</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="truncate">21/01/206</p>
+            <p className="truncate">21/01/2026</p>
           </CardContent>
         </Card>
       </SidebarFooter>
