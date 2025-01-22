@@ -1,9 +1,11 @@
 import {
-  BookOpen,
-  FileText,
+  BookOpenIcon,
+  FileClockIcon,
+  FileTextIcon,
+  HeadsetIcon,
   type LucideIcon,
-  PenSquare,
-  UserCircle,
+  PenSquareIcon,
+  UserCircleIcon,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -35,32 +37,32 @@ const items: MenuItem[] = [
   {
     title: 'Meu Perfil',
     url: '/perfil',
-    icon: UserCircle,
+    icon: UserCircleIcon,
   },
   {
     title: 'Temas',
     url: '/temas',
-    icon: BookOpen,
+    icon: BookOpenIcon,
   },
   {
     title: 'Simulados',
     url: '/simulados',
-    icon: FileText,
+    icon: FileTextIcon,
   },
   {
     title: 'Criar Teste',
     url: '/criar-teste',
-    icon: PenSquare,
+    icon: PenSquareIcon,
   },
   {
     title: 'Testes Prévios',
     url: '/testes-previos',
-    icon: PenSquare,
+    icon: FileClockIcon,
   },
   {
     title: 'Suporte',
     url: '/suporte',
-    icon: PenSquare,
+    icon: HeadsetIcon,
   },
 ];
 
