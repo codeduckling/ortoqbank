@@ -7,8 +7,8 @@ export async function createQuestion(
     options: { text: string; imageUrl?: string }[];
     correctOptionIndex: number;
     explanation: string;
-    subject: string;
-    tags: string[];
+    theme: string;
+    subjects: string[];
     imageUrl?: string;
   },
 ) {

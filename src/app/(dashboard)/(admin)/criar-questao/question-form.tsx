@@ -2,9 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from 'convex/react';
-import { Check, Plus, Trash2, Upload } from 'lucide-react';
-import { useFieldArray,useForm } from 'react-hook-form';
-import { z } from 'zod';
+import { useFieldArray, useForm } from 'react-hook-form';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -18,30 +16,11 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { cn } from '@/lib/utils';
 
 import { api } from '../../../../../convex/_generated/api';
-
-const questionSchema = z.object({
-  text: z.string().min(10, 'A questão deve ter pelo menos 10 caracteres'),
-  imageUrl: z.string().url().optional().or(z.literal('')),
-  options: z
-    .array(
-      z.object({
-        text: z.string().min(1, 'A alternativa não pode estar vazia'),
-        imageUrl: z.string().url().optional().or(z.literal('')),
-      }),
-    )
-    .length(4, 'A questão deve ter exatamente 4 alternativas'),
-  correctOptionIndex: z.number().min(0).max(3),
-  explanation: z
-    .string()
-    .min(10, 'A explicação deve ter pelo menos 10 caracteres'),
-  subject: z.string().min(3, 'O assunto deve ter pelo menos 3 caracteres'),
-  tags: z.array(z.string().min(1, 'Tag não pode estar vazia')),
-});
-
-type QuestionFormData = z.infer<typeof questionSchema>;
+import { ImageUploadField } from './image-upload-field';
+import { QuestionOption } from './question-option';
+import { QuestionFormData, questionSchema } from './schema';
 
 export function QuestionForm() {
   const createQuestion = useMutation(api.questions.createQuestion);
@@ -59,12 +38,12 @@ export function QuestionForm() {
       ],
       correctOptionIndex: 0,
       explanation: '',
-      subject: '',
-      tags: [],
+      theme: '',
+      subjects: [],
     },
   });
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields } = useFieldArray({
     control: form.control,
     name: 'options',
   });
@@ -80,8 +59,8 @@ export function QuestionForm() {
         })),
         correctOptionIndex: data.correctOptionIndex,
         explanation: data.explanation,
-        subject: data.subject,
-        tags: data.tags,
+        theme: data.theme,
+        subjects: data.subjects,
       });
 
       form.reset();
@@ -110,33 +89,12 @@ export function QuestionForm() {
         <FormField
           control={form.control}
           name="imageUrl"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Imagem da Questão (opcional)</FormLabel>
-              <div className="flex gap-2">
-                <FormControl>
-                  <Input
-                    type="url"
-                    {...field}
-                    disabled
-                    placeholder="Nenhuma imagem selecionada"
-                  />
-                </FormControl>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="shrink-0"
-                  onClick={() => {
-                    // Will be implemented later
-                    console.log('Upload image');
-                  }}
-                >
-                  <Upload className="mr-2 h-4 w-4" />
-                  Upload
-                </Button>
-              </div>
-              <FormMessage />
-            </FormItem>
+          render={() => (
+            <ImageUploadField
+              control={form.control}
+              name="imageUrl"
+              label="Imagem da Questão (opcional)"
+            />
           )}
         />
 
@@ -144,80 +102,14 @@ export function QuestionForm() {
           <FormLabel>Alternativas</FormLabel>
           <Card>
             <CardContent className="space-y-2 p-2">
-              {fields.map((fieldItem, index) => (
-                <div key={fieldItem.id} className="relative">
-                  <div className="space-y-2">
-                    <FormField
-                      control={form.control}
-                      name={`options.${index}.text`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <div className="flex gap-2">
-                            <Button
-                              type="button"
-                              variant={
-                                form.watch('correctOptionIndex') === index
-                                  ? 'default'
-                                  : 'outline'
-                              }
-                              size="sm"
-                              className="h-8 w-8 shrink-0 p-0"
-                              onClick={() =>
-                                form.setValue('correctOptionIndex', index)
-                              }
-                            >
-                              {form.watch('correctOptionIndex') === index ? (
-                                <Check className="h-4 w-4" />
-                              ) : (
-                                <span>{String.fromCharCode(65 + index)}</span>
-                              )}
-                            </Button>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                placeholder={`Alternativa ${String.fromCharCode(65 + index)}`}
-                              />
-                            </FormControl>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name={`options.${index}.imageUrl`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <div className="flex gap-2 pl-10">
-                            <FormControl>
-                              <Input
-                                type="url"
-                                {...field}
-                                disabled
-                                placeholder="Nenhuma imagem selecionada"
-                                className="text-sm"
-                              />
-                            </FormControl>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="shrink-0"
-                              onClick={() => {
-                                // Will be implemented later
-                                console.log('Upload image for option', index);
-                              }}
-                            >
-                              <Upload className="h-4 w-4" />
-                            </Button>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
+              {fields.map((field, index) => (
+                <QuestionOption
+                  key={field.id}
+                  control={form.control}
+                  index={index}
+                  isSelected={form.watch('correctOptionIndex') === index}
+                  onSelect={() => form.setValue('correctOptionIndex', index)}
+                />
               ))}
             </CardContent>
           </Card>
@@ -240,10 +132,10 @@ export function QuestionForm() {
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="subject"
+            name="theme"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Assunto</FormLabel>
+                <FormLabel>Tema</FormLabel>
                 <FormControl>
                   <Input {...field} />
                 </FormControl>
@@ -254,22 +146,22 @@ export function QuestionForm() {
 
           <FormField
             control={form.control}
-            name="tags"
+            name="subjects"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Tags</FormLabel>
+                <FormLabel>Matérias</FormLabel>
                 <FormControl>
                   <Input
                     {...field}
                     value={field.value.join(', ')}
-                    onChange={e => {
-                      const tags = e.target.value
+                    onChange={event => {
+                      const subjects = event.target.value
                         .split(',')
-                        .map(tag => tag.trim())
+                        .map(subject => subject.trim())
                         .filter(Boolean);
-                      field.onChange(tags);
+                      field.onChange(subjects);
                     }}
-                    placeholder="tag1, tag2, tag3"
+                    placeholder="matéria1, matéria2, matéria3"
                   />
                 </FormControl>
                 <FormMessage />

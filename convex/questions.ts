@@ -14,8 +14,8 @@ export const createQuestion = mutation({
     ),
     correctOptionIndex: v.number(),
     explanation: v.string(),
-    subject: v.string(),
-    tags: v.array(v.string()),
+    theme: v.string(),
+    subjects: v.array(v.string()),
     imageUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {

@@ -1,6 +1,6 @@
 'use client';
 
-import { UserResource } from '@clerk/types';
+import { type UserResource } from '@clerk/types';
 import {
   BadgeCheck,
   Bell,
@@ -30,7 +30,7 @@ import {
 export function NavUser({ user }: { user: UserResource | null | undefined }) {
   const { isMobile } = useSidebar();
 
-  if (!user) return null;
+  if (!user) return;
 
   return (
     <SidebarMenu>

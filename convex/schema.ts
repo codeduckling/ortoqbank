@@ -21,9 +21,9 @@ export default defineSchema({
     ),
     correctOptionIndex: v.number(),
     explanation: v.string(),
-    subject: v.string(),
-    tags: v.array(v.string()),
-  }).index('by_subject', ['subject']),
+    theme: v.string(),
+    subjects: v.array(v.string()),
+  }).index('by_theme', ['theme']),
 
   examSessions: defineTable({
     userId: v.id('users'),
