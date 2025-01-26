@@ -1,5 +1,6 @@
-import { mutation, query } from './_generated/server';
 import { v } from 'convex/values';
+
+import { mutation, query } from './_generated/server';
 import * as Questions from './model/questions';
 import * as Users from './model/users';
 
@@ -18,14 +19,20 @@ export const createQuestion = mutation({
     subjects: v.array(v.string()),
     imageUrl: v.optional(v.string()),
   },
-  handler: async (ctx, args) => {
-    await Users.getCurrentUser(ctx);
+  handler: async (context, arguments_) => {
+    await Users.getCurrentUser(context);
 
     // Validate the correctOptionIndex
-    if (args.correctOptionIndex >= args.options.length) {
+    if (arguments_.correctOptionIndex >= arguments_.options.length) {
       throw new Error('Invalid correct option index');
     }
 
-    return Questions.createQuestion(ctx, args);
+    return Questions.createQuestion(context, arguments_);
+  },
+});
+
+export const getAllThemeCounts = query({
+  handler: async context => {
+    return Questions.getAllThemeCounts(context);
   },
 });

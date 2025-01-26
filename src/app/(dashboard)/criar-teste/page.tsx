@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery } from 'convex/react';
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,8 @@ import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
 import { useIsMobile } from '@/hooks/use-mobile';
 
+import { api } from '../../../../convex/_generated/api';
+import { THEMES } from '../../../../convex/constants';
 import { PieChartDemo } from './pie-chart-demo';
 import { ThemeBarChart } from './theme-bar-chart';
 
@@ -18,23 +21,28 @@ const subjects = [
   { id: 'trauma', label: 'Trauma', count: 0, selected: false },
 ];
 
-const topics = [
-  { id: 'basicas', label: 'Básicas', count: 0, progress: 0 },
-  { id: 'tumor', label: 'Tumor', count: 0, progress: 0 },
-  { id: 'coluna', label: 'Coluna', count: 0, progress: 0 },
-  { id: 'mao', label: 'Mão', count: 0, progress: 0 },
-  { id: 'ombro', label: 'Ombro', count: 0, progress: 0 },
-  { id: 'joelho', label: 'Joelho', count: 0, progress: 0 },
-  { id: 'quadril', label: 'Quadril', count: 0, progress: 0 },
-  { id: 'pe', label: 'Pé', count: 0, progress: 0 },
-];
+const baseThemes = THEMES.map(theme => ({
+  id: theme.name,
+  label: theme.label,
+  progress: 0,
+}));
 
 export default function CriarTestePage() {
   const isMobile = useIsMobile();
   const [isSimulado, setIsSimulado] = useState(true);
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
-  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+  const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
   const [questionCount, setQuestionCount] = useState(0);
+
+  // Fetch theme counts from Convex
+  const themeCounts = useQuery(api.questions.getAllThemeCounts);
+
+  // Combine base themes with counts from the database
+  const themes = baseThemes.map(theme => ({
+    ...theme,
+    count: themeCounts?.[theme.id] ?? 0,
+  }));
+  console.log(themes);
 
   return (
     <div className="container mx-auto max-w-4xl p-6">
@@ -100,29 +108,29 @@ export default function CriarTestePage() {
       <div className="mb-8">
         <h2 className="mb-4 text-lg font-semibold">Temas</h2>
         <div className="space-y-4">
-          {topics.map(topic => (
-            <div key={topic.id} className="space-y-2">
+          {themes.map(theme => (
+            <div key={theme.id} className="space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Checkbox
-                    id={topic.id}
-                    checked={selectedTopics.includes(topic.id)}
+                    id={theme.id}
+                    checked={selectedThemes.includes(theme.id)}
                     onCheckedChange={checked => {
                       if (checked) {
-                        setSelectedTopics([...selectedTopics, topic.id]);
+                        setSelectedThemes([...selectedThemes, theme.id]);
                       } else {
-                        setSelectedTopics(
-                          selectedTopics.filter(id => id !== topic.id),
+                        setSelectedThemes(
+                          selectedThemes.filter(id => id !== theme.id),
                         );
                       }
                     }}
                   />
-                  <label htmlFor={topic.id} className="text-sm">
-                    {topic.label}
-                    <span className="ml-2 text-gray-500">({topic.count})</span>
+                  <label htmlFor={theme.id} className="text-sm">
+                    {theme.label}
+                    <span className="ml-2 text-gray-500">({theme.count})</span>
                   </label>
                 </div>
-                <Progress value={topic.progress} className="w-24" />
+                <Progress value={theme.progress} className="w-24" />
               </div>
             </div>
           ))}

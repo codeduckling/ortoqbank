@@ -33,4 +33,11 @@ export default defineSchema({
     currentQuestionIndex: v.number(),
     answers: v.array(v.number()), // Array of selected option indices
   }).index('by_user', ['userId']),
+
+  themes: defineTable({
+    name: v.string(),
+    label: v.string(),
+    order: v.number(), // For controlling display order
+    isActive: v.boolean(), // Optional: to enable/disable themes
+  }).index('by_order', ['order']),
 });
