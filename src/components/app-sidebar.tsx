@@ -1,3 +1,6 @@
+'use client';
+
+import { useUser } from '@clerk/nextjs';
 import {
   BookOpenIcon,
   FileClockIcon,
@@ -23,6 +26,7 @@ import {
   SidebarRail,
 } from '@/components/ui/sidebar';
 
+import { NavUser } from './nav-user';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Separator } from './ui/separator';
 
@@ -67,6 +71,8 @@ const items: MenuItem[] = [
 ];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { user } = useUser();
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -124,6 +130,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <p className="truncate">21/01/2026</p>
           </CardContent>
         </Card>
+        <NavUser user={user} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

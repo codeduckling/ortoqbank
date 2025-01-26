@@ -1,7 +1,16 @@
 /* eslint-disable unicorn/prefer-string-raw */
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
-const isProtectedRoute = createRouteMatcher(['/ortoqbank(.*)']);
+const isProtectedRoute = createRouteMatcher([
+  '/dashboard(.*)',
+  '/criar-questao(.*)',
+  '/criar-teste(.*)',
+  '/perfil(.*)',
+  '/simulados(.*)',
+  '/suporte(.*)',
+  '/temas(.*)',
+  '/testes-previos(.*)',
+]);
 
 export default clerkMiddleware(async (auth, request) => {
   if (isProtectedRoute(request)) await auth.protect();
