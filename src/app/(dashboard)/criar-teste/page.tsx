@@ -7,7 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Toggle } from '@/components/ui/toggle';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 import { api } from '../../../../convex/_generated/api';
 import { THEMES } from '../../../../convex/constants';
@@ -60,79 +63,67 @@ export default function CriarTestePage() {
 
       <div className="mb-8">
         <h2 className="mb-4 text-lg font-semibold">Modo</h2>
-        <div className="flex items-center gap-4">
-          <span
-            className={`text-sm ${isSimulado ? 'text-blue-600' : 'text-gray-500'}`}
-          >
-            Simulado
-          </span>
-          <Switch
-            checked={!isSimulado}
-            onCheckedChange={checked => setIsSimulado(!checked)}
-          />
-          <span
-            className={`text-sm ${isSimulado ? 'text-gray-500' : 'text-blue-600'}`}
-          >
-            Tutor
-          </span>
-        </div>
+        <Tabs
+          defaultValue="simulado"
+          value={isSimulado ? 'simulado' : 'tutor'}
+          onValueChange={value => setIsSimulado(value === 'simulado')}
+          className="w-full"
+        >
+          <TabsList className="grid w-52 grid-cols-2">
+            <TabsTrigger value="simulado">Simulado</TabsTrigger>
+            <TabsTrigger value="tutor">Tutor</TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
       <div className="mb-8">
         <h2 className="mb-4 text-lg font-semibold">Matérias</h2>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="flex flex-wrap gap-2">
           {subjects.map(subject => (
-            <div key={subject.id} className="flex items-center space-x-2">
-              <Checkbox
-                id={subject.id}
-                checked={selectedSubjects.includes(subject.id)}
-                onCheckedChange={checked => {
-                  if (checked) {
-                    setSelectedSubjects([...selectedSubjects, subject.id]);
-                  } else {
-                    setSelectedSubjects(
-                      selectedSubjects.filter(id => id !== subject.id),
-                    );
-                  }
-                }}
-              />
-              <label htmlFor={subject.id} className="flex-1 text-sm">
-                {subject.label}
-                <span className="ml-2 text-gray-500">({subject.count})</span>
-              </label>
-            </div>
+            <Toggle
+              key={subject.id}
+              variant="outline"
+              size="default"
+              pressed={selectedSubjects.includes(subject.id)}
+              onPressedChange={pressed => {
+                if (pressed) {
+                  setSelectedSubjects([...selectedSubjects, subject.id]);
+                } else {
+                  setSelectedSubjects(
+                    selectedSubjects.filter(id => id !== subject.id),
+                  );
+                }
+              }}
+            >
+              {subject.label}
+              <span className="ml-2 text-xs opacity-70">({subject.count})</span>
+            </Toggle>
           ))}
         </div>
       </div>
 
       <div className="mb-8">
         <h2 className="mb-4 text-lg font-semibold">Temas</h2>
-        <div className="space-y-4">
+        <div className="flex flex-wrap gap-2">
           {themes.map(theme => (
-            <div key={theme.id} className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id={theme.id}
-                    checked={selectedThemes.includes(theme.id)}
-                    onCheckedChange={checked => {
-                      if (checked) {
-                        setSelectedThemes([...selectedThemes, theme.id]);
-                      } else {
-                        setSelectedThemes(
-                          selectedThemes.filter(id => id !== theme.id),
-                        );
-                      }
-                    }}
-                  />
-                  <label htmlFor={theme.id} className="text-sm">
-                    {theme.label}
-                    <span className="ml-2 text-gray-500">({theme.count})</span>
-                  </label>
-                </div>
-                <Progress value={theme.progress} className="w-24" />
-              </div>
-            </div>
+            <Toggle
+              key={theme.id}
+              variant="outline"
+              size="default"
+              pressed={selectedThemes.includes(theme.id)}
+              onPressedChange={pressed => {
+                if (pressed) {
+                  setSelectedThemes([...selectedThemes, theme.id]);
+                } else {
+                  setSelectedThemes(
+                    selectedThemes.filter(id => id !== theme.id),
+                  );
+                }
+              }}
+            >
+              {theme.label}
+              <span className="ml-2 text-xs opacity-70">({theme.count})</span>
+            </Toggle>
           ))}
         </div>
       </div>
