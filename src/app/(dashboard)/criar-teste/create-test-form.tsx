@@ -1,11 +1,13 @@
 'use client';
 
+import { useQuery } from 'convex/react';
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Toggle } from '@/components/ui/toggle';
 
+import { api } from '../../../../convex/_generated/api';
 import { THEMES } from '../../../../convex/constants';
 
 const subjects = [
@@ -15,17 +17,21 @@ const subjects = [
   { id: 'trauma', label: 'Trauma', count: 0 },
 ];
 
-const baseThemes = THEMES.map(theme => ({
-  id: theme.name,
-  label: theme.label,
-  count: 0,
-}));
-
 export function CreateTestForm() {
   const [isSimulado, setIsSimulado] = useState(true);
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
   const [questionCount] = useState(0);
+
+  // Fetch theme counts from Convex
+  const themeCounts = useQuery(api.questions.getAllThemeCounts);
+
+  // Combine base themes with counts from the database
+  const themes = THEMES.map(theme => ({
+    id: theme.name,
+    label: theme.label,
+    count: themeCounts?.[theme.name] ?? 0,
+  }));
 
   const handleSubmit = () => {
     console.log({
@@ -82,7 +88,7 @@ export function CreateTestForm() {
       <div>
         <h2 className="mb-4 text-lg font-semibold">Temas</h2>
         <div className="flex flex-wrap gap-2">
-          {baseThemes.map(theme => (
+          {themes.map(theme => (
             <Toggle
               key={theme.id}
               variant="outline"
