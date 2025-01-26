@@ -3,12 +3,13 @@
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
+import { useIsMobile } from '@/hooks/use-mobile';
 
-import { CircularProgress } from './circular-progress';
+import { PieChartDemo } from './pie-chart-demo';
+import { ThemeBarChart } from './theme-bar-chart';
 
 const subjects = [
   { id: 'anatomia', label: 'Anatomia', count: 0, selected: false },
@@ -29,6 +30,7 @@ const topics = [
 ];
 
 export default function CriarTestePage() {
+  const isMobile = useIsMobile();
   const [isSimulado, setIsSimulado] = useState(true);
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
@@ -38,27 +40,14 @@ export default function CriarTestePage() {
     <div className="container mx-auto max-w-4xl p-6">
       <h1 className="mb-6 text-2xl font-bold">Criar Teste</h1>
 
-      <div className="mb-8 grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="mb-4 text-center">
-              <CircularProgress value={0} label="Acertos" />
-            </div>
-            <p className="text-center text-sm text-gray-500">
-              Média de acertos: 0%
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="mb-4 text-center">
-              <CircularProgress value={0} label="Completo" />
-            </div>
-            <p className="text-center text-sm text-gray-500">
-              Questões respondidas: 0%
-            </p>
-          </CardContent>
-        </Card>
+      <div
+        className={`mb-8 grid gap-6 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}
+      >
+        <PieChartDemo />
+
+        <div className="row-span-1">
+          <ThemeBarChart />
+        </div>
       </div>
 
       <div className="mb-8">
