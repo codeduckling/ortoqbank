@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Toggle } from '@/components/ui/toggle';
+import { cn } from '@/lib/utils';
 
 import { api } from '../../../../convex/_generated/api';
 import { THEMES } from '../../../../convex/constants';
@@ -53,8 +54,18 @@ export function CreateTestForm() {
           className="w-full"
         >
           <TabsList className="grid w-52 grid-cols-2">
-            <TabsTrigger value="simulado">Simulado</TabsTrigger>
-            <TabsTrigger value="tutor">Tutor</TabsTrigger>
+            <TabsTrigger
+              value="simulado"
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            >
+              Simulado
+            </TabsTrigger>
+            <TabsTrigger
+              value="tutor"
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            >
+              Tutor
+            </TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -65,7 +76,7 @@ export function CreateTestForm() {
           {subjects.map(subject => (
             <Toggle
               key={subject.id}
-              variant="outline"
+              variant="primary"
               size="default"
               pressed={selectedSubjects.includes(subject.id)}
               onPressedChange={pressed => {
@@ -91,7 +102,7 @@ export function CreateTestForm() {
           {themes.map(theme => (
             <Toggle
               key={theme.id}
-              variant="outline"
+              variant="primary"
               size="default"
               pressed={selectedThemes.includes(theme.id)}
               onPressedChange={pressed => {
