@@ -8,6 +8,7 @@ import {
   HeadsetIcon,
   type LucideIcon,
   PenSquareIcon,
+  ShieldIcon,
   UserCircleIcon,
 } from 'lucide-react';
 import Image from 'next/image';
@@ -67,6 +68,11 @@ const items: MenuItem[] = [
     title: 'Suporte',
     url: '/suporte',
     icon: HeadsetIcon,
+  },
+  {
+    title: 'Criar Questão',
+    url: '/criar-questao',
+    icon: PenSquareIcon,
   },
 ];
 
