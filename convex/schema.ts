@@ -25,12 +25,27 @@ export default defineSchema({
     subjects: v.array(v.string()),
   }).index('by_theme', ['theme']),
 
+  // Content/Admin side - Predefined exams
+  exams: defineTable({
+    title: v.string(),
+    description: v.optional(v.string()),
+    theme: v.string(), // matches theme name from THEMES constant
+    questionIds: v.array(v.id('questions')),
+    isPublished: v.boolean(),
+    updatedAt: v.number(),
+  }).index('by_theme', ['theme']),
+
+  // User side - Tracks ongoing exam sessions
   examSessions: defineTable({
     userId: v.id('users'),
-    startedAt: v.number(), // timestamp
+    examId: v.id('exams'),
+    mode: v.string(), // 'simulado' or 'tutor'
+    startedAt: v.number(),
     completedAt: v.optional(v.number()),
-    questionIds: v.array(v.id('questions')),
     currentQuestionIndex: v.number(),
-    answers: v.array(v.number()), // Array of selected option indices
-  }).index('by_user', ['userId']),
+    answers: v.array(v.number()),
+    score: v.optional(v.number()),
+  })
+    .index('by_user', ['userId'])
+    .index('by_exam', ['examId']),
 });

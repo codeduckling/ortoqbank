@@ -15,9 +15,17 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 
 import { api } from '../../../../../convex/_generated/api';
+import { THEMES } from '../../../../../convex/constants';
 import { ImageUploadField } from './image-upload-field';
 import { QuestionOption } from './question-option';
 import { QuestionFormData, questionSchema } from './schema';
@@ -136,9 +144,23 @@ export function QuestionForm() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Tema</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um tema" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {THEMES.map(theme => (
+                      <SelectItem key={theme.name} value={theme.name}>
+                        {theme.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}

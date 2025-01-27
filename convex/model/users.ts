@@ -1,4 +1,6 @@
-import { QueryCtx } from '../_generated/server';
+/* eslint-disable  unicorn/prevent-abbreviations */
+
+import { type QueryCtx } from '../_generated/server';
 
 export async function getCurrentUser(ctx: QueryCtx) {
   const identity = await ctx.auth.getUserIdentity();

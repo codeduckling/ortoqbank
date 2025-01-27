@@ -25,22 +25,18 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart';
 const chartData = [
-  { month: 'January', desktop: 186, mobile: 80 },
-  { month: 'February', desktop: 305, mobile: 200 },
-  { month: 'March', desktop: 237, mobile: 120 },
-  { month: 'April', desktop: 73, mobile: 190 },
-  { month: 'May', desktop: 209, mobile: 130 },
-  { month: 'June', desktop: 214, mobile: 140 },
+  { theme: 'Ciências Básicas', percentage: 25 },
+  { theme: 'Tumores', percentage: 30 },
+  { theme: 'Coluna', percentage: 23 },
+  { theme: 'Mão', percentage: 100 },
+  { theme: 'Ombro e Cotovelo', percentage: 20 },
+  { theme: 'Joelho', percentage: 80 },
 ];
 
 const chartConfig = {
-  desktop: {
-    label: 'Desktop',
+  percentage: {
+    label: 'percentage',
     color: 'hsl(var(--chart-1))',
-  },
-  mobile: {
-    label: 'Mobile',
-    color: 'hsl(var(--chart-2))',
   },
   label: {
     color: 'hsl(var(--background))',
@@ -51,66 +47,75 @@ export function ThemeBarChart() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Bar Chart - Custom Label</CardTitle>
-        <CardDescription>January - June 2024</CardDescription>
+        <CardTitle>Progresso por temas</CardTitle>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig}>
+        <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
           <BarChart
             accessibilityLayer
             data={chartData}
             layout="vertical"
             margin={{
-              right: 16,
+              right: 40,
+              left: 8,
+              top: 8,
+              bottom: 8,
             }}
           >
             <CartesianGrid horizontal={false} />
             <YAxis
-              dataKey="month"
+              dataKey="theme"
               type="category"
               tickLine={false}
               tickMargin={10}
               axisLine={false}
-              tickFormatter={value => value.slice(0, 3)}
-              hide
+              width={60}
+              tick={{ fontSize: 12 }}
+              tickFormatter={(value: string) => {
+                const words = value.split(' ');
+                if (words.length === 1) return value;
+
+                // Split into roughly equal parts
+                const midpoint = Math.ceil(words.length / 2);
+                const firstLine = words.slice(0, midpoint).join(' ');
+                const secondLine = words.slice(midpoint).join(' ');
+
+                return `${firstLine}\n${secondLine}`;
+              }}
             />
-            <XAxis dataKey="desktop" type="number" hide />
+            <XAxis
+              dataKey="percentage"
+              type="number"
+              tickMargin={10}
+              tickLine={false}
+              axisLine={false}
+              tickFormatter={value => value.toString() + '%'}
+              ticks={[0, 25, 50, 75, 100]}
+              minTickGap={0}
+              interval={0}
+            />
             <ChartTooltip
               cursor={false}
               content={<ChartTooltipContent indicator="line" />}
             />
             <Bar
-              dataKey="desktop"
+              dataKey="percentage"
               layout="vertical"
-              fill="var(--color-desktop)"
+              fill="var(--color-percentage)"
               radius={4}
             >
               <LabelList
-                dataKey="month"
-                position="insideLeft"
-                offset={8}
-                className="fill-[--color-label]"
-                fontSize={12}
-              />
-              <LabelList
-                dataKey="desktop"
+                dataKey="percentage"
                 position="right"
                 offset={8}
                 className="fill-foreground"
                 fontSize={12}
+                formatter={(value: number) => value.toString() + '%'}
               />
             </Bar>
           </BarChart>
         </ChartContainer>
       </CardContent>
-      <CardFooter className="flex-col items-start gap-2 text-sm">
-        <div className="flex gap-2 font-medium leading-none">
-          Trending up by 5.2% this month <TrendingUp className="h-4 w-4" />
-        </div>
-        <div className="leading-none text-muted-foreground">
-          Showing total visitors for the last 6 months
-        </div>
-      </CardFooter>
     </Card>
   );
 }
