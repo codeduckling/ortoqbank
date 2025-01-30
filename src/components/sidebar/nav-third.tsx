@@ -30,12 +30,17 @@ const items: MenuItem[] = [
     url: '/suporte',
     icon: HeadsetIcon,
   },
+  {
+    title: 'Meu Perfil',
+    url: '/perfil',
+    icon: UserCircleIcon,
+  },
 ];
 
 export default function NavThird() {
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Suporte</SidebarGroupLabel>
+      <SidebarGroupLabel>Usuário</SidebarGroupLabel>
       <SidebarMenu>
         {items.map(item => (
           <SidebarMenuItem key={item.title}>

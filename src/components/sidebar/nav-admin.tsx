@@ -26,21 +26,21 @@ interface MenuItem {
 
 const items: MenuItem[] = [
   {
-    title: 'Temas',
-    url: '/temas',
-    icon: BookOpenIcon,
+    title: 'Criar Questão',
+    url: '/criar-questao',
+    icon: PenSquareIcon,
   },
-
   {
-    title: 'Testes Prévios',
-    url: '/testes-previos',
-    icon: FileClockIcon,
+    title: 'Criar Tema',
+    url: '/criar-tema',
+    icon: BookOpenIcon,
   },
 ];
 
-export default function NavMain() {
+export default function NavAdmin() {
   return (
     <SidebarGroup>
+      <SidebarGroupLabel>Admin</SidebarGroupLabel>
       <SidebarMenu>
         {items.map(item => (
           <SidebarMenuItem key={item.title}>

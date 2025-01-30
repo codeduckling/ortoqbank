@@ -31,7 +31,7 @@ const items: MenuItem[] = [
 export default function NavSecondary() {
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Simulados</SidebarGroupLabel>
+      <SidebarGroupLabel>Modos</SidebarGroupLabel>
       <SidebarMenu>
         {items.map(item => (
           <SidebarMenuItem key={item.title}>
