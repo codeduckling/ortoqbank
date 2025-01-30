@@ -1,42 +1,57 @@
 /* eslint-disable unicorn/prevent-abbreviations */
 
-import { type MutationCtx, type QueryCtx } from '../_generated/server';
+import { Id } from '../_generated/dataModel';
+import {
+  type MutationCtx as MutationContext,
+  type QueryCtx as QueryContext,
+} from '../_generated/server';
 import { THEMES } from '../constants';
 
 export type QuestionInput = {
   text: string;
-  options: {
-    text: string;
-    imageUrl?: string;
-  }[];
+  imageUrl?: string;
+  options: string[];
   correctOptionIndex: number;
   explanation: string;
-  theme: string;
-  subjects: string[];
-  imageUrl?: string;
+  themeId: Id<'themes'>;
+  subthemeIds: Id<'subthemes'>[];
 };
 
+async function generateFriendlyId(ctx: MutationContext): Promise<string> {
+  // Get the count of all questions to generate the next number
+  const questions = await ctx.db.query('questions').collect();
+  const nextNumber = questions.length + 1;
+
+  // Format as Q001, Q002, etc.
+  return `Q${nextNumber.toString().padStart(3, '0')}`;
+}
+
 export async function createQuestion(
-  ctx: MutationCtx,
+  ctx: MutationContext,
   questionData: QuestionInput,
 ) {
-  return await ctx.db.insert('questions', questionData);
+  const friendlyId = await generateFriendlyId(ctx);
+
+  return await ctx.db.insert('questions', {
+    ...questionData,
+    friendlyId,
+    subthemeIds: questionData.subthemeIds,
+  });
 }
 
 export async function getAllThemeCounts(
-  ctx: QueryCtx,
+  ctx: QueryContext,
 ): Promise<Record<string, number>> {
   const counts: Record<string, number> = {};
+  const questions = await ctx.db.query('questions').collect();
 
-  await Promise.all(
-    THEMES.map(async theme => {
-      const questions = await ctx.db
-        .query('questions')
-        .withIndex('by_theme', q => q.eq('theme', theme.name))
-        .collect();
-      counts[theme.name] = questions.length;
-    }),
-  );
+  // Group questions by themeId
+  for (const question of questions) {
+    const theme = await ctx.db.get(question.themeId);
+    if (theme) {
+      counts[theme.name] = (counts[theme.name] || 0) + 1;
+    }
+  }
 
   return counts;
 }

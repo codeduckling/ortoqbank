@@ -7,7 +7,8 @@ export const create = mutation({
   args: {
     title: v.string(),
     description: v.optional(v.string()),
-    theme: v.string(),
+    themeId: v.id('themes'),
+    subthemes: v.array(v.string()),
     questionIds: v.array(v.id('questions')),
     isPublished: v.boolean(),
   },

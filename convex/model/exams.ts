@@ -7,7 +7,8 @@ import {
 export type ExamInput = {
   title: string;
   description?: string;
-  theme: string;
+  themeId: Id<'themes'>;
+  subthemes: string[];
   questionIds: Id<'questions'>[];
   isPublished: boolean;
 };
@@ -16,11 +17,9 @@ export async function createExam(
   context: MutationContext,
   examData: ExamInput,
 ) {
-  const timestamp = Date.now();
-
   return await context.db.insert('exams', {
     ...examData,
-    updatedAt: timestamp,
+    updatedAt: Date.now(),
   });
 }
 

@@ -11,10 +11,14 @@ export default defineSchema({
   }).index('by_clerkUserId', ['clerkUserId']),
 
   themes: defineTable({
-    name: v.string(), // URL-friendly name
-    label: v.string(), // Display name
-    order: v.number(),
+    name: v.string(),
+    label: v.string(),
   }).index('by_name', ['name']),
+
+  subthemes: defineTable({
+    name: v.string(),
+    themeId: v.id('themes'),
+  }).index('by_theme', ['themeId']),
 
   questions: defineTable({
     friendlyId: v.string(), // e.g., "Q001", "Q002", etc.
@@ -24,10 +28,9 @@ export default defineSchema({
     correctOptionIndex: v.number(),
     explanation: v.string(),
     themeId: v.id('themes'),
-    subthemes: v.array(v.string()),
+    subthemeIds: v.array(v.id('subthemes')),
   })
     .index('by_theme', ['themeId'])
-    .index('by_subthemes', ['subthemes'])
     .index('by_friendlyId', ['friendlyId']),
 
   exams: defineTable({

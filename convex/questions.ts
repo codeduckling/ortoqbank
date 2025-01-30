@@ -7,16 +7,11 @@ import * as Users from './model/users';
 export const createQuestion = mutation({
   args: {
     text: v.string(),
-    options: v.array(
-      v.object({
-        text: v.string(),
-        imageUrl: v.optional(v.string()),
-      }),
-    ),
+    options: v.array(v.string()),
     correctOptionIndex: v.number(),
     explanation: v.string(),
-    theme: v.string(),
-    subjects: v.array(v.string()),
+    themeId: v.id('themes'),
+    subthemeIds: v.array(v.id('subthemes')),
     imageUrl: v.optional(v.string()),
   },
   handler: async (context, arguments_) => {
@@ -25,6 +20,12 @@ export const createQuestion = mutation({
     // Validate the correctOptionIndex
     if (arguments_.correctOptionIndex >= arguments_.options.length) {
       throw new Error('Invalid correct option index');
+    }
+
+    // Validate theme exists
+    const theme = await context.db.get(arguments_.themeId);
+    if (!theme) {
+      throw new Error('Theme not found');
     }
 
     return Questions.createQuestion(context, arguments_);

@@ -1,7 +1,8 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation } from 'convex/react';
+import { useMutation, useQuery } from 'convex/react';
+import { useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { MultiSelect } from '@/components/ui/multi-select';
 import {
   Select,
   SelectContent,
@@ -25,13 +27,18 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 
 import { api } from '../../../../../convex/_generated/api';
-import { THEMES } from '../../../../../convex/constants';
 import { ImageUploadField } from './image-upload-field';
 import { QuestionOption } from './question-option';
 import { QuestionFormData, questionSchema } from './schema';
 
 export function QuestionForm() {
   const createQuestion = useMutation(api.questions.createQuestion);
+  const themes = useQuery(api.themes.getAll);
+  const [selectedTheme, setSelectedTheme] = useState<string | null>(null);
+  const subthemes = useQuery(
+    api.themes.getSubthemes,
+    selectedTheme ? { themeId: selectedTheme } : 'skip',
+  );
 
   const form = useForm<QuestionFormData>({
     resolver: zodResolver(questionSchema),
@@ -46,8 +53,8 @@ export function QuestionForm() {
       ],
       correctOptionIndex: 0,
       explanation: '',
-      theme: '',
-      subjects: [],
+      themeId: '',
+      subthemeIds: [],
     },
   });
 
@@ -59,27 +66,18 @@ export function QuestionForm() {
   const onSubmit = async (data: QuestionFormData) => {
     try {
       await createQuestion({
-        text: data.text,
-        imageUrl: data.imageUrl || undefined,
-        options: data.options.map(opt => ({
-          text: opt.text,
-          imageUrl: opt.imageUrl || undefined,
-        })),
-        correctOptionIndex: data.correctOptionIndex,
-        explanation: data.explanation,
-        theme: data.theme,
-        subjects: data.subjects,
+        ...data,
+        options: data.options.map(opt => opt.text),
       });
-
       form.reset();
     } catch (error) {
-      console.error(error);
+      console.error('Failed to create question:', error);
     }
   };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
           name="text"
@@ -137,25 +135,26 @@ export function QuestionForm() {
           )}
         />
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid gap-4 md:grid-cols-2">
           <FormField
             control={form.control}
-            name="theme"
+            name="themeId"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Tema</FormLabel>
                 <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
+                  value={field.value || undefined}
+                  onValueChange={value => {
+                    field.onChange(value);
+                    setSelectedTheme(value);
+                  }}
                 >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione um tema" />
-                    </SelectTrigger>
-                  </FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um tema" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {THEMES.map(theme => (
-                      <SelectItem key={theme.name} value={theme.name}>
+                    {themes?.map(theme => (
+                      <SelectItem key={theme._id} value={theme._id}>
                         {theme.label}
                       </SelectItem>
                     ))}
@@ -168,22 +167,21 @@ export function QuestionForm() {
 
           <FormField
             control={form.control}
-            name="subjects"
+            name="subthemeIds"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Matérias</FormLabel>
+                <FormLabel>Subtemas</FormLabel>
                 <FormControl>
-                  <Input
-                    {...field}
-                    value={field.value.join(', ')}
-                    onChange={event => {
-                      const subjects = event.target.value
-                        .split(',')
-                        .map(subject => subject.trim())
-                        .filter(Boolean);
-                      field.onChange(subjects);
-                    }}
-                    placeholder="matéria1, matéria2, matéria3"
+                  <MultiSelect
+                    options={
+                      subthemes?.map(s => ({
+                        value: s._id,
+                        label: s.name,
+                      })) || []
+                    }
+                    selected={field.value}
+                    onChange={field.onChange}
+                    placeholder="Selecione os subtemas"
                   />
                 </FormControl>
                 <FormMessage />
