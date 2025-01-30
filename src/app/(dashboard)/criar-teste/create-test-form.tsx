@@ -9,37 +9,27 @@ import { Toggle } from '@/components/ui/toggle';
 import { cn } from '@/lib/utils';
 
 import { api } from '../../../../convex/_generated/api';
-import { THEMES } from '../../../../convex/constants';
-
-const subjects = [
-  { id: 'anatomia', label: 'Anatomia', count: 0 },
-  { id: 'exame-fisico', label: 'Exame Físico', count: 0 },
-  { id: 'ortopedia', label: 'Ortopedia', count: 0 },
-  { id: 'trauma', label: 'Trauma', count: 0 },
-];
 
 export function CreateTestForm() {
   const [isSimulado, setIsSimulado] = useState(true);
-  const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
-  const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
-  const [questionCount] = useState(0);
+  const [selectedTheme, setSelectedTheme] = useState<string | null>(null);
+  const [selectedSubtheme, setSelectedSubtheme] = useState<string | null>(null);
 
-  // Fetch theme counts from Convex
-  const themeCounts = useQuery(api.questions.getAllThemeCounts);
-
-  // Combine base themes with counts from the database
-  const themes = THEMES.map(theme => ({
-    id: theme.name,
-    label: theme.label,
-    count: themeCounts?.[theme.name] ?? 0,
-  }));
+  // Fetch data from Convex
+  const themes = useQuery(api.themes.list);
+  const subthemes = useQuery(
+    api.themes.getWithSubthemes,
+    selectedTheme ? { themeId: selectedTheme } : 'skip',
+  );
+  const questionCounts = useQuery(api.questions.getThemeCounts);
 
   const handleSubmit = () => {
+    if (!selectedTheme || !selectedSubtheme) return;
+
     console.log({
       mode: isSimulado ? 'simulado' : 'tutor',
-      subjects: selectedSubjects,
-      themes: selectedThemes,
-      questionCount,
+      themeId: selectedTheme,
+      subthemeId: selectedSubtheme,
     });
   };
 
@@ -48,88 +38,68 @@ export function CreateTestForm() {
       <div>
         <h2 className="mb-4 text-lg font-semibold">Modo</h2>
         <Tabs
-          defaultValue="simulado"
           value={isSimulado ? 'simulado' : 'tutor'}
           onValueChange={value => setIsSimulado(value === 'simulado')}
-          className="w-full"
         >
-          <TabsList className="grid w-52 grid-cols-2">
-            <TabsTrigger
-              value="simulado"
-              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-            >
-              Simulado
-            </TabsTrigger>
-            <TabsTrigger
-              value="tutor"
-              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-            >
-              Tutor
-            </TabsTrigger>
+          <TabsList>
+            <TabsTrigger value="simulado">Simulado</TabsTrigger>
+            <TabsTrigger value="tutor">Tutor</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
 
       <div>
-        <h2 className="mb-4 text-lg font-semibold">Matérias</h2>
-        <div className="flex flex-wrap gap-2">
-          {subjects.map(subject => (
-            <Toggle
-              key={subject.id}
-              variant="primary"
-              size="default"
-              pressed={selectedSubjects.includes(subject.id)}
-              onPressedChange={pressed => {
-                if (pressed) {
-                  setSelectedSubjects([...selectedSubjects, subject.id]);
-                } else {
-                  setSelectedSubjects(
-                    selectedSubjects.filter(id => id !== subject.id),
-                  );
-                }
-              }}
-            >
-              {subject.label}
-              <span className="ml-2 text-xs opacity-70">({subject.count})</span>
-            </Toggle>
-          ))}
-        </div>
-      </div>
-
-      <div>
         <h2 className="mb-4 text-lg font-semibold">Temas</h2>
         <div className="flex flex-wrap gap-2">
-          {themes.map(theme => (
+          {themes?.map(theme => (
             <Toggle
-              key={theme.id}
+              key={theme._id}
               variant="primary"
               size="default"
-              pressed={selectedThemes.includes(theme.id)}
+              pressed={selectedTheme === theme._id}
               onPressedChange={pressed => {
-                if (pressed) {
-                  setSelectedThemes([...selectedThemes, theme.id]);
-                } else {
-                  setSelectedThemes(
-                    selectedThemes.filter(id => id !== theme.id),
-                  );
-                }
+                setSelectedTheme(pressed ? theme._id : null);
+                setSelectedSubtheme(null);
               }}
             >
-              {theme.label}
-              <span className="ml-2 text-xs opacity-70">({theme.count})</span>
+              {theme.name}
+              <span className="ml-2 text-xs opacity-70">
+                ({questionCounts?.[theme.name] ?? 0})
+              </span>
             </Toggle>
           ))}
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-2xl font-bold">{questionCount}</span>
-          <span className="text-gray-500">Questões</span>
+      {selectedTheme && (
+        <div>
+          <h2 className="mb-4 text-lg font-semibold">Subtemas</h2>
+          <div className="flex flex-wrap gap-2">
+            {subthemes?.subthemes?.map(subtheme => (
+              <Toggle
+                key={subtheme._id}
+                variant="primary"
+                size="default"
+                pressed={selectedSubtheme === subtheme._id}
+                onPressedChange={pressed => {
+                  setSelectedSubtheme(pressed ? subtheme._id : null);
+                }}
+              >
+                {subtheme.name}
+              </Toggle>
+            ))}
+          </div>
         </div>
+      )}
+
+      <div className="flex items-center justify-between">
         <Button
           onClick={handleSubmit}
-          className="bg-[hsl(var(--sidebar-background))] hover:bg-[hsl(var(--sidebar-background))/0.9]"
+          disabled={!selectedTheme || !selectedSubtheme}
+          className={cn(
+            'bg-[hsl(var(--sidebar-background))]',
+            'hover:bg-[hsl(var(--sidebar-background))/0.9]',
+          )}
         >
           Gerar Teste
         </Button>

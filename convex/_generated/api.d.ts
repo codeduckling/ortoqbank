@@ -13,10 +13,7 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
-import type * as constants from "../constants.js";
-import type * as exams from "../exams.js";
 import type * as http from "../http.js";
-import type * as model_exams from "../model/exams.js";
 import type * as model_questions from "../model/questions.js";
 import type * as model_themes from "../model/themes.js";
 import type * as model_users from "../model/users.js";
@@ -33,10 +30,7 @@ import type * as users from "../users.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
-  constants: typeof constants;
-  exams: typeof exams;
   http: typeof http;
-  "model/exams": typeof model_exams;
   "model/questions": typeof model_questions;
   "model/themes": typeof model_themes;
   "model/users": typeof model_users;

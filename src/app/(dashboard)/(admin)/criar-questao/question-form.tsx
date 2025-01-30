@@ -15,8 +15,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { MultiSelect } from '@/components/ui/multi-select';
 import {
   Select,
   SelectContent,
@@ -32,11 +30,11 @@ import { QuestionOption } from './question-option';
 import { QuestionFormData, questionSchema } from './schema';
 
 export function QuestionForm() {
-  const createQuestion = useMutation(api.questions.createQuestion);
-  const themes = useQuery(api.themes.getAll);
+  const createQuestion = useMutation(api.questions.create);
+  const themes = useQuery(api.themes.list);
   const [selectedTheme, setSelectedTheme] = useState<string | null>(null);
   const subthemes = useQuery(
-    api.themes.getSubthemes,
+    api.themes.getWithSubthemes,
     selectedTheme ? { themeId: selectedTheme } : 'skip',
   );
 
@@ -59,15 +57,15 @@ export function QuestionForm() {
   });
 
   const { fields } = useFieldArray({
-    control: form.control,
     name: 'options',
+    control: form.control,
   });
 
   const onSubmit = async (data: QuestionFormData) => {
     try {
       await createQuestion({
         ...data,
-        options: data.options.map(opt => opt.text),
+        options: data.options.map(o => o.text),
       });
       form.reset();
     } catch (error) {
@@ -135,7 +133,7 @@ export function QuestionForm() {
           )}
         />
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-2">
           <FormField
             control={form.control}
             name="themeId"
@@ -143,19 +141,21 @@ export function QuestionForm() {
               <FormItem>
                 <FormLabel>Tema</FormLabel>
                 <Select
-                  value={field.value || undefined}
+                  value={field.value}
                   onValueChange={value => {
                     field.onChange(value);
                     setSelectedTheme(value);
                   }}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um tema" />
-                  </SelectTrigger>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o tema" />
+                    </SelectTrigger>
+                  </FormControl>
                   <SelectContent>
                     {themes?.map(theme => (
                       <SelectItem key={theme._id} value={theme._id}>
-                        {theme.label}
+                        {theme.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -170,20 +170,25 @@ export function QuestionForm() {
             name="subthemeIds"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Subtemas</FormLabel>
-                <FormControl>
-                  <MultiSelect
-                    options={
-                      subthemes?.map(s => ({
-                        value: s._id,
-                        label: s.name,
-                      })) || []
-                    }
-                    selected={field.value}
-                    onChange={field.onChange}
-                    placeholder="Selecione os subtemas"
-                  />
-                </FormControl>
+                <FormLabel>Subtema</FormLabel>
+                <Select
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  disabled={!selectedTheme}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o subtema" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {subthemes?.subthemes?.map(subtheme => (
+                      <SelectItem key={subtheme._id} value={subtheme._id}>
+                        {subtheme.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}

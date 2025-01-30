@@ -5,7 +5,6 @@ import {
   type MutationCtx as MutationContext,
   type QueryCtx as QueryContext,
 } from '../_generated/server';
-import { THEMES } from '../constants';
 
 export type QuestionInput = {
   text: string;
@@ -14,15 +13,14 @@ export type QuestionInput = {
   correctOptionIndex: number;
   explanation: string;
   themeId: Id<'themes'>;
-  subthemeIds: Id<'subthemes'>[];
+  subthemeId: Id<'subthemes'>;
+  themeName: string;
+  subthemeName: string;
 };
 
 async function generateFriendlyId(ctx: MutationContext): Promise<string> {
-  // Get the count of all questions to generate the next number
   const questions = await ctx.db.query('questions').collect();
   const nextNumber = questions.length + 1;
-
-  // Format as Q001, Q002, etc.
   return `Q${nextNumber.toString().padStart(3, '0')}`;
 }
 
@@ -31,11 +29,9 @@ export async function createQuestion(
   questionData: QuestionInput,
 ) {
   const friendlyId = await generateFriendlyId(ctx);
-
   return await ctx.db.insert('questions', {
     ...questionData,
     friendlyId,
-    subthemeIds: questionData.subthemeIds,
   });
 }
 
