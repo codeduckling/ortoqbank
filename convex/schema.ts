@@ -10,32 +10,38 @@ export default defineSchema({
     clerkUserId: v.string(),
   }).index('by_clerkUserId', ['clerkUserId']),
 
+  themes: defineTable({
+    name: v.string(), // URL-friendly name
+    label: v.string(), // Display name
+    order: v.number(),
+  }).index('by_name', ['name']),
+
   questions: defineTable({
+    friendlyId: v.string(), // e.g., "Q001", "Q002", etc.
     text: v.string(),
     imageUrl: v.optional(v.string()),
-    options: v.array(
-      v.object({
-        text: v.string(),
-        imageUrl: v.optional(v.string()),
-      }),
-    ),
+    options: v.array(v.string()),
     correctOptionIndex: v.number(),
     explanation: v.string(),
-    theme: v.string(),
-    subjects: v.array(v.string()),
-  }).index('by_theme', ['theme']),
+    themeId: v.id('themes'),
+    subthemes: v.array(v.string()),
+  })
+    .index('by_theme', ['themeId'])
+    .index('by_subthemes', ['subthemes'])
+    .index('by_friendlyId', ['friendlyId']),
 
-  // Content/Admin side - Predefined exams
   exams: defineTable({
     title: v.string(),
     description: v.optional(v.string()),
-    theme: v.string(), // matches theme name from THEMES constant
+    themeId: v.id('themes'),
+    subthemes: v.array(v.string()),
     questionIds: v.array(v.id('questions')),
     isPublished: v.boolean(),
     updatedAt: v.number(),
-  }).index('by_theme', ['theme']),
+  })
+    .index('by_theme', ['themeId'])
+    .index('by_subthemes', ['subthemes']),
 
-  // User side - Tracks ongoing exam sessions
   examSessions: defineTable({
     userId: v.id('users'),
     examId: v.id('exams'),

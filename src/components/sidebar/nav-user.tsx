@@ -1,6 +1,6 @@
 'use client';
 
-import { type UserResource } from '@clerk/types';
+import { useUser } from '@clerk/nextjs';
 import {
   BadgeCheck,
   Bell,
@@ -27,7 +27,8 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 
-export function NavUser({ user }: { user: UserResource | null | undefined }) {
+export default function NavUser() {
+  const { user } = useUser();
   const { isMobile } = useSidebar();
 
   if (!user) return;
