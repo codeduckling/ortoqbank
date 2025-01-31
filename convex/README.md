@@ -200,16 +200,16 @@ usually redundant (you only need by_foo_and_bar). Reducing the number of indexes
 saves on database storage and reduces the overhead of writing to the table.
 
 convex/teams.ts TS // ❌ const allTeamMembers = await ctx.db
-.query("teamMembers") .withIndex("by_team", (q) => q.eq("team", teamId))
-.collect(); const currentUserId = /_ get current user id from `ctx.auth` _/
+.query("teamMembers") .withIndex("by*team", (q) => q.eq("team", teamId))
+.collect(); const currentUserId = /* get current user id from `ctx.auth` \_/
 const currentTeamMember = await ctx.db .query("teamMembers")
 .withIndex("by_team_and_user", (q) => q.eq("team", teamId).eq("user",
 currentUserId), ) .unique();
 
 // ✅ // Just don't include a condition on `user` when querying for results on
 `team` const allTeamMembers = await ctx.db .query("teamMembers")
-.withIndex("by_team_and_user", (q) => q.eq("team", teamId)) .collect(); const
-currentUserId = /_ get current user id from `ctx.auth` _/ const
+.withIndex("by*team_and_user", (q) => q.eq("team", teamId)) .collect(); const
+currentUserId = /* get current user id from `ctx.auth` \_/ const
 currentTeamMember = await ctx.db .query("teamMembers")
 .withIndex("by_team_and_user", (q) => q.eq("team", teamId).eq("user",
 currentUserId), ) .unique();
