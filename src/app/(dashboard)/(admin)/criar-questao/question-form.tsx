@@ -25,6 +25,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 
 import { api } from '../../../../../convex/_generated/api';
+import { Id } from '../../../../../convex/_generated/dataModel';
 import { ImageUploadField } from './image-upload-field';
 import { QuestionOption } from './question-option';
 import { QuestionFormData, questionSchema } from './schema';
@@ -32,7 +33,9 @@ import { QuestionFormData, questionSchema } from './schema';
 export function QuestionForm() {
   const createQuestion = useMutation(api.questions.create);
   const themes = useQuery(api.themes.list);
-  const [selectedTheme, setSelectedTheme] = useState<string | null>(null);
+  const [selectedTheme, setSelectedTheme] = useState<
+    Id<'themes'> | undefined
+  >();
   const subthemes = useQuery(
     api.themes.getWithSubthemes,
     selectedTheme ? { themeId: selectedTheme } : 'skip',
@@ -52,7 +55,7 @@ export function QuestionForm() {
       correctOptionIndex: 0,
       explanation: '',
       themeId: '',
-      subthemeIds: [],
+      subthemeId: '',
     },
   });
 
@@ -66,6 +69,8 @@ export function QuestionForm() {
       await createQuestion({
         ...data,
         options: data.options.map(o => o.text),
+        themeId: data.themeId as Id<'themes'>,
+        subthemeId: data.subthemeId as Id<'subthemes'>,
       });
       form.reset();
     } catch (error) {
@@ -144,7 +149,7 @@ export function QuestionForm() {
                   value={field.value}
                   onValueChange={value => {
                     field.onChange(value);
-                    setSelectedTheme(value);
+                    setSelectedTheme(value as Id<'themes'>);
                   }}
                 >
                   <FormControl>
@@ -167,7 +172,7 @@ export function QuestionForm() {
 
           <FormField
             control={form.control}
-            name="subthemeIds"
+            name="subthemeId"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Subtema</FormLabel>

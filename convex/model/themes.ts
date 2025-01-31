@@ -6,7 +6,16 @@ import {
 
 // Read operations
 export async function listAllThemes(context: QueryContext) {
-  return await context.db.query('themes').withIndex('by_order_name').collect();
+  // Use withIndex for better performance and caching
+  return await context.db.query('themes').withIndex('by_name').collect();
+}
+
+export async function listAllSubthemes(context: QueryContext) {
+  // Use withIndex for better performance and caching
+  return await context.db
+    .query('subthemes')
+    .withIndex('by_theme_name')
+    .collect();
 }
 
 export async function listThemeWithSubthemes(
@@ -14,15 +23,24 @@ export async function listThemeWithSubthemes(
   { themeId }: { themeId: Id<'themes'> },
 ) {
   const theme = await context.db.get(themeId);
-  if (!theme) return;
+  if (!theme) throw new Error('Tema não encontrado');
 
   const subthemes = await context.db
     .query('subthemes')
-    .withIndex('by_theme_order')
-    .filter(q => q.eq(q.field('themeId'), themeId))
+    .withIndex('by_theme_name', q => q.eq('themeId', themeId))
     .collect();
 
   return { theme, subthemes };
+}
+
+// Helper function: Check if a theme name exists
+export async function themeExists(context: QueryContext, name: string) {
+  const existing = await context.db
+    .query('themes')
+    .withIndex('by_name', q => q.eq('name', name))
+    .unique();
+
+  return existing !== null;
 }
 
 // Write operations
@@ -30,11 +48,27 @@ export async function createTheme(
   context: MutationContext,
   { name }: { name: string },
 ) {
-  return await context.db.insert('themes', {
+  return context.db.insert('themes', {
     name,
-    order: 0,
     subthemeCount: 0,
   });
+}
+
+// Helper function: Check if a subtheme exists in a theme
+export async function subthemeExists(
+  context: QueryContext,
+  themeId: Id<'themes'>,
+  name: string,
+) {
+  const existingSubtheme = await context.db
+    .query('subthemes')
+    .withIndex('by_theme_name')
+    .filter(q =>
+      q.and(q.eq(q.field('themeId'), themeId), q.eq(q.field('name'), name)),
+    )
+    .unique();
+
+  return existingSubtheme !== null;
 }
 
 export async function createSubtheme(
@@ -42,18 +76,11 @@ export async function createSubtheme(
   { name, themeId }: { name: string; themeId: Id<'themes'> },
 ) {
   const theme = await context.db.get(themeId);
-  if (!theme) throw new Error('Theme not found');
+  if (!theme) throw new Error('Tema não encontrado');
 
-  const subthemeId = await context.db.insert('subthemes', {
+  return await context.db.insert('subthemes', {
     name,
     themeId,
-    order: theme.subthemeCount,
     themeName: theme.name,
   });
-
-  await context.db.patch(themeId, {
-    subthemeCount: theme.subthemeCount + 1,
-  });
-
-  return subthemeId;
 }

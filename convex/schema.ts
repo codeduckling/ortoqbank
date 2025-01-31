@@ -14,23 +14,15 @@ export default defineSchema({
   // Themes table - optimized for listing with subthemes
   themes: defineTable({
     name: v.string(),
-    order: v.number(),
-    // Added subthemeCount for quick access without loading all subthemes
     subthemeCount: v.number(),
-  })
-    // Single compound index for both ordering and search
-    .index('by_order_name', ['order', 'name']),
+  }).index('by_name', ['name']),
 
   // Subthemes table - optimized for bulk loading with themes
   subthemes: defineTable({
     name: v.string(),
     themeId: v.id('themes'),
-    order: v.number(),
-    // Cache theme name to avoid extra lookups
     themeName: v.string(),
-  })
-    // Compound index for efficient theme-based queries with ordering
-    .index('by_theme_order', ['themeId', 'order']),
+  }).index('by_theme_name', ['themeId', 'name']),
 
   // Questions table - optimized for exam creation
   questions: defineTable({
