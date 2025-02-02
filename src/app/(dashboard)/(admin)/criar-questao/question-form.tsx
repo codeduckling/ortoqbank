@@ -5,6 +5,7 @@ import { useMutation, useQuery } from 'convex/react';
 import { useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 
+import RichTextEditor from '@/components/rich-text-editor';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -88,7 +89,7 @@ export function QuestionForm() {
             <FormItem>
               <FormLabel>Texto da Questão</FormLabel>
               <FormControl>
-                <Textarea className="min-h-[120px]" {...field} />
+                <RichTextEditor onChange={field.onChange} />
               </FormControl>
               <FormMessage />
             </FormItem>
