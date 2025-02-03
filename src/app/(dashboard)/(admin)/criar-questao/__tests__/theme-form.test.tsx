@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { useMutation } from 'convex/react';
 import { describe, expect, test, vi } from 'vitest';
 
-import { ThemeForm } from '../theme-form';
+import { ThemeForm } from '../_components/theme-form/theme-form';
 
 vi.mock('convex/react', () => ({
   useQuery: vi.fn(query => {

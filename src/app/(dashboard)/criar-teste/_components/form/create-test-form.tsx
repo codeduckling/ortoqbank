@@ -4,20 +4,13 @@ import { useQuery } from 'convex/react';
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Toggle } from '@/components/ui/toggle';
 import { cn } from '@/lib/utils';
 
 import { api } from '../../../../../../convex/_generated/api';
 import { Id } from '../../../../../../convex/_generated/dataModel';
+import { ModeSelector } from './mode-selector';
+import { SubthemeDialog } from './subtheme-dialog';
+import { ThemeSelector } from './theme-selector';
 
 type SelectedSubthemes = Record<Id<'themes'>, Set<Id<'subthemes'>>>;
 
@@ -103,85 +96,24 @@ export function CreateTestForm() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h2 className="mb-4 text-lg font-semibold">Modo</h2>
-        <Tabs
-          value={isSimulado ? 'simulado' : 'tutor'}
-          onValueChange={value => setIsSimulado(value === 'simulado')}
-        >
-          <TabsList>
-            <TabsTrigger value="simulado">Simulado</TabsTrigger>
-            <TabsTrigger value="tutor">Tutor</TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
+      <ModeSelector isSimulado={isSimulado} onModeChange={setIsSimulado} />
 
-      <div>
-        <h2 className="mb-4 text-lg font-semibold">Temas</h2>
-        <div className="flex flex-wrap gap-2">
-          {themes.map(theme => (
-            <Toggle
-              key={theme._id}
-              variant="primary"
-              size="default"
-              pressed={selectedThemes.has(theme._id)}
-              onPressedChange={() => handleThemeClick(theme._id)}
-            >
-              {theme.name}
-              <span className="ml-2 text-xs opacity-70">
-                ({questionCounts[theme.name] ?? 0})
-              </span>
-              {selectedSubthemes[theme._id]?.size > 0 && (
-                <span className="ml-2 rounded-full bg-primary/20 px-2 py-0.5 text-xs">
-                  {selectedSubthemes[theme._id].size} selecionados
-                </span>
-              )}
-            </Toggle>
-          ))}
-        </div>
-      </div>
+      <ThemeSelector
+        themes={themes}
+        selectedThemes={selectedThemes}
+        selectedSubthemes={selectedSubthemes}
+        questionCounts={questionCounts}
+        onThemeClick={handleThemeClick}
+      />
 
-      <Dialog
-        open={dialogTheme !== null}
-        onOpenChange={() => handleDialogClose()}
-      >
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              Subtemas de {themes.find(t => t._id === dialogTheme)?.name}
-            </DialogTitle>
-          </DialogHeader>
-          <ScrollArea className="max-h-[60vh] pr-4">
-            <div className="space-y-2">
-              {dialogTheme &&
-                allSubthemes
-                  .filter(sub => sub.themeId === dialogTheme)
-                  .map(subtheme => (
-                    <div
-                      key={subtheme._id}
-                      className="flex items-center space-x-2"
-                    >
-                      <Checkbox
-                        id={subtheme._id}
-                        checked={selectedSubthemes[dialogTheme]?.has(
-                          subtheme._id,
-                        )}
-                        onCheckedChange={() =>
-                          handleSubthemeSelect(dialogTheme, subtheme._id)
-                        }
-                      />
-                      <label
-                        htmlFor={subtheme._id}
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        {subtheme.name}
-                      </label>
-                    </div>
-                  ))}
-            </div>
-          </ScrollArea>
-        </DialogContent>
-      </Dialog>
+      <SubthemeDialog
+        dialogTheme={dialogTheme}
+        themes={themes}
+        allSubthemes={allSubthemes}
+        selectedSubthemes={selectedSubthemes}
+        onClose={handleDialogClose}
+        onSubthemeSelect={handleSubthemeSelect}
+      />
 
       <div className="flex items-center justify-between">
         <Button

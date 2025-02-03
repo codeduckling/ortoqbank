@@ -77,4 +77,10 @@ export default defineSchema({
     // Compound indexes for efficient queries
     .index('by_user_completed', ['userId', 'completedAt'])
     .index('by_exam_completed', ['examId', 'completedAt']),
+
+  // Zaude table
+
+  zaude: defineTable({
+    name: v.string(),
+  }),
 });

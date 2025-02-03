@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 
-import { QuestionFormData } from './schema';
+import { QuestionFormData } from '../../schema';
 
 interface ImageUploadFieldProps {
   control: Control<QuestionFormData>;

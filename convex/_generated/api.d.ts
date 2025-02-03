@@ -20,6 +20,7 @@ import type * as model_users from "../model/users.js";
 import type * as questions from "../questions.js";
 import type * as themes from "../themes.js";
 import type * as users from "../users.js";
+import type * as zaude from "../zaude.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -37,6 +38,7 @@ declare const fullApi: ApiFromModules<{
   questions: typeof questions;
   themes: typeof themes;
   users: typeof users;
+  zaude: typeof zaude;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,

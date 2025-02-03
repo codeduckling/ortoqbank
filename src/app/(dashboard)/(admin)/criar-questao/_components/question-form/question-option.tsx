@@ -10,8 +10,8 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 
+import { QuestionFormData } from '../../schema';
 import { ImageUploadField } from './image-upload-field';
-import { QuestionFormData } from './schema';
 
 const ASCII_UPPERCASE_A = 65;
 
