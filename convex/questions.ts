@@ -1,12 +1,15 @@
+import { paginationOptsValidator } from 'convex/server';
 import { v } from 'convex/values';
 
+import { Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
-import * as Questions from './model/questions';
-import * as Users from './model/users';
 
-export const createQuestion = mutation({
+export const create = mutation({
   args: {
     text: v.string(),
+    title: v.string(),
+    imageUrl: v.optional(v.string()),
+    explanation: v.string(),
     options: v.array(
       v.object({
         text: v.string(),
@@ -14,25 +17,54 @@ export const createQuestion = mutation({
       }),
     ),
     correctOptionIndex: v.number(),
-    explanation: v.string(),
-    theme: v.string(),
-    subjects: v.array(v.string()),
-    imageUrl: v.optional(v.string()),
+    themeId: v.id('themes'),
+    subthemeId: v.optional(v.id('subthemes')),
+    groupId: v.optional(v.id('groups')),
   },
   handler: async (context, arguments_) => {
-    await Users.getCurrentUser(context);
-
-    // Validate the correctOptionIndex
-    if (arguments_.correctOptionIndex >= arguments_.options.length) {
-      throw new Error('Invalid correct option index');
+    const identity = await context.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error('Not authenticated');
     }
 
-    return Questions.createQuestion(context, arguments_);
+    const user = await context.db
+      .query('users')
+      .withIndex('by_clerkUserId', q => q.eq('clerkUserId', identity.subject))
+      .unique();
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    return await context.db.insert('questions', {
+      ...arguments_,
+      normalizedTitle: arguments_.title.trim().toLowerCase(),
+      authorId: user._id,
+      isPublic: false,
+    });
   },
 });
 
-export const getAllThemeCounts = query({
-  handler: async context => {
-    return Questions.getAllThemeCounts(context);
+export const list = query({
+  args: { paginationOpts: paginationOptsValidator },
+  handler: async (context, arguments_) => {
+    const questions = await context.db
+      .query('questions')
+      .order('desc')
+      .paginate(arguments_.paginationOpts);
+
+    // Fetch themes for all questions in the current page
+    const themes = await Promise.all(
+      questions.page.map(question => context.db.get(question.themeId)),
+    );
+
+    // Combine questions with theme data
+    return {
+      ...questions,
+      page: questions.page.map((question, index) => ({
+        ...question,
+        theme: themes[index],
+      })),
+    };
   },
 });
