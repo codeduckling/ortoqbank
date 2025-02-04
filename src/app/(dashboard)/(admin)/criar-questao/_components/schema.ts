@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { Id } from '../../../../../convex/_generated/dataModel';
+import { Id } from '../../../../../../convex/_generated/dataModel';
 
 export const questionSchema = z.object({
   text: z.string().min(1, 'O texto da questão é obrigatório'),

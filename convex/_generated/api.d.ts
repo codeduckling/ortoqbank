@@ -12,15 +12,13 @@ import type {
   ApiFromModules,
   FilterApi,
   FunctionReference,
-} from "convex/server";
-import type * as http from "../http.js";
-import type * as model_questions from "../model/questions.js";
-import type * as model_themes from "../model/themes.js";
-import type * as model_users from "../model/users.js";
-import type * as questions from "../questions.js";
-import type * as themes from "../themes.js";
-import type * as users from "../users.js";
-import type * as zaude from "../zaude.js";
+} from 'convex/server';
+import type * as groups from '../groups.js';
+import type * as http from '../http.js';
+import type * as subthemes from '../subthemes.js';
+import type * as tags from '../tags.js';
+import type * as themes from '../themes.js';
+import type * as users from '../users.js';
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -31,20 +29,18 @@ import type * as zaude from "../zaude.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  groups: typeof groups;
   http: typeof http;
-  "model/questions": typeof model_questions;
-  "model/themes": typeof model_themes;
-  "model/users": typeof model_users;
-  questions: typeof questions;
+  subthemes: typeof subthemes;
+  tags: typeof tags;
   themes: typeof themes;
   users: typeof users;
-  zaude: typeof zaude;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,
-  FunctionReference<any, "public">
+  FunctionReference<any, 'public'>
 >;
 export declare const internal: FilterApi<
   typeof fullApi,
-  FunctionReference<any, "internal">
+  FunctionReference<any, 'internal'>
 >;

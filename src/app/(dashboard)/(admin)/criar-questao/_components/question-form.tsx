@@ -25,11 +25,11 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 
-import { api } from '../../../../../../../convex/_generated/api';
-import { Id } from '../../../../../../../convex/_generated/dataModel';
-import { QuestionFormData, questionSchema } from '../../schema';
+import { api } from '../../../../../../convex/_generated/api';
+import { Id } from '../../../../../../convex/_generated/dataModel';
 import { ImageUploadField } from './image-upload-field';
 import { QuestionOption } from './question-option';
+import { QuestionFormData, questionSchema } from './schema';
 
 export function QuestionForm() {
   const createQuestion = useMutation(api.questions.create);

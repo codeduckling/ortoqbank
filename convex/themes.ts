@@ -1,116 +1,85 @@
 import { v } from 'convex/values';
 
 import { mutation, query } from './_generated/server';
-import * as Themes from './model/themes';
-import * as Users from './model/users';
 
+// Queries
 export const list = query({
   args: {},
-  returns: v.array(
-    v.object({
-      _id: v.id('themes'),
-      _creationTime: v.number(),
-      name: v.string(),
-      subthemeCount: v.number(),
-    }),
-  ),
   handler: async context => {
-    await Users.getCurrentUser(context);
-    return await Themes.listAllThemes(context);
+    return await context.db.query('themes').collect();
   },
 });
 
-export const getWithSubthemes = query({
-  args: { themeId: v.id('themes') },
-  returns: v.union(
-    v.null(),
-    v.object({
-      theme: v.object({
-        _id: v.id('themes'),
-        _creationTime: v.number(),
-        name: v.string(),
-        subthemeCount: v.number(),
-      }),
-      subthemes: v.array(
-        v.object({
-          _id: v.id('subthemes'),
-          _creationTime: v.number(),
-          name: v.string(),
-          themeId: v.id('themes'),
-          themeName: v.string(),
-        }),
-      ),
-    }),
-  ),
-  handler: async (context, arguments_) => {
-    await Users.getCurrentUser(context);
-    return await Themes.listThemeWithSubthemes(context, arguments_);
+export const getById = query({
+  args: { id: v.id('themes') },
+  handler: async (context, { id }) => {
+    return await context.db.get(id);
   },
 });
 
+// Mutations
 export const create = mutation({
   args: { name: v.string() },
-  handler: async (context, arguments_) => {
-    await Users.getCurrentUser(context);
-
-    // Check if theme name already exists
+  handler: async (context, { name }) => {
+    // Check if theme with same name already exists
     const existing = await context.db
       .query('themes')
-      .withIndex('by_name', q => q.eq('name', arguments_.name))
+      .withIndex('by_name', q => q.eq('name', name))
       .unique();
 
     if (existing) {
-      throw new Error('Já existe um tema com este nome');
+      throw new Error(`Theme "${name}" already exists`);
     }
 
-    return await Themes.createTheme(context, arguments_);
+    return await context.db.insert('themes', { name });
   },
 });
 
-export const createSubtheme = mutation({
+export const update = mutation({
   args: {
-    themeId: v.id('themes'),
+    id: v.id('themes'),
     name: v.string(),
   },
-  handler: async (context, arguments_) => {
-    await Users.getCurrentUser(context);
-
-    // Check if subtheme name already exists in theme
-    const theme = await context.db.get(arguments_.themeId);
-    if (!theme) throw new Error('Tema não encontrado');
-
-    const existingSubtheme = await context.db
-      .query('subthemes')
-      .withIndex('by_theme_name')
-      .filter(q =>
-        q.and(
-          q.eq(q.field('themeId'), arguments_.themeId),
-          q.eq(q.field('name'), arguments_.name),
-        ),
-      )
-      .unique();
-
-    if (existingSubtheme) {
-      throw new Error('Já existe um subtema com este nome neste tema');
+  handler: async (context, { id, name }) => {
+    // Check if theme exists
+    const existing = await context.db.get(id);
+    if (!existing) {
+      throw new Error('Theme not found');
     }
 
-    return await Themes.createSubtheme(context, arguments_);
+    // Check if new name conflicts with another theme
+    const nameConflict = await context.db
+      .query('themes')
+      .withIndex('by_name', q => q.eq('name', name))
+      .unique();
+
+    if (nameConflict && nameConflict._id !== id) {
+      throw new Error(`Theme "${name}" already exists`);
+    }
+
+    return await context.db.patch(id, { name });
   },
 });
 
-export const listAllSubthemes = query({
-  args: {},
-  returns: v.array(
-    v.object({
-      _id: v.id('subthemes'),
-      _creationTime: v.number(),
-      name: v.string(),
-      themeId: v.id('themes'),
-      themeName: v.string(),
-    }),
-  ),
-  handler: async context => {
-    await Users.getCurrentUser(context);
-    return await Themes.listAllSubthemes(context);
+export const remove = mutation({
+  args: { id: v.id('themes') },
+  handler: async (context, { id }) => {
+    // Check if theme exists
+    const existing = await context.db.get(id);
+    if (!existing) {
+      throw new Error('Theme not found');
+    }
+
+    // Check if there are any subthemes using this theme
+    const subthemes = await context.db
+      .query('subthemes')
+      .withIndex('by_theme', q => q.eq('themeId', id))
+      .collect();
+
+    if (subthemes.length > 0) {
+      throw new Error('Cannot delete theme that has subthemes');
+    }
+
+    await context.db.delete(id);
   },
 });
