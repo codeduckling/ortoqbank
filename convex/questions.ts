@@ -1,3 +1,4 @@
+import { paginationOptsValidator } from 'convex/server';
 import { v } from 'convex/values';
 
 import { Id } from './_generated/dataModel';
@@ -37,8 +38,33 @@ export const create = mutation({
 
     return await context.db.insert('questions', {
       ...arguments_,
+      normalizedTitle: arguments_.title.trim().toLowerCase(),
       authorId: user._id,
       isPublic: false,
     });
+  },
+});
+
+export const list = query({
+  args: { paginationOpts: paginationOptsValidator },
+  handler: async (context, arguments_) => {
+    const questions = await context.db
+      .query('questions')
+      .order('desc')
+      .paginate(arguments_.paginationOpts);
+
+    // Fetch themes for all questions in the current page
+    const themes = await Promise.all(
+      questions.page.map(question => context.db.get(question.themeId)),
+    );
+
+    // Combine questions with theme data
+    return {
+      ...questions,
+      page: questions.page.map((question, index) => ({
+        ...question,
+        theme: themes[index],
+      })),
+    };
   },
 });

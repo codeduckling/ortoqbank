@@ -32,6 +32,7 @@ export default defineSchema({
 
   questions: defineTable({
     title: v.string(),
+    normalizedTitle: v.string(),
     text: v.string(),
     imageUrl: v.optional(v.string()),
     explanation: v.string(),
@@ -47,5 +48,9 @@ export default defineSchema({
     groupId: v.optional(v.id('groups')),
     authorId: v.id('users'),
     isPublic: v.boolean(),
-  }).index('by_title', ['title']),
+  })
+    .index('by_title', ['normalizedTitle'])
+    .searchIndex('search_by_title', {
+      searchField: 'title',
+    }),
 });
