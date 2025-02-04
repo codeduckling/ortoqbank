@@ -1,5 +1,6 @@
 import { PieChartDemo } from './_components/charts/pie-chart-demo';
 import { ThemeBarChart } from './_components/charts/theme-bar-chart';
+import TestForm from './_components/form/form';
 
 export default function CriarTestePage() {
   return (
@@ -9,7 +10,7 @@ export default function CriarTestePage() {
         <PieChartDemo />
         <ThemeBarChart />
       </div>
-      Empty
+      <TestForm />
     </div>
   );
 }
