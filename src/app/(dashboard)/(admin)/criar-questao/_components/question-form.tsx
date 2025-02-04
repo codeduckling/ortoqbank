@@ -32,13 +32,13 @@ import { QuestionOption } from './question-option';
 import { QuestionFormData, questionSchema } from './schema';
 
 export function QuestionForm() {
-  const createQuestion = useMutation(api.questions.create);
+  //const createQuestion = useMutation(api.questions.create);
   const themes = useQuery(api.themes.list);
   const [selectedTheme, setSelectedTheme] = useState<
     Id<'themes'> | undefined
   >();
   const subthemes = useQuery(
-    api.themes.getWithSubthemes,
+    api.subthemes.list,
     selectedTheme ? { themeId: selectedTheme } : 'skip',
   );
 
@@ -67,12 +67,14 @@ export function QuestionForm() {
 
   const onSubmit = async (data: QuestionFormData) => {
     try {
-      await createQuestion({
+      /* await createQuestion({
         ...data,
         options: data.options.map(o => o.text),
         themeId: data.themeId as Id<'themes'>,
         subthemeId: data.subthemeId as Id<'subthemes'>,
-      });
+      }); */
+
+      console.log(data);
       form.reset();
     } catch (error) {
       console.error('Failed to create question:', error);
@@ -188,7 +190,7 @@ export function QuestionForm() {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {subthemes?.subthemes?.map(subtheme => (
+                    {subthemes?.map(subtheme => (
                       <SelectItem key={subtheme._id} value={subtheme._id}>
                         {subtheme.name}
                       </SelectItem>
