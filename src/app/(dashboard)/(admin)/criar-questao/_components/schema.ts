@@ -14,7 +14,8 @@ export const questionSchema = z.object({
   correctOptionIndex: z.number(),
   explanation: z.string().min(1, 'A explicação é obrigatória'),
   themeId: z.custom<Id<'themes'>>(),
-  subthemeId: z.custom<Id<'subthemes'>>(),
+  subthemeId: z.custom<Id<'subthemes'>>().optional(),
+  groupId: z.custom<Id<'groups'>>().optional(),
 });
 
 export const themeSchema = z.object({

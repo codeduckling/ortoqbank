@@ -15,6 +15,7 @@ import type {
 } from "convex/server";
 import type * as groups from "../groups.js";
 import type * as http from "../http.js";
+import type * as questions from "../questions.js";
 import type * as subthemes from "../subthemes.js";
 import type * as tags from "../tags.js";
 import type * as themes from "../themes.js";
@@ -31,6 +32,7 @@ import type * as users from "../users.js";
 declare const fullApi: ApiFromModules<{
   groups: typeof groups;
   http: typeof http;
+  questions: typeof questions;
   subthemes: typeof subthemes;
   tags: typeof tags;
   themes: typeof themes;

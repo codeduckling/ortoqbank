@@ -33,4 +33,31 @@ export default defineSchema({
   tags: defineTable({
     name: v.string(),
   }),
+
+  questions: defineTable({
+    text: v.string(),
+    imageUrl: v.optional(v.string()),
+    explanation: v.string(),
+    options: v.array(
+      v.object({
+        text: v.string(),
+        imageUrl: v.optional(v.string()),
+      }),
+    ),
+    correctOptionIndex: v.number(),
+    themeId: v.id('themes'),
+    subthemeId: v.optional(v.id('subthemes')),
+    groupId: v.optional(v.id('groups')),
+    authorId: v.id('users'),
+    isPublic: v.boolean(),
+  })
+    .index('by_theme', ['themeId'])
+    .index('by_subtheme', ['subthemeId'])
+    .index('by_group', ['groupId'])
+    .index('by_author', ['authorId'])
+    .index('by_public', ['isPublic'])
+    .searchIndex('search_text', {
+      searchField: 'text',
+      filterFields: ['isPublic'],
+    }),
 });

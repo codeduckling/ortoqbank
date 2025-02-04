@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
 
 import { api } from '../../../../../../convex/_generated/api';
 import { Id } from '../../../../../../convex/_generated/dataModel';
@@ -32,31 +33,42 @@ import { QuestionOption } from './question-option';
 import { QuestionFormData, questionSchema } from './schema';
 
 export function QuestionForm() {
-  //const createQuestion = useMutation(api.questions.create);
+  const { toast } = useToast();
+
+  const createQuestion = useMutation(api.questions.create);
   const themes = useQuery(api.themes.list);
   const [selectedTheme, setSelectedTheme] = useState<
     Id<'themes'> | undefined
   >();
+  const [selectedSubtheme, setSelectedSubtheme] = useState<
+    Id<'subthemes'> | undefined
+  >();
+
   const subthemes = useQuery(
     api.subthemes.list,
     selectedTheme ? { themeId: selectedTheme } : 'skip',
+  );
+  const groups = useQuery(
+    api.groups.list,
+    selectedSubtheme ? { subthemeId: selectedSubtheme } : 'skip',
   );
 
   const form = useForm<QuestionFormData>({
     resolver: zodResolver(questionSchema),
     defaultValues: {
-      text: '',
+      text: 'Teste de questão',
       imageUrl: '',
       options: [
-        { text: '', imageUrl: '' },
-        { text: '', imageUrl: '' },
-        { text: '', imageUrl: '' },
-        { text: '', imageUrl: '' },
+        { text: 'Resposta 1', imageUrl: '' },
+        { text: 'Resposta 2', imageUrl: '' },
+        { text: 'Resposta 3', imageUrl: '' },
+        { text: 'Resposta 4', imageUrl: '' },
       ],
-      correctOptionIndex: 0,
-      explanation: '',
+      correctOptionIndex: 1,
+      explanation: 'Explicação da questão',
       themeId: '',
-      subthemeId: '',
+      subthemeId: undefined,
+      groupId: undefined,
     },
   });
 
@@ -67,16 +79,24 @@ export function QuestionForm() {
 
   const onSubmit = async (data: QuestionFormData) => {
     try {
-      /* await createQuestion({
+      await createQuestion({
         ...data,
-        options: data.options.map(o => o.text),
-        themeId: data.themeId as Id<'themes'>,
-        subthemeId: data.subthemeId as Id<'subthemes'>,
-      }); */
+        options: data.options.map(o => ({
+          text: o.text,
+          imageUrl: o.imageUrl || undefined,
+        })),
+      });
+      toast({
+        title: 'Questão criada com sucesso!',
+        description: 'Questão criada com sucesso!',
+      });
 
-      console.log(data);
       form.reset();
     } catch (error) {
+      toast({
+        title: 'Erro ao criar questão!',
+        description: 'Erro ao criar questão!',
+      });
       console.error('Failed to create question:', error);
     }
   };
@@ -141,18 +161,23 @@ export function QuestionForm() {
           )}
         />
 
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-3">
           <FormField
             control={form.control}
             name="themeId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Tema</FormLabel>
+                <FormLabel>
+                  Tema <span className="text-red-500">*</span>
+                </FormLabel>
                 <Select
                   value={field.value}
                   onValueChange={value => {
                     field.onChange(value);
                     setSelectedTheme(value as Id<'themes'>);
+                    setSelectedSubtheme(undefined);
+                    form.setValue('subthemeId', undefined);
+                    form.setValue('groupId', undefined);
                   }}
                 >
                   <FormControl>
@@ -178,10 +203,15 @@ export function QuestionForm() {
             name="subthemeId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Subtema</FormLabel>
+                <FormLabel>Subtema (opcional)</FormLabel>
                 <Select
-                  value={field.value}
-                  onValueChange={field.onChange}
+                  value={field.value ?? 'none'}
+                  onValueChange={value => {
+                    const newValue = value === 'none' ? undefined : value;
+                    field.onChange(newValue);
+                    setSelectedSubtheme(newValue as Id<'subthemes'>);
+                    form.setValue('groupId', undefined);
+                  }}
                   disabled={!selectedTheme}
                 >
                   <FormControl>
@@ -190,9 +220,42 @@ export function QuestionForm() {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
+                    <SelectItem value="none">Nenhum</SelectItem>
                     {subthemes?.map(subtheme => (
                       <SelectItem key={subtheme._id} value={subtheme._id}>
                         {subtheme.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="groupId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Grupo (opcional)</FormLabel>
+                <Select
+                  value={field.value ?? 'none'}
+                  onValueChange={value => {
+                    field.onChange(value === 'none' ? undefined : value);
+                  }}
+                  disabled={!selectedSubtheme}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o grupo" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="none">Nenhum</SelectItem>
+                    {groups?.map(group => (
+                      <SelectItem key={group._id} value={group._id}>
+                        {group.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
