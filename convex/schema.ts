@@ -13,11 +13,7 @@ export default defineSchema({
 
   themes: defineTable({
     name: v.string(),
-  })
-    .index('by_name', ['name'])
-    .searchIndex('search_text', {
-      searchField: 'name',
-    }),
+  }).index('by_name', ['name']),
 
   subthemes: defineTable({
     name: v.string(),
@@ -35,6 +31,7 @@ export default defineSchema({
   }),
 
   questions: defineTable({
+    title: v.string(),
     text: v.string(),
     imageUrl: v.optional(v.string()),
     explanation: v.string(),
@@ -50,14 +47,5 @@ export default defineSchema({
     groupId: v.optional(v.id('groups')),
     authorId: v.id('users'),
     isPublic: v.boolean(),
-  })
-    .index('by_theme', ['themeId'])
-    .index('by_subtheme', ['subthemeId'])
-    .index('by_group', ['groupId'])
-    .index('by_author', ['authorId'])
-    .index('by_public', ['isPublic'])
-    .searchIndex('search_text', {
-      searchField: 'text',
-      filterFields: ['isPublic'],
-    }),
+  }).index('by_title', ['title']),
 });
