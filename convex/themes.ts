@@ -17,6 +17,21 @@ export const getById = query({
   },
 });
 
+export const getHierarchicalData = query({
+  args: {},
+  handler: async context => {
+    const themes = await context.db.query('themes').collect();
+    const subthemes = await context.db.query('subthemes').collect();
+    const groups = await context.db.query('groups').collect();
+
+    return {
+      themes,
+      subthemes,
+      groups,
+    };
+  },
+});
+
 // Mutations
 export const create = mutation({
   args: { name: v.string() },
