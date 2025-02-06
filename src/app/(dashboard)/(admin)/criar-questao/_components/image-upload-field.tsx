@@ -14,7 +14,7 @@ import { QuestionFormData } from './schema';
 
 interface ImageUploadFieldProps {
   control: Control<QuestionFormData>;
-  name: `options.${number}.imageUrl` | 'imageUrl';
+  name: 'questionImageUrl' | 'explanationImageUrl';
   label?: string;
 }
 

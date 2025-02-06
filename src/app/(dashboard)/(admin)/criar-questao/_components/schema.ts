@@ -5,11 +5,11 @@ import { Id } from '../../../../../../convex/_generated/dataModel';
 export const questionSchema = z.object({
   title: z.string().min(1, 'O título da questão é obrigatório'),
   text: z.string().min(1, 'O texto da questão é obrigatório'),
-  imageUrl: z.string().optional(),
+  questionImageUrl: z.string().optional(),
+  explanationImageUrl: z.string().optional(),
   options: z.array(
     z.object({
       text: z.string().min(1, 'O texto da opção é obrigatório'),
-      imageUrl: z.string().optional(),
     }),
   ),
   correctOptionIndex: z.number(),

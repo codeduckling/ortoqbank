@@ -59,13 +59,9 @@ export function QuestionForm() {
     defaultValues: {
       title: '',
       text: '',
-      imageUrl: '',
-      options: [
-        { text: '', imageUrl: '' },
-        { text: '', imageUrl: '' },
-        { text: '', imageUrl: '' },
-        { text: '', imageUrl: '' },
-      ],
+      questionImageUrl: '',
+      explanationImageUrl: '',
+      options: [{ text: '' }, { text: '' }, { text: '' }, { text: '' }],
       correctOptionIndex: 0,
       explanation: '',
       themeId: '',
@@ -85,7 +81,6 @@ export function QuestionForm() {
         ...data,
         options: data.options.map(o => ({
           text: o.text,
-          imageUrl: o.imageUrl || undefined,
         })),
       });
       toast({
@@ -136,11 +131,11 @@ export function QuestionForm() {
 
         <FormField
           control={form.control}
-          name="imageUrl"
+          name="questionImageUrl"
           render={() => (
             <ImageUploadField
               control={form.control}
-              name="imageUrl"
+              name="questionImageUrl"
               label="Imagem da Questão (opcional)"
             />
           )}
@@ -174,6 +169,18 @@ export function QuestionForm() {
               </FormControl>
               <FormMessage />
             </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="explanationImageUrl"
+          render={() => (
+            <ImageUploadField
+              control={form.control}
+              name="explanationImageUrl"
+              label="Imagem da Explicação (opcional)"
+            />
           )}
         />
 

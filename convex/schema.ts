@@ -34,12 +34,12 @@ export default defineSchema({
     title: v.string(),
     normalizedTitle: v.string(),
     text: v.string(),
-    imageUrl: v.optional(v.string()),
+    questionImageUrl: v.optional(v.string()),
     explanation: v.string(),
+    explanationImageUrl: v.optional(v.string()),
     options: v.array(
       v.object({
         text: v.string(),
-        imageUrl: v.optional(v.string()),
       }),
     ),
     correctOptionIndex: v.number(),
