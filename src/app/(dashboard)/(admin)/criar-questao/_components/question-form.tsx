@@ -37,6 +37,7 @@ export function QuestionForm() {
   const { toast } = useToast();
 
   const createQuestion = useMutation(api.questions.create);
+  const saveImageUrl = useMutation(api.files.saveImageUrl);
   const themes = useQuery(api.themes.list);
   const [selectedTheme, setSelectedTheme] = useState<
     Id<'themes'> | undefined
@@ -77,12 +78,33 @@ export function QuestionForm() {
 
   const onSubmit = async (data: QuestionFormData) => {
     try {
-      await createQuestion({
+      const questionId = await createQuestion({
         ...data,
         options: data.options.map(o => ({
           text: o.text,
         })),
       });
+
+      // If we have storage IDs, convert them to URLs
+      if (data.questionImageUrl && typeof data.questionImageUrl !== 'string') {
+        await saveImageUrl({
+          storageId: data.questionImageUrl,
+          field: 'questionImageUrl',
+          questionId,
+        });
+      }
+
+      if (
+        data.explanationImageUrl &&
+        typeof data.explanationImageUrl !== 'string'
+      ) {
+        await saveImageUrl({
+          storageId: data.explanationImageUrl,
+          field: 'explanationImageUrl',
+          questionId,
+        });
+      }
+
       toast({
         title: 'Questão criada com sucesso!',
         description: 'Questão criada com sucesso!',
@@ -93,6 +115,7 @@ export function QuestionForm() {
       toast({
         title: 'Erro ao criar questão!',
         description: 'Erro ao criar questão!',
+        variant: 'destructive',
       });
       console.error('Failed to create question:', error);
     }
@@ -132,11 +155,12 @@ export function QuestionForm() {
         <FormField
           control={form.control}
           name="questionImageUrl"
-          render={() => (
+          render={({ field }) => (
             <ImageUploadField
               control={form.control}
               name="questionImageUrl"
               label="Imagem da Questão (opcional)"
+              field={field}
             />
           )}
         />
@@ -175,11 +199,12 @@ export function QuestionForm() {
         <FormField
           control={form.control}
           name="explanationImageUrl"
-          render={() => (
+          render={({ field }) => (
             <ImageUploadField
               control={form.control}
               name="explanationImageUrl"
               label="Imagem da Explicação (opcional)"
+              field={field}
             />
           )}
         />
