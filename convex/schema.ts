@@ -53,4 +53,14 @@ export default defineSchema({
     .searchIndex('search_by_title', {
       searchField: 'title',
     }),
+
+  presetExams: defineTable({
+    name: v.string(),
+    description: v.string(),
+    questions: v.array(v.id('questions')),
+    themeId: v.id('themes'),
+    subthemeId: v.optional(v.id('subthemes')),
+    groupId: v.optional(v.id('groups')),
+    isPublic: v.boolean(),
+  }),
 });
