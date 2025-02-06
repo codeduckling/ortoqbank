@@ -9,7 +9,6 @@ import {
 } from '@/components/ui/sidebar';
 
 import NavAdmin from './nav-admin';
-import NavFooter from './nav-footer';
 import NavLogo from './nav-logo';
 import NavMain from './nav-main';
 import NavSecondary from './nav-secondary';
