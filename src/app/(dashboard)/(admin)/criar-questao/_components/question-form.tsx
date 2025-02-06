@@ -189,7 +189,7 @@ export function QuestionForm() {
             <FormItem>
               <FormLabel>Explicação</FormLabel>
               <FormControl>
-                <Textarea className="min-h-[120px]" {...field} />
+                <RichTextEditor onChange={field.onChange} />
               </FormControl>
               <FormMessage />
             </FormItem>
