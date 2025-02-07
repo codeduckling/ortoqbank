@@ -38,12 +38,6 @@ const items: MenuItem[] = [
     icon: SettingsIcon,
   },
   {
-    title: 'Criar Tema',
-    url: '/criar-tema',
-    icon: BadgePlusIcon,
-  },
-
-  {
     title: 'Gerenciar Temas',
     url: '/gerenciar-temas',
     icon: SettingsIcon,
