@@ -8,12 +8,12 @@ export const create = mutation({
   args: {
     text: v.string(),
     title: v.string(),
-    imageUrl: v.optional(v.string()),
+    questionImageUrl: v.optional(v.string()),
     explanation: v.string(),
+    explanationImageUrl: v.optional(v.string()),
     options: v.array(
       v.object({
         text: v.string(),
-        imageUrl: v.optional(v.string()),
       }),
     ),
     correctOptionIndex: v.number(),

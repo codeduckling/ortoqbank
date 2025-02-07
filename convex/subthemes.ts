@@ -24,6 +24,12 @@ export const getById = query({
   },
 });
 
+export const listByThemes = query({
+  handler: async context => {
+    return await context.db.query('subthemes').collect();
+  },
+});
+
 // Mutations
 export const create = mutation({
   args: {

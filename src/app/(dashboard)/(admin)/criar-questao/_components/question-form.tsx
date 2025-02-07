@@ -37,6 +37,7 @@ export function QuestionForm() {
   const { toast } = useToast();
 
   const createQuestion = useMutation(api.questions.create);
+  const saveImageUrl = useMutation(api.files.saveImageUrl);
   const themes = useQuery(api.themes.list);
   const [selectedTheme, setSelectedTheme] = useState<
     Id<'themes'> | undefined
@@ -57,17 +58,13 @@ export function QuestionForm() {
   const form = useForm<QuestionFormData>({
     resolver: zodResolver(questionSchema),
     defaultValues: {
-      title: 'Questão de teste',
-      text: 'Teste de questão',
-      imageUrl: '',
-      options: [
-        { text: 'Resposta 1', imageUrl: '' },
-        { text: 'Resposta 2', imageUrl: '' },
-        { text: 'Resposta 3', imageUrl: '' },
-        { text: 'Resposta 4', imageUrl: '' },
-      ],
-      correctOptionIndex: 1,
-      explanation: 'Explicação da questão',
+      title: '',
+      text: '',
+      questionImageUrl: '',
+      explanationImageUrl: '',
+      options: [{ text: '' }, { text: '' }, { text: '' }, { text: '' }],
+      correctOptionIndex: 0,
+      explanation: '',
       themeId: '',
       subthemeId: undefined,
       groupId: undefined,
@@ -81,13 +78,33 @@ export function QuestionForm() {
 
   const onSubmit = async (data: QuestionFormData) => {
     try {
-      await createQuestion({
+      const questionId = await createQuestion({
         ...data,
         options: data.options.map(o => ({
           text: o.text,
-          imageUrl: o.imageUrl || undefined,
         })),
       });
+
+      // If we have storage IDs, convert them to URLs
+      if (data.questionImageUrl && typeof data.questionImageUrl !== 'string') {
+        await saveImageUrl({
+          storageId: data.questionImageUrl,
+          field: 'questionImageUrl',
+          questionId,
+        });
+      }
+
+      if (
+        data.explanationImageUrl &&
+        typeof data.explanationImageUrl !== 'string'
+      ) {
+        await saveImageUrl({
+          storageId: data.explanationImageUrl,
+          field: 'explanationImageUrl',
+          questionId,
+        });
+      }
+
       toast({
         title: 'Questão criada com sucesso!',
         description: 'Questão criada com sucesso!',
@@ -98,6 +115,7 @@ export function QuestionForm() {
       toast({
         title: 'Erro ao criar questão!',
         description: 'Erro ao criar questão!',
+        variant: 'destructive',
       });
       console.error('Failed to create question:', error);
     }
@@ -136,12 +154,13 @@ export function QuestionForm() {
 
         <FormField
           control={form.control}
-          name="imageUrl"
-          render={() => (
+          name="questionImageUrl"
+          render={({ field }) => (
             <ImageUploadField
               control={form.control}
-              name="imageUrl"
+              name="questionImageUrl"
               label="Imagem da Questão (opcional)"
+              field={field}
             />
           )}
         />
@@ -170,10 +189,23 @@ export function QuestionForm() {
             <FormItem>
               <FormLabel>Explicação</FormLabel>
               <FormControl>
-                <Textarea className="min-h-[120px]" {...field} />
+                <RichTextEditor onChange={field.onChange} />
               </FormControl>
               <FormMessage />
             </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="explanationImageUrl"
+          render={({ field }) => (
+            <ImageUploadField
+              control={form.control}
+              name="explanationImageUrl"
+              label="Imagem da Explicação (opcional)"
+              field={field}
+            />
           )}
         />
 

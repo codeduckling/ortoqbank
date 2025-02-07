@@ -34,12 +34,12 @@ export default defineSchema({
     title: v.string(),
     normalizedTitle: v.string(),
     text: v.string(),
-    imageUrl: v.optional(v.string()),
+    questionImageUrl: v.optional(v.string()),
     explanation: v.string(),
+    explanationImageUrl: v.optional(v.string()),
     options: v.array(
       v.object({
         text: v.string(),
-        imageUrl: v.optional(v.string()),
       }),
     ),
     correctOptionIndex: v.number(),
@@ -53,4 +53,14 @@ export default defineSchema({
     .searchIndex('search_by_title', {
       searchField: 'title',
     }),
+
+  presetExams: defineTable({
+    name: v.string(),
+    description: v.string(),
+    questions: v.array(v.id('questions')),
+    themeId: v.id('themes'),
+    subthemeId: v.optional(v.id('subthemes')),
+    groupId: v.optional(v.id('groups')),
+    isPublic: v.boolean(),
+  }),
 });
