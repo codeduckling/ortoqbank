@@ -28,7 +28,9 @@ interface QuizContentProps {
 
 export function QuizContent({ examId }: QuizContentProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
+  const [selectedAnswer, setSelectedAnswer] = useState<number | undefined>(
+    
+  );
   const [showExplanation, setShowExplanation] = useState(false);
   const [answeredQuestions, setAnsweredQuestions] = useState<number[]>([]);
 
@@ -63,7 +65,7 @@ export function QuizContent({ examId }: QuizContentProps) {
   const handleNextQuestion = () => {
     if (currentQuestionIndex < exam.questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
-      setSelectedAnswer(null);
+      setSelectedAnswer(undefined);
       setShowExplanation(false);
     }
   };
@@ -71,7 +73,7 @@ export function QuizContent({ examId }: QuizContentProps) {
   const handlePreviousQuestion = () => {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(currentQuestionIndex - 1);
-      setSelectedAnswer(null);
+      setSelectedAnswer(undefined);
       setShowExplanation(false);
     }
   };
