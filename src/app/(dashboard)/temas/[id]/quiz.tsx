@@ -18,8 +18,6 @@ interface ExamQuestion {
   options: { text: string }[];
   correctOptionIndex: number;
   explanation: string;
-  explanationImageUrl?: string;
-  questionImageUrl?: string;
 }
 
 interface QuizContentProps {
@@ -28,9 +26,7 @@ interface QuizContentProps {
 
 export function QuizContent({ examId }: QuizContentProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState<number | undefined>(
-    
-  );
+  const [selectedAnswer, setSelectedAnswer] = useState<number | undefined>();
   const [showExplanation, setShowExplanation] = useState(false);
   const [answeredQuestions, setAnsweredQuestions] = useState<number[]>([]);
 

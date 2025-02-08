@@ -4,20 +4,14 @@ import { Id } from '../../../../../../convex/_generated/dataModel';
 
 export const questionSchema = z.object({
   title: z.string().min(1, 'Título é obrigatório'),
-  text: z.string().min(1, 'Texto é obrigatório'),
-  questionImageUrl: z
-    .union([z.string(), z.custom<Id<'_storage'>>()])
-    .optional(),
-  explanationImageUrl: z
-    .union([z.string(), z.custom<Id<'_storage'>>()])
-    .optional(),
+  questionText: z.string().min(1, 'Texto é obrigatório'),
   options: z.array(
     z.object({
       text: z.string().min(1, 'Texto da alternativa é obrigatório'),
     }),
   ),
   correctOptionIndex: z.number(),
-  explanation: z.string().min(1, 'Explicação é obrigatória'),
+  explanationText: z.string().min(1, 'Explicação é obrigatória'),
   themeId: z.custom<Id<'themes'>>(),
   subthemeId: z.custom<Id<'subthemes'>>().optional(),
   groupId: z.custom<Id<'groups'>>().optional(),

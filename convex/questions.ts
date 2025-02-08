@@ -6,11 +6,9 @@ import { mutation, query } from './_generated/server';
 
 export const create = mutation({
   args: {
-    text: v.string(),
+    questionText: v.string(),
     title: v.string(),
-    questionImageUrl: v.optional(v.string()),
-    explanation: v.string(),
-    explanationImageUrl: v.optional(v.string()),
+    explanationText: v.string(),
     options: v.array(
       v.object({
         text: v.string(),

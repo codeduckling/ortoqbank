@@ -5,7 +5,8 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'first-bandicoot-132.convex.cloud',
+        hostname: 'ik.imagekit.io',
+        port: '',
       },
     ],
   },

@@ -5,7 +5,7 @@ import { useMutation, useQuery } from 'convex/react';
 import { useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 
-import RichTextEditor from '@/components/rich-text-editor';
+import RichTextEditor from '@/components/rich-text-editor/rich-text-editor';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -24,12 +24,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 
 import { api } from '../../../../../../convex/_generated/api';
 import { Id } from '../../../../../../convex/_generated/dataModel';
-import { ImageUploadField } from './image-upload-field';
 import { QuestionOption } from './question-option';
 import { QuestionFormData, questionSchema } from './schema';
 
@@ -37,7 +35,6 @@ export function QuestionForm() {
   const { toast } = useToast();
 
   const createQuestion = useMutation(api.questions.create);
-  const saveImageUrl = useMutation(api.files.saveImageUrl);
   const themes = useQuery(api.themes.list);
   const [selectedTheme, setSelectedTheme] = useState<
     Id<'themes'> | undefined
@@ -59,12 +56,10 @@ export function QuestionForm() {
     resolver: zodResolver(questionSchema),
     defaultValues: {
       title: '',
-      text: '',
-      questionImageUrl: '',
-      explanationImageUrl: '',
+      questionText: '',
       options: [{ text: '' }, { text: '' }, { text: '' }, { text: '' }],
       correctOptionIndex: 0,
-      explanation: '',
+      explanationText: '',
       themeId: '',
       subthemeId: undefined,
       groupId: undefined,
@@ -84,26 +79,6 @@ export function QuestionForm() {
           text: o.text,
         })),
       });
-
-      // If we have storage IDs, convert them to URLs
-      if (data.questionImageUrl && typeof data.questionImageUrl !== 'string') {
-        await saveImageUrl({
-          storageId: data.questionImageUrl,
-          field: 'questionImageUrl',
-          questionId,
-        });
-      }
-
-      if (
-        data.explanationImageUrl &&
-        typeof data.explanationImageUrl !== 'string'
-      ) {
-        await saveImageUrl({
-          storageId: data.explanationImageUrl,
-          field: 'explanationImageUrl',
-          questionId,
-        });
-      }
 
       toast({
         title: 'Questão criada com sucesso!',
@@ -140,7 +115,7 @@ export function QuestionForm() {
 
         <FormField
           control={form.control}
-          name="text"
+          name="questionText"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Texto da Questão</FormLabel>
@@ -149,19 +124,6 @@ export function QuestionForm() {
               </FormControl>
               <FormMessage />
             </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="questionImageUrl"
-          render={({ field }) => (
-            <ImageUploadField
-              control={form.control}
-              name="questionImageUrl"
-              label="Imagem da Questão (opcional)"
-              field={field}
-            />
           )}
         />
 
@@ -184,28 +146,16 @@ export function QuestionForm() {
 
         <FormField
           control={form.control}
-          name="explanation"
+          name="explanationText"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Explicação</FormLabel>
+
               <FormControl>
                 <RichTextEditor onChange={field.onChange} />
               </FormControl>
               <FormMessage />
             </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="explanationImageUrl"
-          render={({ field }) => (
-            <ImageUploadField
-              control={form.control}
-              name="explanationImageUrl"
-              label="Imagem da Explicação (opcional)"
-              field={field}
-            />
           )}
         />
 
