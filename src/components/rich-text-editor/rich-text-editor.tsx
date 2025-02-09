@@ -29,7 +29,7 @@ export default function RichTextEditor({
     editorProps: {
       attributes: {
         class:
-          'min-h-[150px] cursor-text rounded-md border p-5 ring-offset-background focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ',
+          'min-h-[150px] cursor-text rounded-md border p-5 ring-offset-background focus-within:outline-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ',
       },
     },
     immediatelyRender: false,
