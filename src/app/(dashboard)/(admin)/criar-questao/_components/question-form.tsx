@@ -56,10 +56,16 @@ export function QuestionForm() {
     resolver: zodResolver(questionSchema),
     defaultValues: {
       title: '',
-      questionText: '',
+      questionText: {
+        type: 'paragraph',
+        content: [{ type: 'text', text: '' }],
+      },
       options: [{ text: '' }, { text: '' }, { text: '' }, { text: '' }],
       correctOptionIndex: 0,
-      explanationText: '',
+      explanationText: {
+        type: 'paragraph',
+        content: [{ type: 'text', text: '' }],
+      },
       themeId: '',
       subthemeId: undefined,
       groupId: undefined,

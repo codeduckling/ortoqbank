@@ -1,63 +1,69 @@
 'use client';
 
-import { useState } from 'react';
 import { Editor } from '@tiptap/react';
 import { ImageIcon } from 'lucide-react';
-import { IKUpload } from 'imagekitio-next';
+import { useCallback, useRef } from 'react';
+import { uploadToImageKit } from './upload-action';
 
-interface ImageUploadButtonProps {
-  editor: Editor;
-}
+export function ImageUploadButton({ editor }: { editor: Editor }) {
+  const inputRef = useRef<HTMLInputElement>(null);
 
-export function ImageUploadButton({ editor }: ImageUploadButtonProps) {
-  const [isUploading, setIsUploading] = useState(false);
+  const handleFileSelect = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
 
-  const onSuccess = (response: {
-    fileId: string;
-    name: string;
-    url: string;
-    filePath: string;
-  }) => {
-    setIsUploading(false);
-    const imageUrl = `${process.env.NEXT_PUBLIC_URL_ENDPOINT}/${response.filePath}`;
-    editor
-      .chain()
-      .focus()
-      .setImage({
-        src: imageUrl,
-        alt: response.name,
-      })
-      .run();
-  };
+      try {
+        // Create temporary blob URL for immediate display
+        const blobUrl = URL.createObjectURL(file);
+        editor.chain().focus().setImage({ src: blobUrl }).run();
 
-  const onError = (err: any) => {
-    setIsUploading(false);
-    console.error('Upload failed:', err);
-  };
+        // Upload to ImageKit in the background
+        const imagekitUrl = await uploadToImageKit(file);
+
+        // Replace blob URL with ImageKit URL
+        const doc = editor.state.doc;
+        doc.descendants((node, pos) => {
+          if (node.type.name === 'image' && node.attrs.src === blobUrl) {
+            editor
+              .chain()
+              .focus()
+              .setNodeSelection(pos)
+              .updateAttributes('image', { src: imagekitUrl })
+              .run();
+            URL.revokeObjectURL(blobUrl); // Clean up blob URL
+            return false;
+          }
+        });
+      } catch (error) {
+        console.error('Failed to upload image:', error);
+        // You might want to show an error message to the user here
+      }
+
+      // Reset input
+      if (inputRef.current) {
+        inputRef.current.value = '';
+      }
+    },
+    [editor],
+  );
 
   return (
-    <div className="relative">
+    <>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
       <button
-        className={`relative p-2 ${isUploading ? 'cursor-not-allowed opacity-50' : ''}`}
-        disabled={isUploading}
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        className="rounded-md p-2 hover:bg-gray-100"
       >
-        {isUploading ? (
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-violet-500 border-t-transparent" />
-        ) : (
-          <ImageIcon className="h-5 w-5" />
-        )}
+        <ImageIcon className="h-5 w-5" />
       </button>
-      <div className="absolute left-0 top-0 h-full w-full opacity-0">
-        <IKUpload
-          onUploadStart={() => setIsUploading(true)}
-          onSuccess={onSuccess}
-          onError={onError}
-          className="h-full w-full cursor-pointer"
-          urlEndpoint={process.env.NEXT_PUBLIC_URL_ENDPOINT}
-          publicKey={process.env.NEXT_PUBLIC_PUBLIC_KEY}
-          folder="/questions"
-        />
-      </div>
-    </div>
+    </>
   );
 }
