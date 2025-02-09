@@ -1,6 +1,7 @@
+/* eslint-disable unicorn/no-null */
+
 'use client';
 
-import * as React from 'react';
 import { Editor } from '@tiptap/react';
 import {
   BoldIcon,
@@ -8,14 +9,16 @@ import {
   ItalicIcon,
   ListIcon,
   ListOrderedIcon,
+  PaletteIcon,
   RedoIcon,
   StrikethroughIcon,
   UnderlineIcon,
   UndoIcon,
-  PaletteIcon,
 } from 'lucide-react';
-import { ImageUploadButton } from './image-upload-button';
+import * as React from 'react';
 import { memo, useCallback } from 'react';
+
+import { ImageUploadButton } from './image-upload-button';
 
 // Button component with loading state
 function Button({

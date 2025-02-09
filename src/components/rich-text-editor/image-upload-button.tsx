@@ -3,6 +3,7 @@
 import { Editor } from '@tiptap/react';
 import { ImageIcon } from 'lucide-react';
 import { useCallback, useRef } from 'react';
+
 import { uploadToImageKit } from './upload-action';
 
 export function ImageUploadButton({ editor }: { editor: Editor }) {
@@ -22,8 +23,8 @@ export function ImageUploadButton({ editor }: { editor: Editor }) {
         const imagekitUrl = await uploadToImageKit(file);
 
         // Replace blob URL with ImageKit URL
-        const doc = editor.state.doc;
-        doc.descendants((node, pos) => {
+        const document_ = editor.state.doc;
+        document_.descendants((node, pos) => {
           if (node.type.name === 'image' && node.attrs.src === blobUrl) {
             editor
               .chain()

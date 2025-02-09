@@ -2,10 +2,12 @@
 
 import { useQuery } from 'convex/react';
 import { useParams } from 'next/navigation';
+
 import { Button } from '@/components/ui/button';
+import { renderContent } from '@/lib/utils/render-content';
+
 import { api } from '../../../../../../convex/_generated/api';
 import { Id } from '../../../../../../convex/_generated/dataModel';
-import { renderContent } from '@/lib/utils/render-content';
 
 export default function ViewQuestion() {
   const params = useParams();
@@ -21,7 +23,7 @@ export default function ViewQuestion() {
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{question.title}</h1>
-        <Button variant="outline" onClick={() => window.history.back()}>
+        <Button variant="outline" onClick={() => globalThis.history.back()}>
           Voltar
         </Button>
       </div>
