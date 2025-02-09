@@ -33,15 +33,20 @@ export default defineSchema({
   questions: defineTable({
     title: v.string(),
     normalizedTitle: v.string(),
-    text: v.string(),
-    questionImageUrl: v.optional(v.string()),
-    explanation: v.string(),
-    explanationImageUrl: v.optional(v.string()),
+    questionText: v.object({
+      type: v.string(),
+      content: v.array(v.any()),
+    }),
+    explanationText: v.object({
+      type: v.string(),
+      content: v.array(v.any()),
+    }),
     options: v.array(
       v.object({
         text: v.string(),
       }),
     ),
+
     correctOptionIndex: v.number(),
     themeId: v.id('themes'),
     subthemeId: v.optional(v.id('subthemes')),

@@ -28,32 +28,14 @@ export const getById = query({
       throw new Error('Exam not found');
     }
 
-    // Fetch all questions and their image URLs
+    // Fetch all questions data
     const questions = await Promise.all(
-      exam.questions.map(async questionId => {
-        const question = await context.db.get(questionId);
-        if (!question) return null;
-
-        // Get URLs for any images
-        const questionImageUrl = question.questionImageUrl
-          ? await context.storage.getUrl(question.questionImageUrl)
-          : undefined;
-
-        const explanationImageUrl = question.explanationImageUrl
-          ? await context.storage.getUrl(question.explanationImageUrl)
-          : undefined;
-
-        return {
-          ...question,
-          questionImageUrl,
-          explanationImageUrl,
-        };
-      }),
+      exam.questions.map(questionId => context.db.get(questionId)),
     );
 
     return {
       ...exam,
-      questions: questions.filter(Boolean),
+      questions: questions.filter(Boolean), // Remove any null values
     };
   },
 });

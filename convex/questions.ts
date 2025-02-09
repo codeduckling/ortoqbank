@@ -6,11 +6,15 @@ import { mutation, query } from './_generated/server';
 
 export const create = mutation({
   args: {
-    text: v.string(),
+    questionText: v.object({
+      type: v.string(),
+      content: v.array(v.any()),
+    }),
     title: v.string(),
-    questionImageUrl: v.optional(v.string()),
-    explanation: v.string(),
-    explanationImageUrl: v.optional(v.string()),
+    explanationText: v.object({
+      type: v.string(),
+      content: v.array(v.any()),
+    }),
     options: v.array(
       v.object({
         text: v.string(),
@@ -65,6 +69,30 @@ export const list = query({
         ...question,
         theme: themes[index],
       })),
+    };
+  },
+});
+
+export const getById = query({
+  args: { id: v.id('questions') },
+  handler: async (context, args) => {
+    const question = await context.db.get(args.id);
+    if (!question) {
+      throw new Error('Question not found');
+    }
+
+    // Fetch the associated theme
+    const theme = await context.db.get(question.themeId);
+
+    // Fetch the subtheme if it exists
+    const subtheme = question.subthemeId
+      ? await context.db.get(question.subthemeId)
+      : null;
+
+    return {
+      ...question,
+      theme,
+      subtheme,
     };
   },
 });

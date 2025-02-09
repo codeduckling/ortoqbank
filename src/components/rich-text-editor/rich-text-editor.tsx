@@ -1,12 +1,18 @@
+'use client';
+
+import { Color } from '@tiptap/extension-color';
+import Image from '@tiptap/extension-image';
+import { TextStyle } from '@tiptap/extension-text-style';
 import Underline from '@tiptap/extension-underline';
-import { EditorContent, useEditor } from '@tiptap/react';
+import { EditorContent, type JSONContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import ResizeImage from 'tiptap-extension-resize-image';
 
 import TextEditorMenuBar from './editor-menu-bar';
 
 type TextEditorProps = {
-  onChange: (content: string) => void;
-  initialContent?: string; // Add this line
+  onChange: (content: JSONContent) => void;
+  initialContent?: JSONContent; // Add this line
 };
 
 export default function RichTextEditor({
@@ -14,11 +20,12 @@ export default function RichTextEditor({
   initialContent,
 }: TextEditorProps) {
   const editor = useEditor({
-    extensions: [StarterKit, Underline],
+    extensions: [StarterKit, Underline, Image, ResizeImage, Color, TextStyle],
     content: initialContent,
     onUpdate: ({ editor }) => {
-      onChange(editor.getHTML());
+      onChange(editor.getJSON());
     },
+
     editorProps: {
       attributes: {
         class:

@@ -1,6 +1,7 @@
 'use client';
 
 import { usePaginatedQuery } from 'convex/react';
+import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -13,6 +14,7 @@ import {
 } from '@/components/ui/table';
 
 import { api } from '../../../../../convex/_generated/api';
+import { Id } from '../../../../../convex/_generated/dataModel';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -31,6 +33,7 @@ const getButtonText = (status: string) => {
 };
 
 export default function GerenciarQuestoes() {
+  const router = useRouter();
   const {
     results: questions,
     status,
@@ -40,6 +43,10 @@ export default function GerenciarQuestoes() {
     {},
     { initialNumItems: ITEMS_PER_PAGE },
   );
+
+  const handleView = (questionId: Id<'questions'>) => {
+    router.push(`/gerenciar-questoes/${questionId}`);
+  };
 
   return (
     <div className="space-y-6 p-6">
@@ -66,7 +73,14 @@ export default function GerenciarQuestoes() {
                 <TableCell>
                   {question.isPublic ? 'Publicada' : 'Rascunho'}
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="space-x-2 text-right">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleView(question._id)}
+                  >
+                    Visualizar
+                  </Button>
                   <Button variant="ghost" size="sm">
                     Editar
                   </Button>
