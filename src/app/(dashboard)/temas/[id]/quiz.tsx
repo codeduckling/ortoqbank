@@ -1,12 +1,12 @@
 'use client';
 import { useQuery } from 'convex/react';
-import parse from 'html-react-parser';
 import Image from 'next/image';
 import React, { useState } from 'react';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { renderContent } from '@/lib/utils/render-content';
 
 import { api } from '../../../../../convex/_generated/api';
 import { Id } from '../../../../../convex/_generated/dataModel';
@@ -14,10 +14,16 @@ import { Id } from '../../../../../convex/_generated/dataModel';
 interface ExamQuestion {
   _id: Id<'questions'>;
   title: string;
-  text: string;
+  questionText: {
+    type: string;
+    content: any[];
+  };
   options: { text: string }[];
   correctOptionIndex: number;
-  explanation: string;
+  explanationText: {
+    type: string;
+    content: any[];
+  };
 }
 
 interface QuizContentProps {
@@ -30,7 +36,10 @@ export function QuizContent({ examId }: QuizContentProps) {
   const [showExplanation, setShowExplanation] = useState(false);
   const [answeredQuestions, setAnsweredQuestions] = useState<number[]>([]);
 
-  const exam = useQuery(api.exams.getById, { id: examId });
+  const exam = useQuery(api.exams.getById, { id: examId }) as {
+    name: string;
+    questions: ExamQuestion[];
+  } | null;
 
   if (!exam) {
     return (
@@ -48,7 +57,9 @@ export function QuizContent({ examId }: QuizContentProps) {
     );
   }
 
-  const currentQuestion = exam.questions[currentQuestionIndex] as ExamQuestion;
+  const currentQuestion = exam.questions[
+    currentQuestionIndex
+  ] as unknown as ExamQuestion;
   const isAnswered = answeredQuestions.includes(currentQuestionIndex);
   const isCorrect = selectedAnswer === currentQuestion.correctOptionIndex;
 
@@ -98,18 +109,12 @@ export function QuizContent({ examId }: QuizContentProps) {
             <h3 className="mb-2 text-xl font-medium">
               {currentQuestion.title}
             </h3>
-            <div className="text-gray-600">{parse(currentQuestion.text)}</div>
-            {currentQuestion.questionImageUrl && (
-              <div className="mt-4">
-                <Image
-                  src={currentQuestion.questionImageUrl}
-                  alt="Question"
-                  className="rounded-lg object-contain"
-                  width={300}
-                  height={300}
-                />
-              </div>
-            )}
+            <div
+              className="prose max-w-none text-gray-600"
+              dangerouslySetInnerHTML={{
+                __html: renderContent(currentQuestion.questionText),
+              }}
+            />
           </div>
 
           <div className="space-y-3">
@@ -169,20 +174,12 @@ export function QuizContent({ examId }: QuizContentProps) {
 
               {showExplanation && (
                 <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
-                  <div className="text-sm text-gray-700">
-                    {parse(currentQuestion.explanation)}
-                    {currentQuestion.explanationImageUrl && (
-                      <div className="mt-4">
-                        <Image
-                          src={currentQuestion.explanationImageUrl}
-                          alt="Explanation"
-                          className="max-h-[500px] max-w-full rounded-lg object-contain"
-                          width={400}
-                          height={400}
-                        />
-                      </div>
-                    )}
-                  </div>
+                  <div
+                    className="prose max-w-none text-sm text-gray-700"
+                    dangerouslySetInnerHTML={{
+                      __html: renderContent(currentQuestion.explanationText),
+                    }}
+                  />
                 </div>
               )}
             </div>

@@ -28,6 +28,14 @@ export const getById = query({
       throw new Error('Exam not found');
     }
 
-    return exam;
+    // Fetch all questions data
+    const questions = await Promise.all(
+      exam.questions.map(questionId => context.db.get(questionId)),
+    );
+
+    return {
+      ...exam,
+      questions: questions.filter(Boolean), // Remove any null values
+    };
   },
 });
