@@ -1,18 +1,8 @@
-import {
-  BookOpenIcon,
-  FileClockIcon,
-  FileTextIcon,
-  HeadsetIcon,
-  type LucideIcon,
-  PenSquareIcon,
-  UserCircleIcon,
-} from 'lucide-react';
+import { HeadsetIcon, type LucideIcon, UserCircleIcon } from 'lucide-react';
 import Link from 'next/link';
 
 import {
   SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -25,17 +15,8 @@ interface MenuItem {
 }
 
 const items: MenuItem[] = [
-  {
-    title: 'Temas',
-    url: '/temas',
-    icon: BookOpenIcon,
-  },
-
-  {
-    title: 'Testes Prévios',
-    url: '/testes-previos',
-    icon: FileClockIcon,
-  },
+  { title: 'Meu Perfil', url: '/perfil', icon: UserCircleIcon },
+  { title: 'Suporte', url: '/suporte', icon: HeadsetIcon },
 ];
 
 export default function NavMain() {

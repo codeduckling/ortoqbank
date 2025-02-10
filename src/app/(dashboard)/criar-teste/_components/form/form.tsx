@@ -15,22 +15,11 @@ import { Switch } from '@/components/ui/switch';
 import { api } from '../../../../../../convex/_generated/api';
 import { type TestFormData, testFormSchema } from '../schema';
 
-type Theme = {
-  _id: string;
-  name: string;
-};
+type Theme = { _id: string; name: string };
 
-type Subtheme = {
-  _id: string;
-  name: string;
-  themeId: string;
-};
+type Subtheme = { _id: string; name: string; themeId: string };
 
-type Group = {
-  _id: string;
-  name: string;
-  subthemeId: string;
-};
+type Group = { _id: string; name: string; subthemeId: string };
 
 export default function TestForm() {
   const [expandedSubthemes, setExpandedSubthemes] = useState<string[]>([]);
@@ -183,7 +172,7 @@ export default function TestForm() {
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-sm font-medium">Avaliação</h3>
-              <InfoCircle className="h-4 w-4 text-muted-foreground" />
+              <InfoCircle className="text-muted-foreground h-4 w-4" />
             </div>
             <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center gap-2">
@@ -211,7 +200,7 @@ export default function TestForm() {
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-sm font-medium">Modo</h3>
-              <InfoCircle className="h-4 w-4 text-muted-foreground" />
+              <InfoCircle className="text-muted-foreground h-4 w-4" />
             </div>
             <div
               className="flex flex-wrap gap-4"
@@ -238,7 +227,7 @@ export default function TestForm() {
                   <Label htmlFor={id} className="flex items-center gap-2">
                     <span>{label}</span>
                     {count && (
-                      <span className="rounded bg-secondary px-1.5 py-0.5 text-xs">
+                      <span className="bg-secondary rounded px-1.5 py-0.5 text-xs">
                         {count}
                       </span>
                     )}
@@ -247,7 +236,7 @@ export default function TestForm() {
               ))}
             </div>
             {errors.questionMode && (
-              <p className="text-sm text-destructive">
+              <p className="text-destructive text-sm">
                 {errors.questionMode.message}
               </p>
             )}
@@ -287,7 +276,7 @@ export default function TestForm() {
           </div>
 
           {errors.selectedThemes && (
-            <p className="text-sm text-destructive">
+            <p className="text-destructive text-sm">
               {errors.selectedThemes.message}
             </p>
           )}
