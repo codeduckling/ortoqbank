@@ -35,15 +35,13 @@ export default function RichTextEditor({
     extensions: [
       StarterKitExtension,
       UnderlineExtension,
+      ImageExtension,
       ExtendedImage,
       ResizeImage,
       Color,
       TextStyle,
     ],
-    content: initialContent || {
-      type: 'doc',
-      content: [{ type: 'paragraph', content: [{ type: 'text', text: '' }] }],
-    },
+    content: initialContent,
     onUpdate: ({ editor }) => {
       onChange(editor.getJSON());
     },

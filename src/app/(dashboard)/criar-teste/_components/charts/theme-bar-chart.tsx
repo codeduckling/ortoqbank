@@ -31,6 +31,9 @@ const chartData = [
   { theme: 'Mão', percentage: 100 },
   { theme: 'Ombro e Cotovelo', percentage: 20 },
   { theme: 'Joelho', percentage: 80 },
+  { theme: 'Quadril', percentage: 100 },
+  { theme: 'Pé e Tornozelo', percentage: 20 },
+  { theme: 'Ortopedia Pediátrica', percentage: 80 },
 ];
 
 const chartConfig = {
@@ -50,16 +53,16 @@ export function ThemeBarChart() {
         <CardTitle>Progresso por temas</CardTitle>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
+        <ChartContainer config={chartConfig} className="min-h-[400px] w-full">
           <BarChart
             accessibilityLayer
             data={chartData}
             layout="vertical"
             margin={{
               right: 40,
-              left: 8,
-              top: 8,
-              bottom: 8,
+              left: 0,
+              top: 16,
+              bottom: 16,
             }}
           >
             <CartesianGrid horizontal={false} />
@@ -69,18 +72,31 @@ export function ThemeBarChart() {
               tickLine={false}
               tickMargin={10}
               axisLine={false}
-              width={60}
-              tick={{ fontSize: 12 }}
+              width={70}
+              tick={{
+                fontSize: 11,
+                width: 65,
+                fill: 'hsl(var(--muted-foreground))',
+              }}
               tickFormatter={(value: string) => {
+                const maxCharsPerLine = 14;
                 const words = value.split(' ');
-                if (words.length === 1) return value;
+                let lines = [];
+                let currentLine = words[0];
 
-                // Split into roughly equal parts
-                const midpoint = Math.ceil(words.length / 2);
-                const firstLine = words.slice(0, midpoint).join(' ');
-                const secondLine = words.slice(midpoint).join(' ');
+                for (let index = 1; index < words.length; index++) {
+                  if (
+                    (currentLine + ' ' + words[index]).length <= maxCharsPerLine
+                  ) {
+                    currentLine += ' ' + words[index];
+                  } else {
+                    lines.push(currentLine);
+                    currentLine = words[index];
+                  }
+                }
+                lines.push(currentLine);
 
-                return `${firstLine}\n${secondLine}`;
+                return lines.join('\n');
               }}
             />
             <XAxis

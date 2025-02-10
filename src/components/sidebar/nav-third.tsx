@@ -25,16 +25,8 @@ interface MenuItem {
 }
 
 const items: MenuItem[] = [
-  {
-    title: 'Suporte',
-    url: '/suporte',
-    icon: HeadsetIcon,
-  },
-  {
-    title: 'Meu Perfil',
-    url: '/perfil',
-    icon: UserCircleIcon,
-  },
+  { title: 'Criar Teste', url: '/criar-teste', icon: PenSquareIcon },
+  { title: 'Testes Prévios', url: '/testes-previos', icon: FileClockIcon },
 ];
 
 export default function NavThird() {
