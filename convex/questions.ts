@@ -1,25 +1,14 @@
 import { paginationOptsValidator } from 'convex/server';
 import { v } from 'convex/values';
 
-import { Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
 
 export const create = mutation({
   args: {
-    questionText: v.object({
-      type: v.string(),
-      content: v.array(v.any()),
-    }),
+    questionText: v.object({ type: v.string(), content: v.array(v.any()) }),
     title: v.string(),
-    explanationText: v.object({
-      type: v.string(),
-      content: v.array(v.any()),
-    }),
-    options: v.array(
-      v.object({
-        text: v.string(),
-      }),
-    ),
+    explanationText: v.object({ type: v.string(), content: v.array(v.any()) }),
+    options: v.array(v.object({ text: v.string() })),
     correctOptionIndex: v.number(),
     themeId: v.id('themes'),
     subthemeId: v.optional(v.id('subthemes')),
@@ -75,8 +64,8 @@ export const list = query({
 
 export const getById = query({
   args: { id: v.id('questions') },
-  handler: async (context, args) => {
-    const question = await context.db.get(args.id);
+  handler: async (context, arguments_) => {
+    const question = await context.db.get(arguments_.id);
     if (!question) {
       throw new Error('Question not found');
     }
@@ -87,12 +76,8 @@ export const getById = query({
     // Fetch the subtheme if it exists
     const subtheme = question.subthemeId
       ? await context.db.get(question.subthemeId)
-      : null;
+      : undefined;
 
-    return {
-      ...question,
-      theme,
-      subtheme,
-    };
+    return { ...question, theme, subtheme };
   },
 });
