@@ -31,17 +31,27 @@ import { Id } from '../../../../../../convex/_generated/dataModel';
 import { QuestionOption } from './question-option';
 import { QuestionFormData, questionSchema } from './schema';
 
-export function QuestionForm() {
+interface QuestionFormProps {
+  mode?: 'create' | 'edit';
+  defaultValues?: any; // We'll type this properly later
+}
+
+export function QuestionForm({
+  mode = 'create',
+  defaultValues,
+}: QuestionFormProps) {
   const { toast } = useToast();
 
   const createQuestion = useMutation(api.questions.create);
+  const updateQuestion = useMutation(api.questions.update);
   const themes = useQuery(api.themes.list);
-  const [selectedTheme, setSelectedTheme] = useState<
-    Id<'themes'> | undefined
-  >();
+
+  const [selectedTheme, setSelectedTheme] = useState<Id<'themes'> | undefined>(
+    defaultValues?.themeId,
+  );
   const [selectedSubtheme, setSelectedSubtheme] = useState<
     Id<'subthemes'> | undefined
-  >();
+  >(defaultValues?.subthemeId);
 
   const subthemes = useQuery(
     api.subthemes.list,
@@ -54,7 +64,7 @@ export function QuestionForm() {
 
   const form = useForm<QuestionFormData>({
     resolver: zodResolver(questionSchema),
-    defaultValues: {
+    defaultValues: defaultValues || {
       title: '',
       questionText: {
         type: 'paragraph',
@@ -72,34 +82,35 @@ export function QuestionForm() {
     },
   });
 
-  const { fields } = useFieldArray({
-    name: 'options',
-    control: form.control,
-  });
+  const { fields } = useFieldArray({ name: 'options', control: form.control });
 
   const onSubmit = async (data: QuestionFormData) => {
     try {
-      const questionId = await createQuestion({
-        ...data,
-        options: data.options.map(o => ({
-          text: o.text,
-        })),
-      });
+      if (mode === 'edit' && defaultValues) {
+        await updateQuestion({ id: defaultValues._id, ...data });
+        toast({ title: 'Questão atualizada com sucesso!' });
+      } else {
+        await createQuestion(data);
+        toast({ title: 'Questão criada com sucesso!' });
+      }
 
+      if (mode === 'create') {
+        form.reset();
+      }
+    } catch {
       toast({
-        title: 'Questão criada com sucesso!',
-        description: 'Questão criada com sucesso!',
-      });
-
-      form.reset();
-    } catch (error) {
-      toast({
-        title: 'Erro ao criar questão!',
-        description: 'Erro ao criar questão!',
+        title: 'Erro ao salvar questão',
+        description: 'Tente novamente mais tarde',
         variant: 'destructive',
       });
-      console.error('Failed to create question:', error);
     }
+  };
+
+  const getButtonText = () => {
+    if (form.formState.isSubmitting) {
+      return mode === 'edit' ? 'Salvando...' : 'Criando...';
+    }
+    return mode === 'edit' ? 'Salvar Alterações' : 'Criar Questão';
   };
 
   return (
@@ -126,7 +137,10 @@ export function QuestionForm() {
             <FormItem>
               <FormLabel>Texto da Questão</FormLabel>
               <FormControl>
-                <RichTextEditor onChange={field.onChange} />
+                <RichTextEditor
+                  onChange={field.onChange}
+                  initialContent={defaultValues?.questionText}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -156,9 +170,11 @@ export function QuestionForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Explicação</FormLabel>
-
               <FormControl>
-                <RichTextEditor onChange={field.onChange} />
+                <RichTextEditor
+                  onChange={field.onChange}
+                  initialContent={defaultValues?.explanationText}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -275,7 +291,7 @@ export function QuestionForm() {
           disabled={form.formState.isSubmitting}
           className="w-full"
         >
-          {form.formState.isSubmitting ? 'Criando...' : 'Criar Questão'}
+          {getButtonText()}
         </Button>
       </form>
     </Form>

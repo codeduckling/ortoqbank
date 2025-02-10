@@ -6,20 +6,10 @@ import { mutation, query } from './_generated/server';
 
 export const create = mutation({
   args: {
-    questionText: v.object({
-      type: v.string(),
-      content: v.array(v.any()),
-    }),
+    questionText: v.object({ type: v.string(), content: v.array(v.any()) }),
     title: v.string(),
-    explanationText: v.object({
-      type: v.string(),
-      content: v.array(v.any()),
-    }),
-    options: v.array(
-      v.object({
-        text: v.string(),
-      }),
-    ),
+    explanationText: v.object({ type: v.string(), content: v.array(v.any()) }),
+    options: v.array(v.object({ text: v.string() })),
     correctOptionIndex: v.number(),
     themeId: v.id('themes'),
     subthemeId: v.optional(v.id('subthemes')),
@@ -75,8 +65,8 @@ export const list = query({
 
 export const getById = query({
   args: { id: v.id('questions') },
-  handler: async (context, args) => {
-    const question = await context.db.get(args.id);
+  handler: async (context, arguments_) => {
+    const question = await context.db.get(arguments_.id);
     if (!question) {
       throw new Error('Question not found');
     }
@@ -87,12 +77,40 @@ export const getById = query({
     // Fetch the subtheme if it exists
     const subtheme = question.subthemeId
       ? await context.db.get(question.subthemeId)
-      : null;
+      : undefined;
 
-    return {
-      ...question,
-      theme,
-      subtheme,
-    };
+    return { ...question, theme, subtheme };
+  },
+});
+
+export const update = mutation({
+  args: {
+    id: v.id('questions'),
+    questionText: v.object({ type: v.string(), content: v.array(v.any()) }),
+    title: v.string(),
+    explanationText: v.object({ type: v.string(), content: v.array(v.any()) }),
+    options: v.array(v.object({ text: v.string() })),
+    correctOptionIndex: v.number(),
+    themeId: v.id('themes'),
+    subthemeId: v.optional(v.id('subthemes')),
+    groupId: v.optional(v.id('groups')),
+    isPublic: v.optional(v.boolean()),
+  },
+  handler: async (context, arguments_) => {
+    const identity = await context.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error('Not authenticated');
+    }
+
+    const question = await context.db.get(arguments_.id);
+    if (!question) {
+      throw new Error('Question not found');
+    }
+
+    const { id, ...updateData } = arguments_;
+    return await context.db.patch(arguments_.id, {
+      ...updateData,
+      normalizedTitle: arguments_.title.trim().toLowerCase(),
+    });
   },
 });

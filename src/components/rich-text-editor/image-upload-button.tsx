@@ -2,12 +2,14 @@
 
 import { Editor } from '@tiptap/react';
 import { ImageIcon } from 'lucide-react';
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
+import type { ImageAttributes } from './rich-text-editor';
 import { uploadToImageKit } from './upload-action';
 
 export function ImageUploadButton({ editor }: { editor: Editor }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleFileSelect = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -15,35 +17,22 @@ export function ImageUploadButton({ editor }: { editor: Editor }) {
       if (!file) return;
 
       try {
-        // Create temporary blob URL for immediate display
-        const blobUrl = URL.createObjectURL(file);
-        editor.chain().focus().setImage({ src: blobUrl }).run();
-
-        // Upload to ImageKit in the background
+        setIsUploading(true);
         const imagekitUrl = await uploadToImageKit(file);
 
-        // Replace blob URL with ImageKit URL
-        const document_ = editor.state.doc;
-        document_.descendants((node, pos) => {
-          if (node.type.name === 'image' && node.attrs.src === blobUrl) {
-            editor
-              .chain()
-              .focus()
-              .setNodeSelection(pos)
-              .updateAttributes('image', { src: imagekitUrl })
-              .run();
-            URL.revokeObjectURL(blobUrl); // Clean up blob URL
-            return false;
-          }
-        });
+        const imageAttributes: ImageAttributes = {
+          src: imagekitUrl,
+          style: 'width: 250px; height: 250px;',
+        };
+
+        editor.chain().focus().setImage(imageAttributes).run();
       } catch (error) {
         console.error('Failed to upload image:', error);
-        // You might want to show an error message to the user here
-      }
-
-      // Reset input
-      if (inputRef.current) {
-        inputRef.current.value = '';
+      } finally {
+        setIsUploading(false);
+        if (inputRef.current) {
+          inputRef.current.value = '';
+        }
       }
     },
     [editor],
@@ -62,8 +51,13 @@ export function ImageUploadButton({ editor }: { editor: Editor }) {
         type="button"
         onClick={() => inputRef.current?.click()}
         className="rounded-md p-2 hover:bg-gray-100"
+        disabled={isUploading}
       >
-        <ImageIcon className="h-5 w-5" />
+        {isUploading ? (
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-violet-500 border-t-transparent" />
+        ) : (
+          <ImageIcon className="h-5 w-5" />
+        )}
       </button>
     </>
   );

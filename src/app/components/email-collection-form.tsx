@@ -27,7 +27,7 @@ export default function EmailCollectionForm() {
       />
       <Button
         type="submit"
-        className="bg-[#2196F3] text-white hover:bg-opacity-90"
+        className="hover:bg-opacity-90 bg-[#2196F3] text-white"
       >
         Cadastre para receber atualizações
       </Button>
