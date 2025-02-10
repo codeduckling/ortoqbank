@@ -32,7 +32,7 @@ export default function Pricing() {
                 </li>
               ))}
             </ul>
-            <Button className="w-full bg-[#2196F3] text-lg font-semibold text-white hover:bg-opacity-90">
+            <Button className="hover:bg-opacity-90 w-full bg-[#2196F3] text-lg font-semibold text-white">
               Começar Agora
             </Button>
           </div>
