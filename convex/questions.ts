@@ -3,6 +3,14 @@ import { v } from 'convex/values';
 
 import { mutation, query } from './_generated/server';
 
+const validateNoBlobs = (content: any[]) => {
+  for (const node of content) {
+    if (node.type === 'image' && node.attrs?.src?.startsWith('blob:')) {
+      throw new Error('Invalid image URL detected');
+    }
+  }
+};
+
 export const create = mutation({
   args: {
     questionText: v.object({ type: v.string(), content: v.array(v.any()) }),
@@ -15,6 +23,10 @@ export const create = mutation({
     groupId: v.optional(v.id('groups')),
   },
   handler: async (context, arguments_) => {
+    // Validate both text fields
+    validateNoBlobs(arguments_.questionText.content);
+    validateNoBlobs(arguments_.explanationText.content);
+
     const identity = await context.auth.getUserIdentity();
     if (!identity) {
       throw new Error('Not authenticated');
@@ -79,5 +91,37 @@ export const getById = query({
       : undefined;
 
     return { ...question, theme, subtheme };
+  },
+});
+
+export const update = mutation({
+  args: {
+    id: v.id('questions'),
+    questionText: v.object({ type: v.string(), content: v.array(v.any()) }),
+    title: v.string(),
+    explanationText: v.object({ type: v.string(), content: v.array(v.any()) }),
+    options: v.array(v.object({ text: v.string() })),
+    correctOptionIndex: v.number(),
+    themeId: v.id('themes'),
+    subthemeId: v.optional(v.id('subthemes')),
+    groupId: v.optional(v.id('groups')),
+    isPublic: v.optional(v.boolean()),
+  },
+  handler: async (context, arguments_) => {
+    const identity = await context.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error('Not authenticated');
+    }
+
+    const question = await context.db.get(arguments_.id);
+    if (!question) {
+      throw new Error('Question not found');
+    }
+
+    const { id, ...updateData } = arguments_;
+    return await context.db.patch(arguments_.id, {
+      ...updateData,
+      normalizedTitle: arguments_.title.trim().toLowerCase(),
+    });
   },
 });
