@@ -116,6 +116,7 @@ export default function TestForm() {
   const SubthemeItem = ({ subtheme }: { subtheme: Subtheme }) => {
     const subthemeGroups = groups?.filter(g => g.subthemeId === subtheme._id);
     const isSelected = selectedSubthemes.includes(subtheme._id);
+    const hasGroups = subthemeGroups && subthemeGroups.length > 0;
 
     return (
       <div className="space-y-1">
@@ -128,16 +129,18 @@ export default function TestForm() {
           <Label htmlFor={subtheme._id} className="flex-1 truncate text-sm">
             {subtheme.name}
           </Label>
-          <button
-            onClick={() => toggleExpandedSubtheme(subtheme._id)}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <Plus className="h-4 w-4" />
-          </button>
+          {hasGroups && (
+            <button
+              onClick={() => toggleExpandedSubtheme(subtheme._id)}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+          )}
         </div>
-        {expandedSubthemes.includes(subtheme._id) && (
+        {hasGroups && expandedSubthemes.includes(subtheme._id) && (
           <div className="space-y-1 pl-6">
-            {subthemeGroups?.map(group => (
+            {subthemeGroups.map(group => (
               <div key={group._id} className="flex items-center gap-2">
                 <Checkbox
                   id={group._id}
@@ -258,18 +261,29 @@ export default function TestForm() {
             </div>
           </div>
 
-          {/* Subtemas */}
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium">Subtemas</h3>
-            <div className="xs:grid-cols-2 grid grid-cols-1 gap-4">
-              {Object.entries(themeSubthemes ?? {}).map(
-                ([themeId, subthemes]) =>
-                  subthemes.map(subtheme => (
-                    <SubthemeItem key={subtheme._id} subtheme={subtheme} />
-                  )),
-              )}
+          {/* Only show Subtemas if themes are selected */}
+          {selectedThemes.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium">Subtemas</h3>
+              {selectedThemes.map(themeId => {
+                const theme = themes?.find(t => t._id === themeId);
+                const themeSubthemesList = themeSubthemes?.[themeId] ?? [];
+
+                return (
+                  <div key={themeId} className="space-y-2">
+                    <h4 className="text-muted-foreground text-sm font-medium">
+                      {theme?.name}
+                    </h4>
+                    <div className="xs:grid-cols-2 grid grid-cols-1 gap-4">
+                      {themeSubthemesList.map(subtheme => (
+                        <SubthemeItem key={subtheme._id} subtheme={subtheme} />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          </div>
+          )}
 
           {errors.selectedThemes && (
             <p className="text-destructive text-sm">
