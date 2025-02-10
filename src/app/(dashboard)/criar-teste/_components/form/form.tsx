@@ -11,6 +11,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 import { api } from '../../../../../../convex/_generated/api';
 import { type TestFormData, testFormSchema } from '../schema';
@@ -166,7 +167,7 @@ export default function TestForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <Card className="mx-auto w-full max-w-3xl">
+      <Card>
         <CardContent className="space-y-12 p-4 sm:space-y-14 sm:p-6">
           {/* Avaliação */}
           <div className="space-y-2">
@@ -174,25 +175,20 @@ export default function TestForm() {
               <h3 className="text-sm font-medium">Avaliação</h3>
               <InfoCircle className="text-muted-foreground h-4 w-4" />
             </div>
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Switch
-                  checked={testMode === 'simulado'}
-                  onCheckedChange={() =>
-                    setValue('testMode', 'simulado', { shouldValidate: true })
-                  }
-                />
-                <Label className="text-sm">Simulado</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <Switch
-                  checked={testMode === 'estudo'}
-                  onCheckedChange={() =>
-                    setValue('testMode', 'estudo', { shouldValidate: true })
-                  }
-                />
-                <Label className="text-sm">Estudo</Label>
-              </div>
+            <div className="flex items-start">
+              <Tabs
+                value={testMode}
+                onValueChange={value =>
+                  setValue('testMode', value as 'simulado' | 'estudo', {
+                    shouldValidate: true,
+                  })
+                }
+              >
+                <TabsList className="grid grid-cols-2">
+                  <TabsTrigger value="simulado">Simulado</TabsTrigger>
+                  <TabsTrigger value="estudo">Estudo</TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
           </div>
 
