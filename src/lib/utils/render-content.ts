@@ -1,11 +1,25 @@
 import { type JSONContent } from '@tiptap/react';
 
+const renderMarks = (text: string, marks?: any[]) => {
+  if (!marks) return text;
+
+  return marks.reduce((markedText, mark) => {
+    if (mark.type === 'bold') {
+      return `<strong>${markedText}</strong>`;
+    }
+    if (mark.type === 'textStyle' && mark.attrs?.color) {
+      return `<span style="color: ${mark.attrs.color}">${markedText}</span>`;
+    }
+    return markedText;
+  }, text);
+};
+
 export function renderContent(content: JSONContent) {
   if (!content) return '';
 
   const renderNode = (node: JSONContent): string => {
     if (node.type === 'text' && typeof node.text === 'string') {
-      return node.text;
+      return renderMarks(node.text, node.marks);
     }
 
     if (node.type === 'paragraph') {
