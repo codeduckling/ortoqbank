@@ -32,18 +32,8 @@ export default function RichTextEditor({
   initialContent,
 }: TextEditorProps) {
   const editor = useEditor({
-    extensions: [
-      StarterKitExtension,
-      UnderlineExtension,
-      ExtendedImage,
-      ResizeImage,
-      Color,
-      TextStyle,
-    ],
-    content: initialContent || {
-      type: 'doc',
-      content: [{ type: 'paragraph', content: [{ type: 'text', text: '' }] }],
-    },
+    extensions: [StarterKit, Underline, Image, ResizeImage, Color, TextStyle],
+    content: initialContent,
     onUpdate: ({ editor }) => {
       onChange(editor.getJSON());
     },

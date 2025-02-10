@@ -1,4 +1,9 @@
-import { FileTextIcon, type LucideIcon, PenSquareIcon } from 'lucide-react';
+import {
+  BookOpenIcon,
+  FileTextIcon,
+  type LucideIcon,
+  PenSquareIcon,
+} from 'lucide-react';
 import Link from 'next/link';
 
 import {
@@ -16,16 +21,9 @@ interface MenuItem {
 }
 
 const items: MenuItem[] = [
-  {
-    title: 'Simulados',
-    url: '/simulados',
-    icon: FileTextIcon,
-  },
-  {
-    title: 'Criar Teste',
-    url: '/criar-teste',
-    icon: PenSquareIcon,
-  },
+  { title: 'Temas', url: '/temas', icon: BookOpenIcon },
+
+  { title: 'Simulados', url: '/simulados', icon: FileTextIcon },
 ];
 
 export default function NavSecondary() {

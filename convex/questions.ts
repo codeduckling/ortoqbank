@@ -1,7 +1,6 @@
 import { paginationOptsValidator } from 'convex/server';
 import { v } from 'convex/values';
 
-import { Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
 
 const validateNoBlobs = (content: any[]) => {

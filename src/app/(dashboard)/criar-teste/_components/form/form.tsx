@@ -11,26 +11,16 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 import { api } from '../../../../../../convex/_generated/api';
 import { type TestFormData, testFormSchema } from '../schema';
 
-type Theme = {
-  _id: string;
-  name: string;
-};
+type Theme = { _id: string; name: string };
 
-type Subtheme = {
-  _id: string;
-  name: string;
-  themeId: string;
-};
+type Subtheme = { _id: string; name: string; themeId: string };
 
-type Group = {
-  _id: string;
-  name: string;
-  subthemeId: string;
-};
+type Group = { _id: string; name: string; subthemeId: string };
 
 export default function TestForm() {
   const [expandedSubthemes, setExpandedSubthemes] = useState<string[]>([]);
@@ -126,6 +116,7 @@ export default function TestForm() {
   const SubthemeItem = ({ subtheme }: { subtheme: Subtheme }) => {
     const subthemeGroups = groups?.filter(g => g.subthemeId === subtheme._id);
     const isSelected = selectedSubthemes.includes(subtheme._id);
+    const hasGroups = subthemeGroups && subthemeGroups.length > 0;
 
     return (
       <div className="space-y-1">
@@ -138,16 +129,18 @@ export default function TestForm() {
           <Label htmlFor={subtheme._id} className="flex-1 truncate text-sm">
             {subtheme.name}
           </Label>
-          <button
-            onClick={() => toggleExpandedSubtheme(subtheme._id)}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <Plus className="h-4 w-4" />
-          </button>
+          {hasGroups && (
+            <button
+              onClick={() => toggleExpandedSubtheme(subtheme._id)}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+          )}
         </div>
-        {expandedSubthemes.includes(subtheme._id) && (
+        {hasGroups && expandedSubthemes.includes(subtheme._id) && (
           <div className="space-y-1 pl-6">
-            {subthemeGroups?.map(group => (
+            {subthemeGroups.map(group => (
               <div key={group._id} className="flex items-center gap-2">
                 <Checkbox
                   id={group._id}
@@ -177,7 +170,7 @@ export default function TestForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <Card className="mx-auto w-full max-w-3xl">
+      <Card>
         <CardContent className="space-y-12 p-4 sm:space-y-14 sm:p-6">
           {/* Avaliação */}
           <div className="space-y-2">
@@ -185,25 +178,20 @@ export default function TestForm() {
               <h3 className="text-sm font-medium">Avaliação</h3>
               <InfoCircle className="text-muted-foreground h-4 w-4" />
             </div>
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Switch
-                  checked={testMode === 'simulado'}
-                  onCheckedChange={() =>
-                    setValue('testMode', 'simulado', { shouldValidate: true })
-                  }
-                />
-                <Label className="text-sm">Simulado</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <Switch
-                  checked={testMode === 'estudo'}
-                  onCheckedChange={() =>
-                    setValue('testMode', 'estudo', { shouldValidate: true })
-                  }
-                />
-                <Label className="text-sm">Estudo</Label>
-              </div>
+            <div className="flex items-start">
+              <Tabs
+                value={testMode}
+                onValueChange={value =>
+                  setValue('testMode', value as 'simulado' | 'estudo', {
+                    shouldValidate: true,
+                  })
+                }
+              >
+                <TabsList className="grid grid-cols-2">
+                  <TabsTrigger value="simulado">Simulado</TabsTrigger>
+                  <TabsTrigger value="estudo">Estudo</TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
           </div>
 
@@ -273,18 +261,29 @@ export default function TestForm() {
             </div>
           </div>
 
-          {/* Subtemas */}
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium">Subtemas</h3>
-            <div className="xs:grid-cols-2 grid grid-cols-1 gap-4">
-              {Object.entries(themeSubthemes ?? {}).map(
-                ([themeId, subthemes]) =>
-                  subthemes.map(subtheme => (
-                    <SubthemeItem key={subtheme._id} subtheme={subtheme} />
-                  )),
-              )}
+          {/* Only show Subtemas if themes are selected */}
+          {selectedThemes.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium">Subtemas</h3>
+              {selectedThemes.map(themeId => {
+                const theme = themes?.find(t => t._id === themeId);
+                const themeSubthemesList = themeSubthemes?.[themeId] ?? [];
+
+                return (
+                  <div key={themeId} className="space-y-2">
+                    <h4 className="text-muted-foreground text-sm font-medium">
+                      {theme?.name}
+                    </h4>
+                    <div className="xs:grid-cols-2 grid grid-cols-1 gap-4">
+                      {themeSubthemesList.map(subtheme => (
+                        <SubthemeItem key={subtheme._id} subtheme={subtheme} />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          </div>
+          )}
 
           {errors.selectedThemes && (
             <p className="text-destructive text-sm">
