@@ -59,7 +59,6 @@ export default function GerenciarQuestoes() {
             <TableRow>
               <TableHead>Título</TableHead>
               <TableHead>Tema</TableHead>
-              <TableHead>Status</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
@@ -70,9 +69,7 @@ export default function GerenciarQuestoes() {
                 <TableCell>
                   {question.theme?.name ?? 'Tema não encontrado'}
                 </TableCell>
-                <TableCell>
-                  {question.isPublic ? 'Publicada' : 'Rascunho'}
-                </TableCell>
+
                 <TableCell className="space-x-2 text-right">
                   <Button
                     variant="ghost"
@@ -80,9 +77,6 @@ export default function GerenciarQuestoes() {
                     onClick={() => handleView(question._id)}
                   >
                     Visualizar
-                  </Button>
-                  <Button variant="ghost" size="sm">
-                    Editar
                   </Button>
                 </TableCell>
               </TableRow>
