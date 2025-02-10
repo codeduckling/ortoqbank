@@ -65,7 +65,7 @@ export default function ThemesPage() {
                 </div>
               </AccordionTrigger>
               <AccordionContent>
-                <div className="ml-8 mt-2 space-y-2">
+                <div className="mt-2 ml-8 space-y-2">
                   {themeSubthemes?.map(subtheme => (
                     <Link
                       key={subtheme._id}

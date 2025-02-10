@@ -5,7 +5,9 @@ import { useMutation, useQuery } from 'convex/react';
 import { useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 
+import { pendingUploads } from '@/components/rich-text-editor/image-upload-button';
 import RichTextEditor from '@/components/rich-text-editor/rich-text-editor';
+import { uploadToImageKit } from '@/components/rich-text-editor/upload-action';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -31,17 +33,36 @@ import { Id } from '../../../../../../convex/_generated/dataModel';
 import { QuestionOption } from './question-option';
 import { QuestionFormData, questionSchema } from './schema';
 
-export function QuestionForm() {
+interface QuestionFormProps {
+  mode?: 'create' | 'edit';
+  defaultValues?: any; // We'll type this properly later
+}
+
+const hasBlobUrls = (content: any[]): boolean => {
+  for (const node of content) {
+    if (node.type === 'image' && node.attrs?.src?.startsWith('blob:')) {
+      return true;
+    }
+  }
+  return false;
+};
+
+export function QuestionForm({
+  mode = 'create',
+  defaultValues,
+}: QuestionFormProps) {
   const { toast } = useToast();
 
   const createQuestion = useMutation(api.questions.create);
+  const updateQuestion = useMutation(api.questions.update);
   const themes = useQuery(api.themes.list);
-  const [selectedTheme, setSelectedTheme] = useState<
-    Id<'themes'> | undefined
-  >();
+
+  const [selectedTheme, setSelectedTheme] = useState<Id<'themes'> | undefined>(
+    defaultValues?.themeId,
+  );
   const [selectedSubtheme, setSelectedSubtheme] = useState<
     Id<'subthemes'> | undefined
-  >();
+  >(defaultValues?.subthemeId);
 
   const subthemes = useQuery(
     api.subthemes.list,
@@ -54,7 +75,7 @@ export function QuestionForm() {
 
   const form = useForm<QuestionFormData>({
     resolver: zodResolver(questionSchema),
-    defaultValues: {
+    defaultValues: defaultValues || {
       title: '',
       questionText: {
         type: 'paragraph',
@@ -72,34 +93,93 @@ export function QuestionForm() {
     },
   });
 
-  const { fields } = useFieldArray({
-    name: 'options',
-    control: form.control,
-  });
+  const { fields } = useFieldArray({ name: 'options', control: form.control });
 
   const onSubmit = async (data: QuestionFormData) => {
     try {
-      const questionId = await createQuestion({
+      // Process both questionText and explanationText
+      const processContent = async (content: any[]) => {
+        const promises = content.map(async (node, index) => {
+          if (node.type === 'image' && node.attrs?.src?.startsWith('blob:')) {
+            const blobUrl = node.attrs.src;
+            const pendingUpload = pendingUploads.get(blobUrl);
+
+            if (pendingUpload) {
+              try {
+                const imagekitUrl = await uploadToImageKit(pendingUpload.file);
+                // Clean up
+                URL.revokeObjectURL(blobUrl);
+                pendingUploads.delete(blobUrl);
+
+                return { ...node, attrs: { ...node.attrs, src: imagekitUrl } };
+              } catch (error) {
+                console.error('Failed to upload image:', error);
+                return node; // Keep original node if upload fails
+              }
+            }
+          }
+          return node;
+        });
+
+        return await Promise.all(promises);
+      };
+
+      // Process both text fields
+      const [updatedQuestionContent, updatedExplanationContent] =
+        await Promise.all([
+          processContent(data.questionText.content),
+          processContent(data.explanationText.content),
+        ]);
+
+      const updatedData = {
         ...data,
-        options: data.options.map(o => ({
-          text: o.text,
-        })),
-      });
+        questionText: { ...data.questionText, content: updatedQuestionContent },
+        explanationText: {
+          ...data.explanationText,
+          content: updatedExplanationContent,
+        },
+      };
 
-      toast({
-        title: 'Questão criada com sucesso!',
-        description: 'Questão criada com sucesso!',
-      });
+      // Check for any remaining blob URLs after processing
+      if (
+        hasBlobUrls(updatedData.questionText.content) ||
+        hasBlobUrls(updatedData.explanationText.content)
+      ) {
+        toast({
+          title: 'Erro ao salvar questão',
+          description: 'Algumas imagens não foram processadas corretamente',
+          variant: 'destructive',
+        });
+        return;
+      }
 
-      form.reset();
+      // Now submit with real URLs
+      if (mode === 'edit' && defaultValues) {
+        await updateQuestion({ id: defaultValues._id, ...updatedData });
+        toast({ title: 'Questão atualizada com sucesso!' });
+      } else {
+        await createQuestion(updatedData);
+        toast({ title: 'Questão criada com sucesso!' });
+      }
+
+      if (mode === 'create') {
+        form.reset();
+      }
     } catch (error) {
+      console.error('Failed to submit:', error);
       toast({
-        title: 'Erro ao criar questão!',
-        description: 'Erro ao criar questão!',
+        title: 'Erro ao salvar questão',
+        description: 'Tente novamente mais tarde',
         variant: 'destructive',
       });
-      console.error('Failed to create question:', error);
     }
+  };
+
+  const getButtonText = () => {
+    if (form.formState.isSubmitting) {
+      return mode === 'edit' ? 'Salvando...' : 'Criando...';
+    }
+    return mode === 'edit' ? 'Salvar Alterações' : 'Criar Questão';
   };
 
   return (
@@ -126,7 +206,10 @@ export function QuestionForm() {
             <FormItem>
               <FormLabel>Texto da Questão</FormLabel>
               <FormControl>
-                <RichTextEditor onChange={field.onChange} />
+                <RichTextEditor
+                  onChange={field.onChange}
+                  initialContent={defaultValues?.questionText}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -156,9 +239,11 @@ export function QuestionForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Explicação</FormLabel>
-
               <FormControl>
-                <RichTextEditor onChange={field.onChange} />
+                <RichTextEditor
+                  onChange={field.onChange}
+                  initialContent={defaultValues?.explanationText}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -275,7 +360,7 @@ export function QuestionForm() {
           disabled={form.formState.isSubmitting}
           className="w-full"
         >
-          {form.formState.isSubmitting ? 'Criando...' : 'Criar Questão'}
+          {getButtonText()}
         </Button>
       </form>
     </Form>
