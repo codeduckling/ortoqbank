@@ -5,7 +5,9 @@ import { useMutation, useQuery } from 'convex/react';
 import { useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 
+import { pendingUploads } from '@/components/rich-text-editor/image-upload-button';
 import RichTextEditor from '@/components/rich-text-editor/rich-text-editor';
+import { uploadToImageKit } from '@/components/rich-text-editor/upload-action';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -35,6 +37,15 @@ interface QuestionFormProps {
   mode?: 'create' | 'edit';
   defaultValues?: any; // We'll type this properly later
 }
+
+const hasBlobUrls = (content: any[]): boolean => {
+  for (const node of content) {
+    if (node.type === 'image' && node.attrs?.src?.startsWith('blob:')) {
+      return true;
+    }
+  }
+  return false;
+};
 
 export function QuestionForm({
   mode = 'create',
@@ -86,18 +97,76 @@ export function QuestionForm({
 
   const onSubmit = async (data: QuestionFormData) => {
     try {
+      // Process both questionText and explanationText
+      const processContent = async (content: any[]) => {
+        const promises = content.map(async (node, index) => {
+          if (node.type === 'image' && node.attrs?.src?.startsWith('blob:')) {
+            const blobUrl = node.attrs.src;
+            const pendingUpload = pendingUploads.get(blobUrl);
+
+            if (pendingUpload) {
+              try {
+                const imagekitUrl = await uploadToImageKit(pendingUpload.file);
+                // Clean up
+                URL.revokeObjectURL(blobUrl);
+                pendingUploads.delete(blobUrl);
+
+                return { ...node, attrs: { ...node.attrs, src: imagekitUrl } };
+              } catch (error) {
+                console.error('Failed to upload image:', error);
+                return node; // Keep original node if upload fails
+              }
+            }
+          }
+          return node;
+        });
+
+        return await Promise.all(promises);
+      };
+
+      // Process both text fields
+      const [updatedQuestionContent, updatedExplanationContent] =
+        await Promise.all([
+          processContent(data.questionText.content),
+          processContent(data.explanationText.content),
+        ]);
+
+      const updatedData = {
+        ...data,
+        questionText: { ...data.questionText, content: updatedQuestionContent },
+        explanationText: {
+          ...data.explanationText,
+          content: updatedExplanationContent,
+        },
+      };
+
+      // Check for any remaining blob URLs after processing
+      if (
+        hasBlobUrls(updatedData.questionText.content) ||
+        hasBlobUrls(updatedData.explanationText.content)
+      ) {
+        toast({
+          title: 'Erro ao salvar questão',
+          description: 'Algumas imagens não foram processadas corretamente',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Now submit with real URLs
       if (mode === 'edit' && defaultValues) {
-        await updateQuestion({ id: defaultValues._id, ...data });
+        await updateQuestion({ id: defaultValues._id, ...updatedData });
         toast({ title: 'Questão atualizada com sucesso!' });
       } else {
-        await createQuestion(data);
+        await createQuestion(updatedData);
         toast({ title: 'Questão criada com sucesso!' });
       }
 
       if (mode === 'create') {
         form.reset();
       }
-    } catch {
+    } catch (error) {
+      console.error('Failed to submit:', error);
       toast({
         title: 'Erro ao salvar questão',
         description: 'Tente novamente mais tarde',

@@ -4,6 +4,14 @@ import { v } from 'convex/values';
 import { Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
 
+const validateNoBlobs = (content: any[]) => {
+  for (const node of content) {
+    if (node.type === 'image' && node.attrs?.src?.startsWith('blob:')) {
+      throw new Error('Invalid image URL detected');
+    }
+  }
+};
+
 export const create = mutation({
   args: {
     questionText: v.object({ type: v.string(), content: v.array(v.any()) }),
@@ -16,6 +24,10 @@ export const create = mutation({
     groupId: v.optional(v.id('groups')),
   },
   handler: async (context, arguments_) => {
+    // Validate both text fields
+    validateNoBlobs(arguments_.questionText.content);
+    validateNoBlobs(arguments_.explanationText.content);
+
     const identity = await context.auth.getUserIdentity();
     if (!identity) {
       throw new Error('Not authenticated');

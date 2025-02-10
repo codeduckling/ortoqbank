@@ -5,11 +5,19 @@ import { ImageIcon } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 
 import type { ImageAttributes } from './rich-text-editor';
-import { uploadToImageKit } from './upload-action';
+
+// Keep track of temporary images
+interface PendingUpload {
+  file: File;
+  blobUrl: string;
+}
+
+// Use a Map to store pending uploads globally
+export const pendingUploads = new Map<string, PendingUpload>();
 
 export function ImageUploadButton({ editor }: { editor: Editor }) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [isUploading, setIsUploading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleFileSelect = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -17,19 +25,25 @@ export function ImageUploadButton({ editor }: { editor: Editor }) {
       if (!file) return;
 
       try {
-        setIsUploading(true);
-        const imagekitUrl = await uploadToImageKit(file);
+        setIsLoading(true);
 
+        // Create temporary blob URL
+        const blobUrl = URL.createObjectURL(file);
+
+        // Store file and blobUrl for later upload
+        pendingUploads.set(blobUrl, { file, blobUrl });
+
+        // Insert blob URL into editor
         const imageAttributes: ImageAttributes = {
-          src: imagekitUrl,
+          src: blobUrl,
           style: 'width: 250px; height: 250px;',
         };
 
         editor.chain().focus().setImage(imageAttributes).run();
       } catch (error) {
-        console.error('Failed to upload image:', error);
+        console.error('Failed to handle image:', error);
       } finally {
-        setIsUploading(false);
+        setIsLoading(false);
         if (inputRef.current) {
           inputRef.current.value = '';
         }
@@ -51,9 +65,9 @@ export function ImageUploadButton({ editor }: { editor: Editor }) {
         type="button"
         onClick={() => inputRef.current?.click()}
         className="rounded-md p-2 hover:bg-gray-100"
-        disabled={isUploading}
+        disabled={isLoading}
       >
-        {isUploading ? (
+        {isLoading ? (
           <div className="h-5 w-5 animate-spin rounded-full border-2 border-violet-500 border-t-transparent" />
         ) : (
           <ImageIcon className="h-5 w-5" />
