@@ -5,11 +5,9 @@
 import { Editor } from '@tiptap/react';
 import {
   BoldIcon,
-  ImageIcon,
   ItalicIcon,
   ListIcon,
   ListOrderedIcon,
-  PaletteIcon,
   RedoIcon,
   StrikethroughIcon,
   UnderlineIcon,
