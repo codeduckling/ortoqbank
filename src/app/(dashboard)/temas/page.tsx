@@ -39,8 +39,19 @@ const THEME_ICONS: Record<
 };
 
 export default function ThemesPage() {
-  const themes = useQuery(api.themes.list);
-  const subthemesByTheme = useQuery(api.subthemes.listByThemes);
+  const themes = useQuery(api.themes.list) || [];
+  const presetExams = useQuery(api.presetExams.list) || [];
+
+  // Group exams by theme
+  const examsByTheme = themes.reduce(
+    (accumulator, theme) => {
+      accumulator[theme._id] = presetExams.filter(
+        exam => exam.themeId === theme._id,
+      );
+      return accumulator;
+    },
+    {} as Record<string, typeof presetExams>,
+  );
 
   if (!themes) {
     return <div>Loading...</div>;
@@ -52,9 +63,7 @@ export default function ThemesPage() {
       <Accordion type="single" collapsible className="space-y-4">
         {themes?.map(theme => {
           const Icon = THEME_ICONS[theme.name] || Dna;
-          const themeSubthemes = subthemesByTheme?.filter(
-            s => s.themeId === theme._id,
-          );
+          const themeExams = examsByTheme[theme._id] || [];
 
           return (
             <AccordionItem key={theme._id} value={theme._id}>
@@ -62,19 +71,35 @@ export default function ThemesPage() {
                 <div className="flex items-center gap-3">
                   <Icon className="h-5 w-5" />
                   <span>{theme.name}</span>
+                  <span className="text-muted-foreground text-sm">
+                    ({themeExams.length} testes)
+                  </span>
                 </div>
               </AccordionTrigger>
               <AccordionContent>
                 <div className="mt-2 ml-8 space-y-2">
-                  {themeSubthemes?.map(subtheme => (
+                  {themeExams.map(exam => (
                     <Link
-                      key={subtheme._id}
-                      href={`/temas/${theme._id}`}
+                      key={exam._id}
+                      href={`/temas/${exam._id}`}
                       className="block rounded-lg border p-3 text-sm hover:bg-gray-50"
                     >
-                      {subtheme.name}
+                      <div className="flex flex-col gap-1">
+                        <span className="font-medium">{exam.name}</span>
+                        <span className="text-muted-foreground">
+                          {exam.description}
+                        </span>
+                        <span className="text-muted-foreground text-xs">
+                          {exam.questions.length} questões
+                        </span>
+                      </div>
                     </Link>
                   ))}
+                  {themeExams.length === 0 && (
+                    <div className="text-muted-foreground text-sm">
+                      Nenhum teste disponível para este tema
+                    </div>
+                  )}
                 </div>
               </AccordionContent>
             </AccordionItem>

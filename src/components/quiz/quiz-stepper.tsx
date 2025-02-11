@@ -6,10 +6,10 @@ import { cn } from '@/lib/utils';
 export type QuestionStatus = 'correct' | 'incorrect' | 'unanswered';
 
 const STEPPER_CONFIG = {
-  VISIBLE_BEFORE: 1, // Steps visible before current step
-  VISIBLE_AFTER: 7, // Steps visible after current step
-  JUMP_SIZE: 15, // Number of steps to jump with arrows
-  ARROW_THRESHOLD: 8, // When to show arrows
+  VISIBLE_BEFORE: 3, // Steps visible before current step
+  VISIBLE_AFTER: 3, // Steps visible after current step
+  JUMP_SIZE: 1, // Number of steps to jump with arrows
+  ARROW_THRESHOLD: 1, // When to show arrows
 } as const;
 
 interface QuizStepperProps {

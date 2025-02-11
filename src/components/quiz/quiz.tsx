@@ -26,16 +26,21 @@ interface ExamQuestion {
 }
 
 interface QuizContentProps {
-  questions: ExamQuestion[];
+  questions: (ExamQuestion | null)[];
   name: string;
 }
 
-export function QuizContent({ questions, name }: QuizContentProps) {
+export function QuizContent({
+  questions: rawQuestions,
+  name,
+}: QuizContentProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Map<number, number>>(new Map());
   const [showExplanation, setShowExplanation] = useState(false);
   const [answeredQuestions, setAnsweredQuestions] = useState<number[]>([]);
   const [bookmarkedQuestions, setBookmarkedQuestions] = useState<string[]>([]);
+
+  const questions = rawQuestions.filter((q): q is ExamQuestion => q !== null);
 
   if (questions.length === 0) {
     return (
@@ -99,10 +104,22 @@ export function QuizContent({ questions, name }: QuizContentProps) {
         <CardContent className="p-6">
           <div className="mb-4 space-y-4">
             <div className="flex justify-between">
-              <span className="text-sm text-gray-600">
-                Questão {currentQuestionIndex + 1} de {questions.length}
-              </span>
+              <QuizStepper
+                steps={Array.from(
+                  { length: questions.length },
+                  (_, index) => index + 1,
+                )}
+                currentStep={currentQuestionIndex + 1}
+                onStepClick={step => setCurrentQuestionIndex(step - 1)}
+                getQuestionStatus={step => getQuestionStatus(step - 1)}
+              />
               <div className="flex items-center gap-4">
+                <span className="text-sm text-gray-600">
+                  {Math.round(
+                    (answeredQuestions.length / questions.length) * 100,
+                  )}
+                  % Completo
+                </span>
                 <button
                   onClick={toggleBookmark}
                   className="text-gray-500 hover:text-gray-700"
@@ -113,34 +130,21 @@ export function QuizContent({ questions, name }: QuizContentProps) {
                   }
                 >
                   <Bookmark
-                    className={`h-5 w-5 ${
+                    className={`h-8 w-8 ${
                       bookmarkedQuestions.includes(currentQuestion._id)
-                        ? 'fill-current'
+                        ? 'fill-red-500 text-red-500'
                         : 'fill-none'
                     }`}
                   />
                 </button>
-                <span className="text-sm text-gray-600">
-                  {Math.round(
-                    (answeredQuestions.length / questions.length) * 100,
-                  )}
-                  % Completo
-                </span>
               </div>
             </div>
-
-            <QuizStepper
-              steps={Array.from({ length: 120 }, (_, index) => index + 1)}
-              currentStep={currentQuestionIndex + 1}
-              onStepClick={step => setCurrentQuestionIndex(step - 1)}
-              getQuestionStatus={step => getQuestionStatus(step - 1)}
-            />
           </div>
 
           <div className="mb-6">
-            <h3 className="mb-2 text-xl font-medium">
-              {currentQuestion.title}
-            </h3>
+            <span className="text-sm text-gray-600">
+              Questão {currentQuestionIndex + 1} de {questions.length}
+            </span>
             <div
               className="prose max-w-none text-gray-600"
               dangerouslySetInnerHTML={{

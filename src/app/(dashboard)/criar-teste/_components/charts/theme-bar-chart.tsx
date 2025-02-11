@@ -38,7 +38,7 @@ const chartData = [
 
 const chartConfig = {
   percentage: {
-    label: 'percentage',
+    label: 'porcentagem',
     color: 'hsl(var(--chart-1))',
   },
   label: {
