@@ -1,5 +1,12 @@
+'use client';
+
+import { useQuery } from 'convex/react';
+import { use } from 'react';
+
+import { QuizContent } from '@/components/quiz/quiz';
+
+import { api } from '../../../../../convex/_generated/api';
 import { Id } from '../../../../../convex/_generated/dataModel';
-import { QuizContent } from './quiz';
 
 interface PageProps {
   params: Promise<{
@@ -7,7 +14,19 @@ interface PageProps {
   }>;
 }
 
-export default async function QuizPage({ params }: PageProps) {
-  const { id } = await params;
-  return <QuizContent examId={id as Id<'presetExams'>} />;
+export default function QuizPage({ params }: PageProps) {
+  const resolvedParams = use(params);
+  const exam = useQuery(api.exams.getById, {
+    id: resolvedParams.id as Id<'presetExams'>,
+  });
+
+  if (!exam) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <div className="text-lg text-gray-600">Loading...</div>
+      </div>
+    );
+  }
+
+  return <QuizContent questions={exam.questions} name={exam.name} />;
 }
