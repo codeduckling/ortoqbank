@@ -172,10 +172,10 @@ export default function TestForm() {
     <form onSubmit={handleSubmit(onSubmit)}>
       <Card>
         <CardContent className="space-y-12 p-4 sm:space-y-14 sm:p-6">
-          {/* Avaliação */}
+          {/* Modo */}
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-sm font-medium">Avaliação</h3>
+              <h3 className="text-sm font-medium">Modo</h3>
               <InfoCircle className="text-muted-foreground h-4 w-4" />
             </div>
             <div className="flex items-start">
@@ -195,23 +195,22 @@ export default function TestForm() {
             </div>
           </div>
 
-          {/* Modo */}
+          {/* Questões */}
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-sm font-medium">Modo</h3>
+              <h3 className="text-sm font-medium">Questões</h3>
               <InfoCircle className="text-muted-foreground h-4 w-4" />
             </div>
             <div
               className="flex flex-wrap gap-4"
               role="group"
-              aria-label="Question modes"
+              aria-label="Questões"
             >
               {[
-                { id: 'unused', label: 'Unused', count: 3896 },
-                { id: 'incorrect', label: 'Incorrect', count: 30 },
-                { id: 'marked', label: 'Marked', count: 3 },
-                { id: 'all', label: 'All', count: 3928 },
-                { id: 'custom', label: 'Custom' },
+                { id: 'all', label: 'Todas', count: 3896 },
+                { id: 'unanswered', label: 'Não respondidas', count: 30 },
+                { id: 'incorrect', label: 'Incorretas', count: 3 },
+                { id: 'bookmarked', label: 'Marcadas', count: 3 },
               ].map(({ id, label, count }) => (
                 <div key={id} className="flex items-center gap-2">
                   <Checkbox

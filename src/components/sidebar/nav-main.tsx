@@ -1,4 +1,10 @@
-import { HeadsetIcon, type LucideIcon, UserCircleIcon } from 'lucide-react';
+import {
+  BookOpenIcon,
+  FileTextIcon,
+  HeadsetIcon,
+  type LucideIcon,
+  UserCircleIcon,
+} from 'lucide-react';
 import Link from 'next/link';
 
 import {
@@ -16,7 +22,9 @@ interface MenuItem {
 
 const items: MenuItem[] = [
   { title: 'Meu Perfil', url: '/perfil', icon: UserCircleIcon },
-  { title: 'Suporte', url: '/suporte', icon: HeadsetIcon },
+  { title: 'Trilhas', url: '/temas', icon: BookOpenIcon },
+
+  { title: 'Simulados', url: '/simulados', icon: FileTextIcon },
 ];
 
 export default function NavMain() {

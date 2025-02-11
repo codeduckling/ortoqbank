@@ -24,9 +24,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <NavMain />
         <NavSecondary />
-        <NavThird />
       </SidebarContent>
       <SidebarFooter>
+        <NavThird />
+
         <NavAdmin />
         <NavUser />
       </SidebarFooter>
