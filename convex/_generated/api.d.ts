@@ -16,6 +16,7 @@ import type {
 import type * as exams from "../exams.js";
 import type * as groups from "../groups.js";
 import type * as http from "../http.js";
+import type * as presetExams from "../presetExams.js";
 import type * as questions from "../questions.js";
 import type * as subthemes from "../subthemes.js";
 import type * as tags from "../tags.js";
@@ -34,6 +35,7 @@ declare const fullApi: ApiFromModules<{
   exams: typeof exams;
   groups: typeof groups;
   http: typeof http;
+  presetExams: typeof presetExams;
   questions: typeof questions;
   subthemes: typeof subthemes;
   tags: typeof tags;

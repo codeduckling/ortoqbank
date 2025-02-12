@@ -125,3 +125,9 @@ export const update = mutation({
     });
   },
 });
+
+export const listAll = query({
+  handler: async context => {
+    return await context.db.query('questions').collect();
+  },
+});

@@ -3,6 +3,7 @@ import {
   FileClockIcon,
   FileTextIcon,
   HeadsetIcon,
+  LogOutIcon,
   type LucideIcon,
   PenSquareIcon,
   UserCircleIcon,
@@ -25,8 +26,8 @@ interface MenuItem {
 }
 
 const items: MenuItem[] = [
-  { title: 'Criar Teste', url: '/criar-teste', icon: PenSquareIcon },
-  { title: 'Testes Prévios', url: '/testes-previos', icon: FileClockIcon },
+  { title: 'Suporte', url: '/', icon: HeadsetIcon },
+  { title: 'Logout', url: '/', icon: LogOutIcon },
 ];
 
 export default function NavThird() {

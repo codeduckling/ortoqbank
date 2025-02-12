@@ -1,19 +1,8 @@
-import {
-  BadgePlusIcon,
-  BookOpenIcon,
-  FileClockIcon,
-  FileTextIcon,
-  HeadsetIcon,
-  type LucideIcon,
-  PenSquareIcon,
-  SettingsIcon,
-  UserCircleIcon,
-} from 'lucide-react';
+import { BadgePlusIcon, type LucideIcon, SettingsIcon } from 'lucide-react';
 import Link from 'next/link';
 
 import {
   SidebarGroup,
-  SidebarGroupContent,
   SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
@@ -40,6 +29,11 @@ const items: MenuItem[] = [
   {
     title: 'Gerenciar Temas',
     url: '/gerenciar-temas',
+    icon: SettingsIcon,
+  },
+  {
+    title: 'Gerenciar Trilhas',
+    url: '/gerenciar-trilhas',
     icon: SettingsIcon,
   },
 ];

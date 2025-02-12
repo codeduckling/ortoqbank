@@ -1,9 +1,4 @@
-import {
-  BookOpenIcon,
-  FileTextIcon,
-  type LucideIcon,
-  PenSquareIcon,
-} from 'lucide-react';
+import { FileClockIcon, type LucideIcon, PenSquareIcon } from 'lucide-react';
 import Link from 'next/link';
 
 import {
@@ -21,15 +16,14 @@ interface MenuItem {
 }
 
 const items: MenuItem[] = [
-  { title: 'Temas', url: '/temas', icon: BookOpenIcon },
-
-  { title: 'Simulados', url: '/simulados', icon: FileTextIcon },
+  { title: 'Criar Teste', url: '/criar-teste', icon: PenSquareIcon },
+  { title: 'Testes Prévios', url: '/testes-previos', icon: FileClockIcon },
 ];
 
 export default function NavSecondary() {
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Modos</SidebarGroupLabel>
+      <SidebarGroupLabel>Personalizado</SidebarGroupLabel>
       <SidebarMenu>
         {items.map(item => (
           <SidebarMenuItem key={item.title}>

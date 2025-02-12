@@ -1,15 +1,14 @@
 'use client';
-import { useQuery } from 'convex/react';
-import Image from 'next/image';
-import React, { useState } from 'react';
+import { Bookmark } from 'lucide-react';
+import { useState } from 'react';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { renderContent } from '@/lib/utils/render-content';
 
-import { api } from '../../../../../convex/_generated/api';
-import { Id } from '../../../../../convex/_generated/dataModel';
+import { Id } from '../../../convex/_generated/dataModel';
+import QuizStepper, { type QuestionStatus } from './quiz-stepper';
 
 interface ExamQuestion {
   _id: Id<'questions'>;
@@ -27,29 +26,23 @@ interface ExamQuestion {
 }
 
 interface QuizContentProps {
-  examId: Id<'presetExams'>;
+  questions: (ExamQuestion | null)[];
+  name: string;
 }
 
-export function QuizContent({ examId }: QuizContentProps) {
+export function QuizContent({
+  questions: rawQuestions,
+  name,
+}: QuizContentProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState<number | undefined>();
+  const [answers, setAnswers] = useState<Map<number, number>>(new Map());
   const [showExplanation, setShowExplanation] = useState(false);
   const [answeredQuestions, setAnsweredQuestions] = useState<number[]>([]);
+  const [bookmarkedQuestions, setBookmarkedQuestions] = useState<string[]>([]);
 
-  const exam = useQuery(api.exams.getById, { id: examId }) as {
-    name: string;
-    questions: ExamQuestion[];
-  } | null;
+  const questions = rawQuestions.filter((q): q is ExamQuestion => q !== null);
 
-  if (!exam) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="text-lg text-gray-600">Loading...</div>
-      </div>
-    );
-  }
-
-  if (exam.questions.length === 0) {
+  if (questions.length === 0) {
     return (
       <div className="flex h-64 items-center justify-center">
         <div className="text-lg text-gray-600">No questions found</div>
@@ -57,22 +50,22 @@ export function QuizContent({ examId }: QuizContentProps) {
     );
   }
 
-  const currentQuestion = exam.questions[
-    currentQuestionIndex
-  ] as unknown as ExamQuestion;
+  const currentQuestion = questions[currentQuestionIndex];
   const isAnswered = answeredQuestions.includes(currentQuestionIndex);
-  const isCorrect = selectedAnswer === currentQuestion.correctOptionIndex;
+  const currentAnswer = answers.get(currentQuestionIndex);
+  const isCorrect = currentAnswer === currentQuestion.correctOptionIndex;
 
   const handleOptionSelect = (optionIndex: number) => {
     if (isAnswered) return;
-    setSelectedAnswer(optionIndex);
+    setAnswers(previous =>
+      new Map(previous).set(currentQuestionIndex, optionIndex),
+    );
     setAnsweredQuestions([...answeredQuestions, currentQuestionIndex]);
   };
 
   const handleNextQuestion = () => {
-    if (currentQuestionIndex < exam.questions.length - 1) {
+    if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
-      setSelectedAnswer(undefined);
       setShowExplanation(false);
     }
   };
@@ -80,35 +73,78 @@ export function QuizContent({ examId }: QuizContentProps) {
   const handlePreviousQuestion = () => {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(currentQuestionIndex - 1);
-      setSelectedAnswer(undefined);
       setShowExplanation(false);
     }
+  };
+
+  const toggleBookmark = () => {
+    const questionId = currentQuestion._id;
+    setBookmarkedQuestions(previous =>
+      previous.includes(questionId)
+        ? previous.filter(id => id !== questionId)
+        : [...previous, questionId],
+    );
+  };
+
+  const getQuestionStatus = (index: number): QuestionStatus => {
+    if (!answeredQuestions.includes(index)) return 'unanswered';
+    const question = questions[index];
+    const answer = answers.get(index);
+    const isCorrect = answer === question.correctOptionIndex;
+    return isCorrect ? 'correct' : 'incorrect';
   };
 
   return (
     <div className="container mx-auto max-w-3xl p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">{exam.name}</h1>
+        <h1 className="text-2xl font-bold">{name}</h1>
       </div>
 
       <Card className="mb-6">
         <CardContent className="p-6">
-          <div className="mb-4 flex justify-between">
-            <span className="text-sm text-gray-600">
-              Questão {currentQuestionIndex + 1} de {exam.questions.length}
-            </span>
-            <span className="text-sm text-gray-600">
-              {Math.round(
-                (answeredQuestions.length / exam.questions.length) * 100,
-              )}
-              % Completo
-            </span>
+          <div className="mb-4 space-y-4">
+            <div className="flex justify-between">
+              <QuizStepper
+                steps={Array.from(
+                  { length: questions.length },
+                  (_, index) => index + 1,
+                )}
+                currentStep={currentQuestionIndex + 1}
+                onStepClick={step => setCurrentQuestionIndex(step - 1)}
+                getQuestionStatus={step => getQuestionStatus(step - 1)}
+              />
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-gray-600">
+                  {Math.round(
+                    (answeredQuestions.length / questions.length) * 100,
+                  )}
+                  % Completo
+                </span>
+                <button
+                  onClick={toggleBookmark}
+                  className="text-gray-500 hover:text-gray-700"
+                  title={
+                    bookmarkedQuestions.includes(currentQuestion._id)
+                      ? 'Remover marcador'
+                      : 'Marcar questão'
+                  }
+                >
+                  <Bookmark
+                    className={`h-8 w-8 ${
+                      bookmarkedQuestions.includes(currentQuestion._id)
+                        ? 'fill-red-500 text-red-500'
+                        : 'fill-none'
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
           </div>
 
           <div className="mb-6">
-            <h3 className="mb-2 text-xl font-medium">
-              {currentQuestion.title}
-            </h3>
+            <span className="text-sm text-gray-600">
+              Questão {currentQuestionIndex + 1} de {questions.length}
+            </span>
             <div
               className="prose max-w-none text-gray-600"
               dangerouslySetInnerHTML={{
@@ -126,11 +162,11 @@ export function QuizContent({ examId }: QuizContentProps) {
                 if (optionIndex === currentQuestion.correctOptionIndex) {
                   optionClass =
                     'p-4 rounded-lg border border-green-500 bg-green-50';
-                } else if (optionIndex === selectedAnswer) {
+                } else if (optionIndex === currentAnswer) {
                   optionClass =
                     'p-4 rounded-lg border border-red-500 bg-red-50';
                 }
-              } else if (optionIndex === selectedAnswer) {
+              } else if (optionIndex === currentAnswer) {
                 optionClass =
                   'p-4 rounded-lg border border-blue-500 bg-blue-50';
               }
@@ -198,7 +234,7 @@ export function QuizContent({ examId }: QuizContentProps) {
         <Button
           variant="outline"
           onClick={handleNextQuestion}
-          disabled={currentQuestionIndex === exam.questions.length - 1}
+          disabled={currentQuestionIndex === questions.length - 1}
         >
           Próxima Questão
         </Button>
