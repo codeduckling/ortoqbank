@@ -61,3 +61,40 @@ export const removeQuestion = mutation({
     await context.db.patch(arguments_.examId, { questions: updatedQuestions });
   },
 });
+
+export const updateQuestions = mutation({
+  args: {
+    examId: v.id('presetExams'),
+    questions: v.array(v.id('questions')),
+  },
+  handler: async (context, arguments_) => {
+    await context.db.patch(arguments_.examId, {
+      questions: arguments_.questions,
+    });
+  },
+});
+
+export const updateExam = mutation({
+  args: {
+    examId: v.id('presetExams'),
+    name: v.string(),
+    description: v.string(),
+    questions: v.array(v.id('questions')),
+  },
+  handler: async (context, arguments_) => {
+    await context.db.patch(arguments_.examId, {
+      name: arguments_.name,
+      description: arguments_.description,
+      questions: arguments_.questions,
+    });
+  },
+});
+
+export const deleteExam = mutation({
+  args: {
+    examId: v.id('presetExams'),
+  },
+  handler: async (context, arguments_) => {
+    await context.db.delete(arguments_.examId);
+  },
+});

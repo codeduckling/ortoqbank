@@ -38,12 +38,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
-import {
   Table,
   TableBody,
   TableCell,
@@ -56,6 +50,7 @@ import { useToast } from '@/hooks/use-toast';
 
 import { api } from '../../../../../convex/_generated/api';
 import { Id } from '../../../../../convex/_generated/dataModel';
+import { EditExamDialog } from './components/edit-exam-dialog';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
@@ -81,6 +76,11 @@ export default function ManagePresetExams() {
   const questions = useQuery(api.questions.listAll) || [];
   const createPresetExam = useMutation(api.presetExams.create);
   const addQuestion = useMutation(api.presetExams.addQuestion);
+  const [selectedTheme, setSelectedTheme] = useState<string>('all');
+  const [questionSearch, setQuestionSearch] = useState('');
+  const updateExamQuestions = useMutation(api.presetExams.updateQuestions);
+  const updateExam = useMutation(api.presetExams.updateExam);
+  const deleteExam = useMutation(api.presetExams.deleteExam);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -135,6 +135,74 @@ export default function ManagePresetExams() {
       });
     }
   };
+
+  const handleUpdateQuestions = async (questionIds: string[]) => {
+    if (!editingExam) return;
+
+    try {
+      await updateExamQuestions({
+        examId: editingExam.id as Id<'presetExams'>,
+        questions: questionIds as Id<'questions'>[],
+      });
+      toast({
+        title: 'Sucesso',
+        description: 'Questões atualizadas com sucesso!',
+      });
+    } catch {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível atualizar as questões.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleUpdateExam = async (data: {
+    name: string;
+    description: string;
+    questions: string[];
+  }) => {
+    if (!editingExam) return;
+
+    try {
+      await updateExam({
+        examId: editingExam.id as Id<'presetExams'>,
+        name: data.name,
+        description: data.description,
+        questions: data.questions as Id<'questions'>[],
+      });
+    } catch {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível atualizar o teste.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeleteExam = async () => {
+    if (!editingExam) return;
+
+    try {
+      await deleteExam({
+        examId: editingExam.id as Id<'presetExams'>,
+      });
+    } catch {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível excluir o teste.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const filteredQuestions = questions.filter(
+    question =>
+      (selectedTheme === 'all' || question.themeId === selectedTheme) &&
+      !presetExams
+        .find(exam => exam._id === editingExam?.id)
+        ?.questions.includes(question._id),
+  );
 
   return (
     <div className="p-6">
@@ -253,58 +321,22 @@ export default function ManagePresetExams() {
       </Card>
 
       {editingExam && (
-        <Sheet
+        <EditExamDialog
           open={!!editingExam}
           onOpenChange={() => setEditingExam(undefined)}
-        >
-          <SheetContent>
-            <SheetHeader>
-              <SheetTitle>Editar Teste: {editingExam.name}</SheetTitle>
-            </SheetHeader>
-            <div className="mt-6">
-              <h3 className="mb-4 text-sm font-medium">Adicionar Questões</h3>
-              <Select onValueChange={value => handleAddQuestion(value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione uma questão" />
-                </SelectTrigger>
-                <SelectContent>
-                  {questions
-                    .filter(
-                      question =>
-                        !presetExams
-                          .find(exam => exam._id === editingExam.id)
-                          ?.questions.includes(question._id),
-                    )
-                    .map(question => (
-                      <SelectItem key={question._id} value={question._id}>
-                        {question.title}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-
-              <div className="mt-6">
-                <h3 className="mb-4 text-sm font-medium">Questões no Teste</h3>
-                <div className="space-y-2">
-                  {questions
-                    .filter(question =>
-                      presetExams
-                        .find(exam => exam._id === editingExam.id)
-                        ?.questions.includes(question._id),
-                    )
-                    .map(question => (
-                      <div
-                        key={question._id}
-                        className="flex items-center justify-between rounded-lg border p-3"
-                      >
-                        <span className="text-sm">{question.title}</span>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            </div>
-          </SheetContent>
-        </Sheet>
+          exam={{
+            id: editingExam.id,
+            name:
+              presetExams.find(exam => exam._id === editingExam.id)?.name ?? '',
+            description:
+              presetExams.find(exam => exam._id === editingExam.id)
+                ?.description ?? '',
+          }}
+          questions={questions}
+          presetExams={presetExams}
+          onUpdateExam={handleUpdateExam}
+          onDeleteExam={handleDeleteExam}
+        />
       )}
     </div>
   );

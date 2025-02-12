@@ -99,7 +99,7 @@ export function QuestionForm({
     try {
       // Process both questionText and explanationText
       const processContent = async (content: any[]) => {
-        const promises = content.map(async (node, index) => {
+        const promises = content.map(async node => {
           if (node.type === 'image' && node.attrs?.src?.startsWith('blob:')) {
             const blobUrl = node.attrs.src;
             const pendingUpload = pendingUploads.get(blobUrl);
