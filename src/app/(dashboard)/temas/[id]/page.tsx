@@ -29,7 +29,6 @@ export default function QuizPage({ params }: PageProps) {
     );
   }
 
-  // You can determine the mode based on your application's needs
   const mode: QuizMode = 'study'; // or 'exam'
 
   return (
