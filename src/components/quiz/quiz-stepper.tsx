@@ -1,15 +1,13 @@
 import { CheckIcon, ChevronLeft, ChevronRight, XIcon } from 'lucide-react';
-import React, { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 
 import { cn } from '@/lib/utils';
 
 export type QuestionStatus = 'correct' | 'incorrect' | 'unanswered';
 
 const STEPPER_CONFIG = {
-  VISIBLE_BEFORE: 3, // Steps visible before current step
-  VISIBLE_AFTER: 3, // Steps visible after current step
+  VISIBLE_STEPS: 6, // Total steps visible at once
   JUMP_SIZE: 1, // Number of steps to jump with arrows
-  ARROW_THRESHOLD: 1, // When to show arrows
 } as const;
 
 interface QuizStepperProps {
@@ -17,6 +15,7 @@ interface QuizStepperProps {
   currentStep: number;
   onStepClick: (step: number) => void;
   getQuestionStatus: (step: number) => QuestionStatus;
+  showFeedback?: boolean;
 }
 
 export default function QuizStepper({
@@ -24,15 +23,26 @@ export default function QuizStepper({
   currentStep,
   onStepClick,
   getQuestionStatus,
+  showFeedback = true,
 }: QuizStepperProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const getVisibleSteps = () => {
-    const start = Math.max(0, currentStep - STEPPER_CONFIG.VISIBLE_BEFORE);
-    const end = Math.min(
-      steps.length,
-      currentStep + STEPPER_CONFIG.VISIBLE_AFTER,
-    );
+    const totalSteps = steps.length;
+    const halfVisible = Math.floor(STEPPER_CONFIG.VISIBLE_STEPS / 2);
+
+    let start = currentStep - halfVisible - 1;
+    let end = currentStep + halfVisible;
+
+    // Adjust start and end to maintain VISIBLE_STEPS count
+    if (start < 0) {
+      end = Math.min(STEPPER_CONFIG.VISIBLE_STEPS, totalSteps);
+      start = 0;
+    } else if (end > totalSteps) {
+      start = Math.max(0, totalSteps - STEPPER_CONFIG.VISIBLE_STEPS);
+      end = totalSteps;
+    }
+
     return steps.slice(start, end);
   };
 
@@ -47,12 +57,20 @@ export default function QuizStepper({
       );
     }
 
-    if (status === 'correct') {
-      return cn(baseClasses, 'border-green-500 bg-green-500 text-white');
-    }
+    if (showFeedback) {
+      if (status === 'correct') {
+        return cn(baseClasses, 'border-green-500 bg-green-50 text-white');
+      }
 
-    if (status === 'incorrect') {
-      return cn(baseClasses, 'border-red-500 bg-red-500 text-white');
+      if (status === 'incorrect') {
+        return cn(baseClasses, 'border-red-500 bg-red-50 text-white');
+      }
+    } else if (status !== 'unanswered') {
+      // Show gray border for answered questions when feedback is disabled
+      return cn(
+        baseClasses,
+        'bg-background bg-gray-300 text-foreground border-gray-400',
+      );
     }
 
     return cn(
@@ -62,21 +80,22 @@ export default function QuizStepper({
   };
 
   const getStepContent = (status: QuestionStatus, stepNumber: number) => {
-    if (status === 'correct') {
-      return <CheckIcon className="h-4 w-4" />;
-    }
+    if (showFeedback) {
+      if (status === 'correct') {
+        return <CheckIcon className="h-4 w-4" />;
+      }
 
-    if (status === 'incorrect') {
-      return <XIcon className="h-4 w-4" />;
+      if (status === 'incorrect') {
+        return <XIcon className="h-4 w-4" />;
+      }
     }
 
     return stepNumber;
   };
 
   const visibleSteps = getVisibleSteps();
-  const showLeftArrow = currentStep > STEPPER_CONFIG.ARROW_THRESHOLD;
-  const showRightArrow =
-    currentStep < steps.length - STEPPER_CONFIG.VISIBLE_AFTER;
+  const showLeftArrow = currentStep > 1;
+  const showRightArrow = currentStep < steps.length;
 
   return (
     <div className="flex items-center gap-2">
