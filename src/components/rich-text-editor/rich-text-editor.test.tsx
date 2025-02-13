@@ -33,7 +33,7 @@ describe('RichTextEditor', () => {
       const editorContent = screen.getByRole('textbox', { hidden: true });
 
       await user.click(editorContent);
-      await user.keyboard('Test content');
+      await user.type(editorContent, 'Test content');
 
       expect(mockOnChange).toHaveBeenCalled();
       const calls = mockOnChange.mock.calls;
