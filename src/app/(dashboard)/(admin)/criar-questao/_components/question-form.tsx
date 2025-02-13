@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery } from 'convex/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 
 import { pendingUploads } from '@/components/rich-text-editor/image-upload-button';
@@ -95,6 +95,10 @@ export function QuestionForm({
 
   const { fields } = useFieldArray({ name: 'options', control: form.control });
 
+  // Add refs to store editor instances
+  const [questionEditor, setQuestionEditor] = useState<any>();
+  const [explanationEditor, setExplanationEditor] = useState<any>();
+
   const onSubmit = async (data: QuestionFormData) => {
     try {
       // Process both questionText and explanationText
@@ -164,6 +168,9 @@ export function QuestionForm({
 
       if (mode === 'create') {
         form.reset();
+        // Clear editors
+        questionEditor?.commands.setContent('');
+        explanationEditor?.commands.setContent('');
       }
     } catch (error) {
       console.error('Failed to submit:', error);
@@ -209,6 +216,7 @@ export function QuestionForm({
                 <RichTextEditor
                   onChange={field.onChange}
                   initialContent={defaultValues?.questionText}
+                  onEditorReady={setQuestionEditor}
                 />
               </FormControl>
               <FormMessage />
@@ -243,6 +251,7 @@ export function QuestionForm({
                 <RichTextEditor
                   onChange={field.onChange}
                   initialContent={defaultValues?.explanationText}
+                  onEditorReady={setExplanationEditor}
                 />
               </FormControl>
               <FormMessage />
