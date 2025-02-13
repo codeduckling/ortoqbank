@@ -27,18 +27,24 @@ describe('RichTextEditor', () => {
 
     test('handles content changes and triggers onChange callback', async () => {
       const mockOnChange = vi.fn();
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: 50 });
 
       render(<RichTextEditor onChange={mockOnChange} />);
       const editorContent = screen.getByRole('textbox', { hidden: true });
 
       await user.click(editorContent);
-      await user.type(editorContent, 'Test content');
 
-      expect(mockOnChange).toHaveBeenCalled();
-      const calls = mockOnChange.mock.calls;
-      const lastCall = calls.at(-1)?.[0] as JSONContent;
-      expect(lastCall?.content?.[0]?.content?.[0]?.text).toBe('Test content');
+      // Type the content character by character with waits
+      await user.type(editorContent, 'Test');
+      await user.type(editorContent, ' ');
+      await user.type(editorContent, 'content');
+
+      // Wait for the last onChange call
+      await vi.waitFor(() => {
+        const calls = mockOnChange.mock.calls;
+        const lastCall = calls.at(-1)?.[0] as JSONContent;
+        expect(lastCall?.content?.[0]?.content?.[0]?.text).toBe('Test content');
+      });
     });
   });
 
