@@ -5,13 +5,13 @@ on: [pull_request]
 jobs:
   lint:
     name: ⬣ ESLint
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2204
     steps:
       - name: ⬇️ Checkout repo
         uses: actions/checkout@v4
 
       - name: ⎔ Setup node
-        uses: actions/setup-node@v4
+        uses: useblacksmith/setup-node@v5
         with:
           node-version: 20
 
@@ -23,13 +23,13 @@ jobs:
 
   type-check:
     name: ʦ TypeScript
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2204
     steps:
       - name: ⬇️ Checkout repo
         uses: actions/checkout@v4
 
       - name: ⎔ Setup node
-        uses: actions/setup-node@v4
+        uses: useblacksmith/setup-node@v5
         with:
           node-version: 20
 
@@ -41,14 +41,14 @@ jobs:
 
   vitest:
     name: ⚡ Vitest
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2204
 
     steps:
       - name: ⬇️ Checkout repo
         uses: actions/checkout@v4
 
       - name: ⎔ Setup node
-        uses: actions/setup-node@v4
+        uses: useblacksmith/setup-node@v5
         with:
           node-version: 20
 
@@ -60,7 +60,7 @@ jobs:
 
   playwright:
     name: 🎭 Playwright
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2204
     env:
       NEXT_PUBLIC_CONVEX_URL: ${{ secrets.NEXT_PUBLIC_CONVEX_URL }}
       CONVEX_DEPLOYMENT: test
@@ -74,7 +74,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: ⎔ Setup node
-        uses: actions/setup-node@v4
+        uses: useblacksmith/setup-node@v5
         with:
           node-version: 20
 
