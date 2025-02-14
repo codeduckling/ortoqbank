@@ -1,6 +1,7 @@
 'use client';
 
-import { useQuery } from 'convex/react';
+import { useUser } from '@clerk/nextjs';
+import { useMutation, useQuery } from 'convex/react';
 import {
   Baby,
   Bone,
@@ -13,6 +14,7 @@ import {
   Wrench,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 import {
   Accordion,
@@ -22,6 +24,7 @@ import {
 } from '@/components/ui/accordion';
 
 import { api } from '../../../../convex/_generated/api';
+import { Id } from '../../../../convex/_generated/dataModel';
 
 const THEME_ICONS: Record<
   string,
@@ -41,6 +44,9 @@ const THEME_ICONS: Record<
 export default function ThemesPage() {
   const themes = useQuery(api.themes.list) || [];
   const presetExams = useQuery(api.presetExams.list) || [];
+  const startSession = useMutation(api.quizSessions.create);
+  const activeSession = useQuery(api.quizSessions.getActiveSession);
+  const router = useRouter();
 
   // Group exams by theme
   const examsByTheme = themes.reduce(
@@ -52,6 +58,26 @@ export default function ThemesPage() {
     },
     {} as Record<string, typeof presetExams>,
   );
+
+  const handleExamClick = async (examId: Id<'presetExams'>) => {
+    // If there's an active session for this exam, just navigate to it
+    if (activeSession?.presetExamId === examId) {
+      router.push(`/temas/${examId}`);
+      return;
+    }
+
+    // If there's an active session for another exam, don't create a new one
+    if (activeSession) {
+      // Optionally show a message that they need to complete or cancel the other session first
+      return;
+    }
+
+    // Create new session only if there's no active session
+    await startSession({
+      presetExamId: examId,
+    });
+    router.push(`/temas/${examId}`);
+  };
 
   if (!themes) {
     return <div>Loading...</div>;
@@ -79,10 +105,10 @@ export default function ThemesPage() {
               <AccordionContent>
                 <div className="mt-2 ml-8 space-y-2">
                   {themeExams.map(exam => (
-                    <Link
+                    <div
                       key={exam._id}
-                      href={`/temas/${exam._id}`}
-                      className="block rounded-lg border p-3 text-sm hover:bg-gray-50"
+                      onClick={() => handleExamClick(exam._id)}
+                      className="block cursor-pointer rounded-lg border p-3 text-sm hover:bg-gray-50"
                     >
                       <div className="flex flex-col gap-1">
                         <span className="font-medium">{exam.name}</span>
@@ -93,7 +119,7 @@ export default function ThemesPage() {
                           {exam.questions.length} questões
                         </span>
                       </div>
-                    </Link>
+                    </div>
                   ))}
                   {themeExams.length === 0 && (
                     <div className="text-muted-foreground text-sm">

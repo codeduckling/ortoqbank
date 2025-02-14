@@ -13,6 +13,10 @@ import { ExamQuestion } from './types';
 interface ExamModeProps {
   questions: ExamQuestion[];
   name: string;
+  onComplete?: (results: {
+    answers: Map<number, number>;
+    bookmarks?: string[];
+  }) => void;
 }
 
 type OptionIndex = 0 | 1 | 2 | 3;

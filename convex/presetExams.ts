@@ -98,3 +98,23 @@ export const deleteExam = mutation({
     await context.db.delete(arguments_.examId);
   },
 });
+
+export const get = query({
+  args: { id: v.id('presetExams') },
+  handler: async (context, arguments_) => {
+    return await context.db.get(arguments_.id);
+  },
+});
+
+export const getWithQuestions = query({
+  args: { id: v.id('presetExams') },
+  handler: async (context, arguments_) => {
+    const exam = await context.db.get(arguments_.id);
+    if (!exam) return;
+
+    const questions = await Promise.all(
+      exam.questions.map(async id => await context.db.get(id)),
+    );
+    return { ...exam, questions };
+  },
+});
