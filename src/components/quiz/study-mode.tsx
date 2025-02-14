@@ -1,15 +1,16 @@
 // StudyMode.tsx
 'use client';
 
+import { useMutation } from 'convex/react';
 import { Bookmark, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { cn } from '@/lib/utils';
 import { renderContent } from '@/lib/utils/render-content';
 
+import { api } from '../../../convex/_generated/api';
+import { Id } from '../../../convex/_generated/dataModel';
 import { QuestionDisplay } from './question-display';
 import QuizStepper, { QuestionStatus } from './quiz-stepper';
 import { ExamQuestion } from './types';
@@ -21,11 +22,17 @@ interface StudyModeProps {
     answers: Map<number, number>;
     bookmarks: string[];
   }) => void;
+  sessionId?: Id<'quizSessions'>;
 }
 
 type OptionIndex = 0 | 1 | 2 | 3;
 
-export function StudyMode({ questions, name, onComplete }: StudyModeProps) {
+export function StudyMode({
+  questions,
+  name,
+  onComplete,
+  sessionId,
+}: StudyModeProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Map<number, OptionIndex>>(new Map());
   const [showExplanation, setShowExplanation] = useState(false);
@@ -40,12 +47,14 @@ export function StudyMode({ questions, name, onComplete }: StudyModeProps) {
   const currentAnswer = answers.get(currentQuestionIndex);
   const progress = (answeredQuestions.length / questions.length) * 100;
 
+  const updateProgress = useMutation(api.quizSessions.updateProgress);
+
   const handleOptionSelect = (optionIndex: OptionIndex) => {
     if (isAnswered) return;
     setSelectedOption(optionIndex);
   };
 
-  const handleConfirmAnswer = () => {
+  const handleConfirmAnswer = async () => {
     if (selectedOption === undefined || isAnswered) return;
 
     setAnswers(previous =>
@@ -54,6 +63,29 @@ export function StudyMode({ questions, name, onComplete }: StudyModeProps) {
     setAnsweredQuestions([...answeredQuestions, currentQuestionIndex]);
     setSelectedOption(undefined);
     setShowExplanation(true);
+
+    // Save progress when answer is confirmed
+    if (sessionId) {
+      console.log('Updating progress:', {
+        sessionId,
+        currentQuestionIndex,
+        answer: {
+          questionId: currentQuestion._id,
+          selectedOption,
+          isCorrect: selectedOption === currentQuestion.correctOptionIndex,
+        },
+      });
+
+      await updateProgress({
+        sessionId,
+        currentQuestionIndex,
+        answer: {
+          questionId: currentQuestion._id,
+          selectedOption,
+          isCorrect: selectedOption === currentQuestion.correctOptionIndex,
+        },
+      });
+    }
   };
 
   const handleNextQuestion = () => {

@@ -52,4 +52,34 @@ export default defineSchema({
     groupId: v.optional(v.id('groups')),
     isPublic: v.boolean(),
   }),
+
+  customExams: defineTable({
+    name: v.string(),
+    description: v.string(),
+    questions: v.array(v.id('questions')),
+    authorId: v.id('users'),
+  }),
+
+  quizSessions: defineTable({
+    userId: v.id('users'),
+    presetExamId: v.optional(v.id('presetExams')),
+    customExamId: v.optional(v.id('customExams')),
+    endTime: v.optional(v.number()),
+    status: v.union(v.literal('in_progress'), v.literal('completed')),
+    score: v.optional(v.number()),
+    progress: v.optional(
+      v.object({
+        currentQuestionIndex: v.number(),
+        answers: v.array(
+          v.object({
+            questionId: v.id('questions'),
+            selectedOption: v.number(),
+            isCorrect: v.boolean(),
+          }),
+        ),
+      }),
+    ),
+  })
+    .index('by_user', ['userId'])
+    .index('by_status', ['status']),
 });

@@ -1,5 +1,6 @@
 'use client';
 
+import { useUser } from '@clerk/nextjs';
 import { useQuery } from 'convex/react';
 import { use } from 'react';
 
@@ -17,11 +18,13 @@ interface PageProps {
 
 export default function QuizPage({ params }: PageProps) {
   const resolvedParams = use(params);
-  const exam = useQuery(api.exams.getById, {
+  const { user } = useUser();
+  const exam = useQuery(api.presetExams.getWithQuestions, {
     id: resolvedParams.id as Id<'presetExams'>,
   });
+  const activeSession = useQuery(api.quizSessions.getActiveSession);
 
-  if (!exam) {
+  if (!exam || !user || activeSession === undefined) {
     return (
       <div className="flex h-64 items-center justify-center">
         <div className="text-lg text-gray-600">Loading...</div>
@@ -29,9 +32,14 @@ export default function QuizPage({ params }: PageProps) {
     );
   }
 
-  const mode: QuizMode = 'study'; // or 'exam'
+  const mode: QuizMode = 'study';
 
   return (
-    <QuizWrapper questions={exam.questions} name={exam.name} mode={mode} />
+    <QuizWrapper
+      questions={exam.questions}
+      name={exam.name}
+      mode={mode}
+      sessionId={activeSession?._id}
+    />
   );
 }

@@ -18,6 +18,7 @@ import type * as groups from "../groups.js";
 import type * as http from "../http.js";
 import type * as presetExams from "../presetExams.js";
 import type * as questions from "../questions.js";
+import type * as quizSessions from "../quizSessions.js";
 import type * as subthemes from "../subthemes.js";
 import type * as tags from "../tags.js";
 import type * as themes from "../themes.js";
@@ -37,6 +38,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   presetExams: typeof presetExams;
   questions: typeof questions;
+  quizSessions: typeof quizSessions;
   subthemes: typeof subthemes;
   tags: typeof tags;
   themes: typeof themes;

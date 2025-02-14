@@ -4,7 +4,7 @@ import { Color } from '@tiptap/extension-color';
 import ImageExtension from '@tiptap/extension-image';
 import { TextStyle } from '@tiptap/extension-text-style';
 import UnderlineExtension from '@tiptap/extension-underline';
-import { EditorContent, type JSONContent, useEditor } from '@tiptap/react';
+import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKitExtension from '@tiptap/starter-kit';
 import { useEffect } from 'react';
 import ResizeImage from 'tiptap-extension-resize-image';
