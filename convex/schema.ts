@@ -43,7 +43,7 @@ export default defineSchema({
     .index('by_title', ['normalizedTitle'])
     .searchIndex('search_by_title', { searchField: 'title' }),
 
-  presetExams: defineTable({
+  presetQuiz: defineTable({
     name: v.string(),
     description: v.string(),
     questions: v.array(v.id('questions')),
@@ -53,7 +53,7 @@ export default defineSchema({
     isPublic: v.boolean(),
   }),
 
-  customExams: defineTable({
+  customQuiz: defineTable({
     name: v.string(),
     description: v.string(),
     questions: v.array(v.id('questions')),
@@ -62,8 +62,8 @@ export default defineSchema({
 
   quizSessions: defineTable({
     userId: v.id('users'),
-    presetExamId: v.optional(v.id('presetExams')),
-    customExamId: v.optional(v.id('customExams')),
+    presetQuizId: v.optional(v.id('presetQuizzes')),
+    customQuizId: v.optional(v.id('customQuizzes')),
     endTime: v.optional(v.number()),
     status: v.union(v.literal('in_progress'), v.literal('completed')),
     score: v.optional(v.number()),

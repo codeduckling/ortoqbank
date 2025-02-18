@@ -12,29 +12,29 @@ export const create = mutation({
     subthemeId: v.optional(v.id('subthemes')),
     groupId: v.optional(v.id('groups')),
   },
-  handler: async (context, arguments_) => {
-    return await context.db.insert('presetExams', {
-      ...arguments_,
+  handler: async (ctx, args) => {
+    return await ctx.db.insert('presetQuiz', {
+      ...args,
       isPublic: false, // Default to private
     });
   },
 });
 
 export const getById = query({
-  args: { id: v.id('presetExams') },
-  handler: async (context, { id }) => {
-    const exam = await context.db.get(id);
-    if (!exam) {
-      throw new Error('Exam not found');
+  args: { id: v.id('presetQuiz') },
+  handler: async (ctx, { id }) => {
+    const quiz = await ctx.db.get(id);
+    if (!quiz) {
+      throw new Error('Quiz not found');
     }
 
     // Fetch all questions data
     const questions = await Promise.all(
-      exam.questions.map(questionId => context.db.get(questionId)),
+      quiz.questions.map(questionId => ctx.db.get(questionId)),
     );
 
     return {
-      ...exam,
+      ...quiz,
       questions: questions.filter(Boolean), // Remove any null values
     };
   },

@@ -33,20 +33,8 @@ export default [
       'unicorn/no-array-callback-reference': 'off',
       'unicorn/no-array-for-each': 'off',
       'unicorn/no-array-reduce': 'off',
-
-      'unicorn/prevent-abbreviations': [
-        'error',
-        {
-          allowList: {
-            e2e: true,
-          },
-          replacements: {
-            props: false,
-            ref: false,
-            params: false,
-          },
-        },
-      ],
+      'unicorn/prevent-abbreviations': 'off',
+      'unicorn/filename-case': 'off',
     },
   },
   {
