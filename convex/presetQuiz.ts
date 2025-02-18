@@ -13,7 +13,7 @@ export const create = mutation({
     isPublic: v.boolean(),
   },
   handler: async (ctx, args) => {
-    return await ctx.db.insert('presetQuiz', {
+    return await ctx.db.insert('presetQuizzes', {
       name: args.name,
       description: args.description,
       themeId: args.themeId,
@@ -27,13 +27,13 @@ export const create = mutation({
 
 export const list = query({
   handler: async ctx => {
-    return await ctx.db.query('presetQuiz').collect();
+    return await ctx.db.query('presetQuizzes').collect();
   },
 });
 
 export const addQuestion = mutation({
   args: {
-    quizId: v.id('presetQuiz'),
+    quizId: v.id('presetQuizzes'),
     questionId: v.id('questions'),
   },
   handler: async (ctx, args) => {
@@ -47,7 +47,7 @@ export const addQuestion = mutation({
 
 export const removeQuestion = mutation({
   args: {
-    quizId: v.id('presetQuiz'),
+    quizId: v.id('presetQuizzes'),
     questionId: v.id('questions'),
   },
   handler: async (ctx, args) => {
@@ -63,7 +63,7 @@ export const removeQuestion = mutation({
 
 export const updateQuestions = mutation({
   args: {
-    quizId: v.id('presetQuiz'),
+    quizId: v.id('presetQuizzes'),
     questions: v.array(v.id('questions')),
   },
   handler: async (ctx, args) => {
@@ -75,7 +75,7 @@ export const updateQuestions = mutation({
 
 export const updateQuiz = mutation({
   args: {
-    quizId: v.id('presetQuiz'),
+    quizId: v.id('presetQuizzes'),
     name: v.string(),
     description: v.string(),
     questions: v.array(v.id('questions')),
@@ -91,7 +91,7 @@ export const updateQuiz = mutation({
 
 export const deleteQuiz = mutation({
   args: {
-    quizId: v.id('presetQuiz'),
+    quizId: v.id('presetQuizzes'),
   },
   handler: async (ctx, args) => {
     await ctx.db.delete(args.quizId);
@@ -99,14 +99,14 @@ export const deleteQuiz = mutation({
 });
 
 export const get = query({
-  args: { id: v.id('presetQuiz') },
+  args: { id: v.id('presetQuizzes') },
   handler: async (ctx, args) => {
     return await ctx.db.get(args.id);
   },
 });
 
 export const getWithQuestions = query({
-  args: { id: v.id('presetQuiz') },
+  args: { id: v.id('presetQuizzes') },
   handler: async (ctx, args) => {
     const quiz = await ctx.db.get(args.id);
     if (!quiz) return;

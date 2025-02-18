@@ -13,7 +13,7 @@ export const create = mutation({
     groupId: v.optional(v.id('groups')),
   },
   handler: async (ctx, args) => {
-    return await ctx.db.insert('presetQuiz', {
+    return await ctx.db.insert('presetQuizzes', {
       ...args,
       isPublic: false, // Default to private
     });
@@ -21,7 +21,7 @@ export const create = mutation({
 });
 
 export const getById = query({
-  args: { id: v.id('presetQuiz') },
+  args: { id: v.id('presetQuizzes') },
   handler: async (ctx, { id }) => {
     const quiz = await ctx.db.get(id);
     if (!quiz) {

@@ -43,7 +43,7 @@ export default defineSchema({
     .index('by_title', ['normalizedTitle'])
     .searchIndex('search_by_title', { searchField: 'title' }),
 
-  presetQuiz: defineTable({
+  presetQuizzes: defineTable({
     name: v.string(),
     description: v.string(),
     questions: v.array(v.id('questions')),
@@ -53,7 +53,7 @@ export default defineSchema({
     isPublic: v.boolean(),
   }),
 
-  customQuiz: defineTable({
+  customQuizzes: defineTable({
     name: v.string(),
     description: v.string(),
     questions: v.array(v.id('questions')),
