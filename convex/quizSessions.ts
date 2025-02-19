@@ -36,17 +36,17 @@ export const startQuizSession = mutation({
     customQuizId: v.optional(v.id('customQuizzes')),
   },
   handler: async (ctx, args) => {
-    const mockUser = 'j571n8n6pntprjpnv9w22th81n78fq8y' as Id<'users'>;
+    const user = await getCurrentUserOrThrow(ctx);
 
     if (!args.presetQuizId && !args.customQuizId) {
       throw new Error('Either presetQuizId or customQuizId must be provided');
     }
 
-    let activeSession = await getActiveQuizSession(ctx, mockUser, args);
+    let activeSession = await getActiveQuizSession(ctx, user._id, args);
 
     if (!activeSession) {
       activeSession = await ctx.db.insert('quizSessions', {
-        userId: mockUser,
+        userId: user._id,
         presetQuizId: args.presetQuizId,
         customQuizId: args.customQuizId,
         status: 'in_progress',
@@ -68,7 +68,7 @@ export const get = query({
     customQuizId: v.optional(v.id('customQuizzes')),
   },
   handler: async (ctx, args) => {
-    const mockUser = 'j571n8n6pntprjpnv9w22th81n78fq8y' as Id<'users'>;
+    const user = await getCurrentUserOrThrow(ctx);
 
     if (!args.presetQuizId && !args.customQuizId) {
       throw new Error('Either presetQuizId or customQuizId must be provided');
@@ -76,7 +76,7 @@ export const get = query({
 
     return ctx.db
       .query('quizSessions')
-      .withIndex('by_user', q => q.eq('userId', mockUser))
+      .withIndex('by_user', q => q.eq('userId', user._id))
       .filter(q =>
         q.and(
           q.eq(q.field('status'), 'in_progress'),
@@ -182,11 +182,11 @@ export const getCompletedSession = query({
     presetQuizId: v.id('presetQuizzes'),
   },
   handler: async (ctx, args) => {
-    const mockUser = 'j571n8n6pntprjpnv9w22th81n78fq8y' as Id<'users'>;
+    const user = await getCurrentUserOrThrow(ctx);
 
     return ctx.db
       .query('quizSessions')
-      .withIndex('by_user', q => q.eq('userId', mockUser))
+      .withIndex('by_user', q => q.eq('userId', user._id))
       .filter(q =>
         q.and(
           q.eq(q.field('status'), 'completed'),
