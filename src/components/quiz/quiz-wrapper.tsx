@@ -6,10 +6,7 @@ import { useEffect, useState } from 'react';
 
 import { api } from '../../../convex/_generated/api';
 import { Id } from '../../../convex/_generated/dataModel';
-import { Button } from '../ui/button';
-import { Card, CardContent } from '../ui/card';
 import { ExamMode } from './exam-mode';
-import { QuizResults } from './quiz-results';
 import { useQuizStore } from './quiz-store';
 import { StudyMode } from './study-mode';
 import { ExamQuestion, QuestionStatus, QuizMode } from './types';

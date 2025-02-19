@@ -1,7 +1,6 @@
 // StudyMode.tsx
 'use client';
 
-import { useMutation } from 'convex/react';
 import { Bookmark, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 
@@ -9,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { renderContent } from '@/lib/utils/render-content';
 
-import { api } from '../../../convex/_generated/api';
 import { Id } from '../../../convex/_generated/dataModel';
 import { QuestionDisplay } from './question-display';
 import QuizStepper, { QuestionStatus } from './quiz-stepper';
@@ -136,7 +134,7 @@ export function StudyMode({
               <div className="flex items-center gap-4">
                 <span className="text-sm text-gray-600">
                   {Math.round(((currentIndex + 1) / questions.length) * 100)}%
-                  Complete
+                  Completo
                 </span>
                 <button
                   onClick={toggleBookmark}
@@ -156,7 +154,7 @@ export function StudyMode({
 
           <div className="mb-6">
             <span className="text-sm text-gray-600">
-              Question {currentIndex + 1} of {questions.length}
+              Questão {currentIndex + 1} de {questions.length}
             </span>
           </div>
 

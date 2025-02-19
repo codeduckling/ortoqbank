@@ -1,11 +1,9 @@
-import { Check, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { renderContent } from '@/lib/utils/render-content';
 
-import QuizStepper from './quiz-stepper';
 import { ExamQuestion } from './types';
 
 interface QuizResultsProps {
@@ -16,17 +14,8 @@ interface QuizResultsProps {
 
 type FilterType = 'all' | 'correct' | 'incorrect';
 
-const getOptionClassName = (
-  isCorrectAnswer: boolean,
-  isUserAnswer: boolean,
-): string => {
-  if (isCorrectAnswer) {
-    return 'border-green-500 bg-green-50';
-  }
-  if (isUserAnswer) {
-    return 'border-red-500 bg-red-50';
-  }
-  return 'border-gray-200';
+const getStepContent = (stepNumber: number) => {
+  return stepNumber;
 };
 
 export function QuizResults({
@@ -54,6 +43,18 @@ export function QuizResults({
     const correctAnswer = correctAnswers.get(index);
     return answer === correctAnswer;
   };
+
+  const getCorrectCount = () =>
+    questions.reduce(
+      (count, _, index) => count + (isCorrect(index) ? 1 : 0),
+      0,
+    );
+
+  const getIncorrectCount = () =>
+    questions.reduce(
+      (count, _, index) => count + (isCorrect(index) ? 0 : 1),
+      0,
+    );
 
   const getFilteredQuestions = () => {
     switch (filter) {
@@ -91,10 +92,6 @@ export function QuizResults({
     );
   };
 
-  const getStepContent = (stepNumber: number) => {
-    return stepNumber;
-  };
-
   return (
     <div className="space-y-6">
       <div className="space-y-4">
@@ -111,14 +108,14 @@ export function QuizResults({
             variant={filter === 'correct' ? 'default' : 'outline'}
             onClick={() => setFilter('correct')}
           >
-            Correctas ({questions.filter(isCorrect).length})
+            Corretas ({getCorrectCount()})
           </Button>
           <Button
             size="sm"
             variant={filter === 'incorrect' ? 'default' : 'outline'}
             onClick={() => setFilter('incorrect')}
           >
-            Incorrectas ({questions.filter(index => !isCorrect(index)).length})
+            Incorretas ({getIncorrectCount()})
           </Button>
         </div>
 
