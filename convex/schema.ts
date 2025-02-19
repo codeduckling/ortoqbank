@@ -64,9 +64,9 @@ export default defineSchema({
     userId: v.id('users'),
     presetQuizId: v.optional(v.id('presetQuizzes')),
     customQuizId: v.optional(v.id('customQuizzes')),
-    endTime: v.optional(v.number()),
     status: v.union(v.literal('in_progress'), v.literal('completed')),
-    score: v.optional(v.number()),
+    score: v.number(),
+    endTime: v.optional(v.number()),
     progress: v.optional(
       v.object({
         currentQuestionIndex: v.number(),

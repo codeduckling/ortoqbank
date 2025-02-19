@@ -44,7 +44,7 @@ const THEME_ICONS: Record<
 export default function ThemesPage() {
   const themes = useQuery(api.themes.list) || [];
   const presetQuizzes = useQuery(api.presetQuizzes.list) || [];
-  const startSession = useMutation(api.quizSessions.create);
+  const startSession = useMutation(api.quizSessions.startQuizSession);
 
   const router = useRouter();
 
@@ -60,9 +60,6 @@ export default function ThemesPage() {
   );
 
   const handleExamClick = async (quizId: Id<'presetQuizzes'>) => {
-    // If there's an active session for this exam, just navigate to it
-
-    // Create new session only if there's no active session
     await startSession({
       presetQuizId: quizId,
     });

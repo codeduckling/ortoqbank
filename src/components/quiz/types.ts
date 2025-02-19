@@ -18,3 +18,18 @@ export interface ExamQuestion {
 export type QuizMode = 'study' | 'exam';
 
 export type OptionIndex = 0 | 1 | 2 | 3;
+
+export interface QuizModeProps {
+  questions: ExamQuestion[];
+  name: string;
+  onAnswer: (
+    questionId: Id<'questions'>,
+    answer: number,
+    isCorrect: boolean,
+  ) => Promise<void>;
+  onComplete: () => Promise<void>;
+  currentIndex: number;
+}
+
+export type StudyModeProps = QuizModeProps;
+export type ExamModeProps = QuizModeProps;

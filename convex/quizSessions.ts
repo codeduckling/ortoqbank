@@ -36,7 +36,6 @@ export const startQuizSession = mutation({
     customQuizId: v.optional(v.id('customQuizzes')),
   },
   handler: async (ctx, args) => {
-    //const user = await getCurrentUserOrThrow(ctx);
     const mockUser = 'j571n8n6pntprjpnv9w22th81n78fq8y' as Id<'users'>;
 
     if (!args.presetQuizId && !args.customQuizId) {
@@ -59,26 +58,108 @@ export const startQuizSession = mutation({
       });
     }
 
-    //3. Fetch the quiz (either preset or custom)
-    let quiz;
-    if (args.presetQuizId) {
-      quiz = await ctx.db.get(args.presetQuizId);
-    } else if (args.customQuizId) {
-      quiz = await ctx.db.get(args.customQuizId);
-    }
-    if (!quiz) {
-      throw new Error('Quiz not found.');
+    return activeSession;
+  },
+});
+
+export const get = query({
+  args: {
+    presetQuizId: v.optional(v.id('presetQuizzes')),
+    customQuizId: v.optional(v.id('customQuizzes')),
+  },
+  handler: async (ctx, args) => {
+    const mockUser = 'j571n8n6pntprjpnv9w22th81n78fq8y' as Id<'users'>;
+
+    if (!args.presetQuizId && !args.customQuizId) {
+      throw new Error('Either presetQuizId or customQuizId must be provided');
     }
 
-    // 4. Fetch questions based on the IDs in quiz.questions
-    const questionIds = quiz.questions as Id<'questions'>[];
-    const questions = await Promise.all(
-      questionIds.map(qId => ctx.db.get(qId)),
-    );
+    return ctx.db
+      .query('quizSessions')
+      .withIndex('by_user', q => q.eq('userId', mockUser))
+      .filter(q =>
+        q.and(
+          q.eq(q.field('status'), 'in_progress'),
+          args.presetQuizId
+            ? q.eq(q.field('presetQuizId'), args.presetQuizId)
+            : q.eq(q.field('customQuizId'), args.customQuizId),
+        ),
+      )
+      .first();
+  },
+});
 
-    // 5. Return session + questions to the client
-    //    - The client can immediately display the questions or store them locally
-    //    - Optionally return the "activeSession" doc if you want the entire object
-    return { session: activeSession, questions };
+export const updateProgress = mutation({
+  args: {
+    sessionId: v.id('quizSessions'),
+    answer: v.object({
+      questionId: v.id('questions'),
+      selectedOption: v.number(),
+      isCorrect: v.boolean(),
+    }),
+    currentQuestionIndex: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const session = await ctx.db.get(args.sessionId);
+    if (!session) {
+      throw new Error('Session not found');
+    }
+
+    if (session.status !== 'in_progress') {
+      throw new Error('Cannot update completed session');
+    }
+
+    // Update progress
+    const progress = {
+      currentQuestionIndex: args.currentQuestionIndex,
+      answers: [
+        ...(session.progress?.answers || []),
+        {
+          questionId: args.answer.questionId,
+          selectedOption: args.answer.selectedOption,
+          isCorrect: args.answer.isCorrect,
+        },
+      ],
+    };
+
+    // Calculate new score
+    const score = progress.answers.filter(a => a.isCorrect).length;
+
+    // Update session
+    await ctx.db.patch(args.sessionId, {
+      progress,
+      score,
+    });
+
+    return { progress, score };
+  },
+});
+
+export const completeSession = mutation({
+  args: {
+    sessionId: v.id('quizSessions'),
+  },
+  handler: async (ctx, args) => {
+    const session = await ctx.db.get(args.sessionId);
+    if (!session) {
+      throw new Error('Session not found');
+    }
+
+    if (session.status === 'completed') {
+      throw new Error('Session already completed');
+    }
+
+    // Calculate final score from progress
+    const finalScore =
+      session.progress?.answers.filter(a => a.isCorrect).length ?? 0;
+
+    // Update session with completion data
+    await ctx.db.patch(args.sessionId, {
+      status: 'completed',
+      endTime: Date.now(),
+      score: finalScore,
+    });
+
+    return { success: true };
   },
 });

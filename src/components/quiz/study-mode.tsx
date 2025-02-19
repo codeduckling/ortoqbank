@@ -23,6 +23,12 @@ interface StudyModeProps {
     bookmarks: string[];
   }) => void;
   sessionId?: Id<'quizSessions'>;
+  onAnswer: (
+    questionId: Id<'questions'>,
+    answer: number,
+    isCorrect: boolean,
+  ) => Promise<void>;
+  currentIndex: number;
 }
 
 type OptionIndex = 0 | 1 | 2 | 3;
@@ -32,6 +38,8 @@ export function StudyMode({
   name,
   onComplete,
   sessionId,
+  onAnswer,
+  currentIndex,
 }: StudyModeProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Map<number, OptionIndex>>(new Map());

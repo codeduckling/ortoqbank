@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
+import { Id } from '../../../convex/_generated/dataModel';
 import { QuestionDisplay } from './question-display';
 import { QuizResults } from './quiz-results';
 import QuizStepper, { type QuestionStatus } from './quiz-stepper';
@@ -17,11 +18,24 @@ interface ExamModeProps {
     answers: Map<number, number>;
     bookmarks?: string[];
   }) => void;
+  onAnswer: (
+    questionId: Id<'questions'>,
+    answer: number,
+    isCorrect: boolean,
+  ) => Promise<void>;
+  sessionId?: Id<'quizSessions'>;
+  currentIndex: number;
 }
 
 type OptionIndex = 0 | 1 | 2 | 3;
 
-export function ExamMode({ questions, name }: ExamModeProps) {
+export function ExamMode({
+  questions,
+  name,
+  onAnswer,
+  sessionId,
+  currentIndex,
+}: ExamModeProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Map<number, OptionIndex>>(new Map());
   const [selectedOption, setSelectedOption] = useState<

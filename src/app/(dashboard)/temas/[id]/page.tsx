@@ -10,34 +10,17 @@ import { QuizMode } from '@/components/quiz/types';
 import { api } from '../../../../../convex/_generated/api';
 import { Id } from '../../../../../convex/_generated/dataModel';
 
-interface PageProps {
-  params: Promise<{
-    id: string;
-  }>;
-}
-
 export default function QuizPage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useUser();
   const quiz = useQuery(api.presetQuizzes.getWithQuestions, {
     id: id as Id<'presetQuizzes'>,
   });
-  const activeSession = useQuery(api.quizSessions.getActiveSessionForQuiz, {
-    presetQuizId: resolvedParams.id as Id<'presetQuizzes'>,
-    status: 'in_progress',
+  const session = useQuery(api.quizSessions.get, {
+    presetQuizId: id as Id<'presetQuizzes'>,
   });
 
-  if (activeSession) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="text-lg text-gray-600">
-          Existe um teste em aberto deseja finalizar?
-        </div>
-      </div>
-    );
-  }
-
-  if (!quiz || !user || activeSession === undefined) {
+  if (!quiz || !user || !session) {
     return (
       <div className="flex h-64 items-center justify-center">
         <div className="text-lg text-gray-600">Loading...</div>
@@ -52,7 +35,7 @@ export default function QuizPage() {
       questions={quiz.questions}
       name={quiz.name}
       mode={mode}
-      sessionId={activeSession?._id}
+      sessionId={session._id}
     />
   );
 }
