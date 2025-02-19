@@ -10,7 +10,7 @@ import { Button } from '../ui/button';
 import { ExamMode } from './exam-mode';
 import { useQuizStore } from './quiz-store';
 import { StudyMode } from './study-mode';
-import { ExamQuestion, QuizMode } from './types';
+import { ExamQuestion, QuestionStatus, QuizMode } from './types';
 
 export interface QuizWrapperProps {
   questions: (ExamQuestion | null)[];
@@ -28,6 +28,19 @@ export function QuizWrapper({
   const router = useRouter();
   const store = useQuizStore();
   const completeQuiz = useMutation(api.quizSessions.completeSession);
+  const updateProgress = useMutation(api.quizSessions.updateProgress);
+
+  // Get session from backend using sessionId
+  const session = useQuery(api.quizSessions.getById, {
+    sessionId: sessionId as Id<'quizSessions'>,
+  });
+
+  // Sync state on mount and when session changes
+  useEffect(() => {
+    if (sessionId && session?.progress) {
+      store.actions.syncQuizState(sessionId, session.progress, session.score);
+    }
+  }, [sessionId, session, store.actions]);
 
   // Initialize quiz state if needed
   useEffect(() => {
@@ -36,7 +49,7 @@ export function QuizWrapper({
     }
   }, [sessionId, store]);
 
-  const quizState = sessionId ? store.activeQuizzes[sessionId] : null;
+  const quizState = sessionId ? store.activeQuizzes[sessionId] : undefined;
 
   // Add early return if no quiz state
   if (!quizState) {
@@ -64,11 +77,25 @@ export function QuizWrapper({
     answer: number,
     isCorrect: boolean,
   ) => {
-    if (!sessionId) return;
+    if (!sessionId || !quizState) return;
 
-    store.actions.setCurrentIndex(sessionId, quizState.currentIndex + 1);
+    await updateProgress({
+      sessionId,
+      answer: {
+        questionId,
+        selectedOption: answer,
+        isCorrect,
+      },
+      currentQuestionIndex: quizState.currentIndex,
+    });
+
     store.actions.setAnswer(sessionId, quizState.currentIndex, answer);
     store.actions.setScore(sessionId, quizState.score + (isCorrect ? 1 : 0));
+    store.actions.setQuestionStatus(
+      sessionId,
+      quizState.currentIndex,
+      isCorrect ? 'correct' : 'incorrect',
+    );
   };
 
   const handleComplete = async () => {
@@ -76,6 +103,21 @@ export function QuizWrapper({
 
     await completeQuiz({ sessionId });
     store.actions.setIsCompleted(sessionId, true);
+  };
+
+  // Pass getQuestionStatus to StudyMode
+  const getQuestionStatus = (index: number): QuestionStatus => {
+    return quizState.questionStatuses.get(index) || 'unanswered';
+  };
+
+  const handleNextQuestion = () => {
+    if (!sessionId) return;
+    store.actions.nextQuestion(sessionId);
+  };
+
+  const handlePreviousQuestion = () => {
+    if (!sessionId) return;
+    store.actions.previousQuestion(sessionId);
   };
 
   if (quizState.isCompleted) {
@@ -98,6 +140,9 @@ export function QuizWrapper({
       onAnswer={handleAnswer}
       onComplete={handleComplete}
       currentIndex={quizState.currentIndex}
+      getQuestionStatus={getQuestionStatus}
+      onNext={handleNextQuestion}
+      onPrevious={handlePreviousQuestion}
     />
   ) : (
     <ExamMode
@@ -106,6 +151,9 @@ export function QuizWrapper({
       onAnswer={handleAnswer}
       onComplete={handleComplete}
       currentIndex={quizState.currentIndex}
+      getQuestionStatus={getQuestionStatus}
+      onNext={handleNextQuestion}
+      onPrevious={handlePreviousQuestion}
     />
   );
 }

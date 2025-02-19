@@ -1,5 +1,7 @@
 import { Id } from '../../../convex/_generated/dataModel';
 
+export type QuestionStatus = 'unanswered' | 'correct' | 'incorrect';
+
 export interface ExamQuestion {
   _id: Id<'questions'>;
   title: string;
@@ -27,8 +29,14 @@ export interface QuizModeProps {
     answer: number,
     isCorrect: boolean,
   ) => Promise<void>;
-  onComplete: () => Promise<void>;
+  onComplete: (data: {
+    answers: Map<number, number>;
+    bookmarks: string[];
+  }) => void;
   currentIndex: number;
+  getQuestionStatus: (index: number) => QuestionStatus;
+  onNext: () => void;
+  onPrevious: () => void;
 }
 
 export type StudyModeProps = QuizModeProps;
