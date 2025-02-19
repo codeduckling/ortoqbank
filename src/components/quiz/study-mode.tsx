@@ -1,7 +1,6 @@
 // StudyMode.tsx
 'use client';
 
-import { useMutation } from 'convex/react';
 import { Bookmark, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 
@@ -9,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { renderContent } from '@/lib/utils/render-content';
 
-import { api } from '../../../convex/_generated/api';
 import { Id } from '../../../convex/_generated/dataModel';
 import { QuestionDisplay } from './question-display';
 import QuizStepper, { QuestionStatus } from './quiz-stepper';
@@ -18,11 +16,19 @@ import { ExamQuestion } from './types';
 interface StudyModeProps {
   questions: ExamQuestion[];
   name: string;
-  onComplete?: (results: {
+  onAnswer: (
+    questionId: Id<'questions'>,
+    answer: number,
+    isCorrect: boolean,
+  ) => Promise<void>;
+  onComplete: (data: {
     answers: Map<number, number>;
     bookmarks: string[];
   }) => void;
-  sessionId?: Id<'quizSessions'>;
+  currentIndex: number;
+  getQuestionStatus: (index: number) => QuestionStatus;
+  onNext: () => void;
+  onPrevious: () => void;
 }
 
 type OptionIndex = 0 | 1 | 2 | 3;
@@ -30,79 +36,55 @@ type OptionIndex = 0 | 1 | 2 | 3;
 export function StudyMode({
   questions,
   name,
+  onAnswer,
   onComplete,
-  sessionId,
+  currentIndex,
+  getQuestionStatus,
+  onNext,
+  onPrevious,
 }: StudyModeProps) {
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Map<number, OptionIndex>>(new Map());
   const [showExplanation, setShowExplanation] = useState(false);
-  const [answeredQuestions, setAnsweredQuestions] = useState<number[]>([]);
-  const [bookmarkedQuestions, setBookmarkedQuestions] = useState<string[]>([]);
   const [selectedOption, setSelectedOption] = useState<
     OptionIndex | undefined
   >();
+  const [bookmarkedQuestions, setBookmarkedQuestions] = useState<string[]>([]);
 
-  const currentQuestion = questions[currentQuestionIndex];
-  const isAnswered = answeredQuestions.includes(currentQuestionIndex);
-  const currentAnswer = answers.get(currentQuestionIndex);
-  const progress = (answeredQuestions.length / questions.length) * 100;
+  const currentQuestion = questions[currentIndex];
+  const isAnswered = getQuestionStatus(currentIndex) !== 'unanswered';
 
-  const updateProgress = useMutation(api.quizSessions.updateProgress);
+  const handleConfirmAnswer = async () => {
+    if (selectedOption === undefined || isAnswered) return;
+    setShowExplanation(true);
+    await onAnswer(
+      currentQuestion._id,
+      selectedOption,
+      selectedOption === currentQuestion.correctOptionIndex,
+    );
+  };
 
   const handleOptionSelect = (optionIndex: OptionIndex) => {
     if (isAnswered) return;
     setSelectedOption(optionIndex);
   };
 
-  const handleConfirmAnswer = async () => {
-    if (selectedOption === undefined || isAnswered) return;
-
-    setAnswers(previous =>
-      new Map(previous).set(currentQuestionIndex, selectedOption),
-    );
-    setAnsweredQuestions([...answeredQuestions, currentQuestionIndex]);
-    setSelectedOption(undefined);
-    setShowExplanation(true);
-
-    // Save progress when answer is confirmed
-    if (sessionId) {
-      console.log('Updating progress:', {
-        sessionId,
-        currentQuestionIndex,
-        answer: {
-          questionId: currentQuestion._id,
-          selectedOption,
-          isCorrect: selectedOption === currentQuestion.correctOptionIndex,
-        },
-      });
-
-      await updateProgress({
-        sessionId,
-        currentQuestionIndex,
-        answer: {
-          questionId: currentQuestion._id,
-          selectedOption,
-          isCorrect: selectedOption === currentQuestion.correctOptionIndex,
-        },
-      });
-    }
-  };
-
   const handleNextQuestion = () => {
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
+    if (currentIndex < questions.length - 1) {
       setShowExplanation(false);
       setSelectedOption(undefined);
-    } else if (onComplete) {
-      onComplete({ answers, bookmarks: bookmarkedQuestions });
+      onNext();
+    } else {
+      onComplete({
+        answers: new Map(),
+        bookmarks: bookmarkedQuestions,
+      });
     }
   };
 
   const handlePreviousQuestion = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1);
+    if (currentIndex > 0) {
       setShowExplanation(false);
       setSelectedOption(undefined);
+      onPrevious();
     }
   };
 
@@ -115,19 +97,10 @@ export function StudyMode({
     );
   };
 
-  const getQuestionStatus = (index: number): QuestionStatus => {
-    if (!answeredQuestions.includes(index)) return 'unanswered';
-    const answer = answers.get(index);
-    return answer === questions[index].correctOptionIndex
-      ? 'correct'
-      : 'incorrect';
-  };
-
   const getStudyStats = () => {
-    const totalAnswered = answeredQuestions.length;
-    const correctAnswers = [...answers.entries()].filter(
-      ([index, answer]) => answer === questions[index].correctOptionIndex,
-    ).length;
+    const status = getQuestionStatus(currentIndex);
+    const totalAnswered = status === 'unanswered' ? 0 : 1;
+    const correctAnswers = status === 'correct' ? 1 : 0;
 
     return {
       totalAnswered,
@@ -153,17 +126,15 @@ export function StudyMode({
                   { length: questions.length },
                   (_, index) => index + 1,
                 )}
-                currentStep={currentQuestionIndex + 1}
-                onStepClick={step => setCurrentQuestionIndex(step - 1)}
-                getQuestionStatus={step => getQuestionStatus(step - 1)}
+                currentStep={currentIndex + 1}
+                onStepClick={handlePreviousQuestion}
+                getQuestionStatus={getQuestionStatus}
                 showFeedback={true}
               />
               <div className="flex items-center gap-4">
                 <span className="text-sm text-gray-600">
-                  {Math.round(
-                    (answeredQuestions.length / questions.length) * 100,
-                  )}
-                  % Complete
+                  {Math.round(((currentIndex + 1) / questions.length) * 100)}%
+                  Completo
                 </span>
                 <button
                   onClick={toggleBookmark}
@@ -183,7 +154,7 @@ export function StudyMode({
 
           <div className="mb-6">
             <span className="text-sm text-gray-600">
-              Question {currentQuestionIndex + 1} of {questions.length}
+              Questão {currentIndex + 1} de {questions.length}
             </span>
           </div>
 
@@ -191,7 +162,7 @@ export function StudyMode({
             question={currentQuestion}
             selectedOption={selectedOption ?? undefined}
             isAnswered={isAnswered}
-            currentAnswer={currentAnswer}
+            currentAnswer={selectedOption}
             onOptionSelect={handleOptionSelect}
             showCorrect={true}
           />
@@ -202,16 +173,25 @@ export function StudyMode({
             </div>
           )}
 
-          {isAnswered && showExplanation && (
-            <div className="mt-6 space-y-4">
-              <div className="rounded-lg border bg-gray-50 p-4">
-                <div
-                  className="prose max-w-none text-sm text-gray-700"
-                  dangerouslySetInnerHTML={{
-                    __html: renderContent(currentQuestion.explanationText),
-                  }}
-                />
-              </div>
+          {isAnswered && (
+            <div className="mt-4 space-y-4">
+              <Button
+                variant="outline"
+                onClick={() => setShowExplanation(!showExplanation)}
+              >
+                {showExplanation ? 'Esconder Explicação' : 'Mostrar Explicação'}
+              </Button>
+
+              {showExplanation && (
+                <div className="rounded-lg border bg-gray-50 p-4">
+                  <div
+                    className="prose max-w-none text-sm text-gray-700"
+                    dangerouslySetInnerHTML={{
+                      __html: renderContent(currentQuestion.explanationText),
+                    }}
+                  />
+                </div>
+              )}
             </div>
           )}
         </CardContent>
@@ -221,18 +201,15 @@ export function StudyMode({
         <Button
           variant="outline"
           onClick={handlePreviousQuestion}
-          disabled={currentQuestionIndex === 0}
+          disabled={currentIndex === 0}
         >
           <ChevronLeft className="mr-2 h-4 w-4" />
           Previous
         </Button>
         <Button onClick={handleNextQuestion} disabled={!isAnswered}>
-          {currentQuestionIndex === questions.length - 1
+          {currentIndex === questions.length - 1
             ? 'Finalizar'
             : 'Próxima Questão'}
-          {currentQuestionIndex < questions.length - 1 && (
-            <ChevronRight className="ml-2 h-4 w-4" />
-          )}
         </Button>
       </div>
     </div>

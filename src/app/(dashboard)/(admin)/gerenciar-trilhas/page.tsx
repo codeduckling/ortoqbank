@@ -50,7 +50,7 @@ import { useToast } from '@/hooks/use-toast';
 
 import { api } from '../../../../../convex/_generated/api';
 import { Id } from '../../../../../convex/_generated/dataModel';
-import { EditExamDialog } from './components/edit-exam-dialog';
+import { EditExamDialog } from './components/edit-quiz-dialog';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
@@ -72,15 +72,15 @@ export default function ManagePresetExams() {
     | undefined
   >();
   const themes = useQuery(api.themes.list) || [];
-  const presetExams = useQuery(api.presetExams.list) || [];
+  const presetQuizzes = useQuery(api.presetQuizzes.list) || [];
   const questions = useQuery(api.questions.listAll) || [];
-  const createPresetExam = useMutation(api.presetExams.create);
-  const addQuestion = useMutation(api.presetExams.addQuestion);
+  const createPresetQuiz = useMutation(api.presetQuizzes.create);
+  const addQuestion = useMutation(api.presetQuizzes.addQuestion);
   const [selectedTheme, setSelectedTheme] = useState<string>('all');
   const [questionSearch, setQuestionSearch] = useState('');
-  const updateExamQuestions = useMutation(api.presetExams.updateQuestions);
-  const updateExam = useMutation(api.presetExams.updateExam);
-  const deleteExam = useMutation(api.presetExams.deleteExam);
+  const updateQuizQuestions = useMutation(api.presetQuizzes.updateQuestions);
+  const updateQuiz = useMutation(api.presetQuizzes.updateQuiz);
+  const deleteQuiz = useMutation(api.presetQuizzes.deleteQuiz);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -93,7 +93,7 @@ export default function ManagePresetExams() {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      await createPresetExam({
+      await createPresetQuiz({
         ...values,
         questions: [],
         themeId: values.themeId as Id<'themes'>,
@@ -120,7 +120,7 @@ export default function ManagePresetExams() {
 
     try {
       await addQuestion({
-        examId: editingExam.id as Id<'presetExams'>,
+        quizId: editingExam.id as Id<'presetQuizzes'>,
         questionId: questionId as Id<'questions'>,
       });
       toast({
@@ -140,8 +140,8 @@ export default function ManagePresetExams() {
     if (!editingExam) return;
 
     try {
-      await updateExamQuestions({
-        examId: editingExam.id as Id<'presetExams'>,
+      await updateQuizQuestions({
+        quizId: editingExam.id as Id<'presetQuizzes'>,
         questions: questionIds as Id<'questions'>[],
       });
       toast({
@@ -165,8 +165,8 @@ export default function ManagePresetExams() {
     if (!editingExam) return;
 
     try {
-      await updateExam({
-        examId: editingExam.id as Id<'presetExams'>,
+      await updateQuiz({
+        quizId: editingExam.id as Id<'presetQuizzes'>,
         name: data.name,
         description: data.description,
         questions: data.questions as Id<'questions'>[],
@@ -184,8 +184,8 @@ export default function ManagePresetExams() {
     if (!editingExam) return;
 
     try {
-      await deleteExam({
-        examId: editingExam.id as Id<'presetExams'>,
+      await deleteQuiz({
+        quizId: editingExam.id as Id<'presetQuizzes'>,
       });
     } catch {
       toast({
@@ -199,8 +199,8 @@ export default function ManagePresetExams() {
   const filteredQuestions = questions.filter(
     question =>
       (selectedTheme === 'all' || question.themeId === selectedTheme) &&
-      !presetExams
-        .find(exam => exam._id === editingExam?.id)
+      !presetQuizzes
+        .find(quiz => quiz._id === editingExam?.id)
         ?.questions.includes(question._id),
   );
 
@@ -298,16 +298,16 @@ export default function ManagePresetExams() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {presetExams.map(exam => (
-                <TableRow key={exam._id}>
-                  <TableCell>{exam.name}</TableCell>
-                  <TableCell>{exam.description}</TableCell>
-                  <TableCell>{exam.questions.length} questões</TableCell>
+              {presetQuizzes.map(quiz => (
+                <TableRow key={quiz._id}>
+                  <TableCell>{quiz.name}</TableCell>
+                  <TableCell>{quiz.description}</TableCell>
+                  <TableCell>{quiz.questions.length} questões</TableCell>
                   <TableCell>
                     <Button
                       variant="outline"
                       onClick={() =>
-                        setEditingExam({ id: exam._id, name: exam.name })
+                        setEditingExam({ id: quiz._id, name: quiz.name })
                       }
                     >
                       Editar
@@ -324,18 +324,19 @@ export default function ManagePresetExams() {
         <EditExamDialog
           open={!!editingExam}
           onOpenChange={() => setEditingExam(undefined)}
-          exam={{
+          quiz={{
             id: editingExam.id,
             name:
-              presetExams.find(exam => exam._id === editingExam.id)?.name ?? '',
+              presetQuizzes.find(quiz => quiz._id === editingExam.id)?.name ??
+              '',
             description:
-              presetExams.find(exam => exam._id === editingExam.id)
+              presetQuizzes.find(quiz => quiz._id === editingExam.id)
                 ?.description ?? '',
           }}
           questions={questions}
-          presetExams={presetExams}
-          onUpdateExam={handleUpdateExam}
-          onDeleteExam={handleDeleteExam}
+          presetQuizzes={presetQuizzes}
+          onUpdateQuiz={handleUpdateExam}
+          onDeleteQuiz={handleDeleteExam}
         />
       )}
     </div>

@@ -1,10 +1,11 @@
-import { Check, X } from 'lucide-react';
+import { Check, ChevronLeft, X } from 'lucide-react';
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
+import { Id } from '../../../convex/_generated/dataModel';
 import { QuestionDisplay } from './question-display';
 import { QuizResults } from './quiz-results';
 import QuizStepper, { type QuestionStatus } from './quiz-stepper';
@@ -13,84 +14,77 @@ import { ExamQuestion } from './types';
 interface ExamModeProps {
   questions: ExamQuestion[];
   name: string;
-  onComplete?: (results: {
+  onComplete: (results: {
     answers: Map<number, number>;
     bookmarks?: string[];
   }) => void;
+  onAnswer: (
+    questionId: Id<'questions'>,
+    answer: number,
+    isCorrect: boolean,
+  ) => Promise<void>;
+  sessionId?: Id<'quizSessions'>;
+  currentIndex: number;
+  getQuestionStatus: (index: number) => QuestionStatus;
+  onNext: () => void;
+  onPrevious: () => void;
 }
 
 type OptionIndex = 0 | 1 | 2 | 3;
 
-export function ExamMode({ questions, name }: ExamModeProps) {
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Map<number, OptionIndex>>(new Map());
+export function ExamMode({
+  questions,
+  name,
+  onAnswer,
+  onComplete,
+  currentIndex,
+  getQuestionStatus,
+  onNext,
+  onPrevious,
+}: ExamModeProps) {
+  const [showExplanation, setShowExplanation] = useState(false);
   const [selectedOption, setSelectedOption] = useState<
     OptionIndex | undefined
   >();
-  const [isComplete, setIsComplete] = useState(false);
 
-  const currentQuestion = questions[currentQuestionIndex];
-  const isAnswered = answers.has(currentQuestionIndex);
+  const currentQuestion = questions[currentIndex];
+  const isAnswered = getQuestionStatus(currentIndex) !== 'unanswered';
 
-  const handleOptionSelect = (optionIndex: number) => {
+  const handleOptionSelect = (optionIndex: OptionIndex) => {
     if (isAnswered) return;
-    setSelectedOption(optionIndex as OptionIndex);
+    setSelectedOption(optionIndex);
+  };
+
+  const handleConfirmAnswer = async () => {
+    if (selectedOption === undefined || isAnswered) return;
+    setShowExplanation(true);
+    await onAnswer(
+      currentQuestion._id,
+      selectedOption,
+      selectedOption === currentQuestion.correctOptionIndex,
+    );
   };
 
   const handleNextQuestion = () => {
-    if (selectedOption === undefined) return;
-
-    setAnswers(previous =>
-      new Map(previous).set(currentQuestionIndex, selectedOption),
-    );
-
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
+    if (currentIndex < questions.length - 1) {
+      setShowExplanation(false);
       setSelectedOption(undefined);
+      onNext();
     } else {
-      setIsComplete(true);
+      onComplete({
+        answers: new Map(),
+        bookmarks: [],
+      });
     }
   };
 
-  const getQuestionStatus = (index: number): QuestionStatus => {
-    if (!answers.has(index)) return 'unanswered';
-    const answer = answers.get(index);
-    return answer === questions[index].correctOptionIndex
-      ? 'correct'
-      : 'incorrect';
+  const handlePreviousQuestion = () => {
+    if (currentIndex > 0) {
+      setShowExplanation(false);
+      setSelectedOption(undefined);
+      onPrevious();
+    }
   };
-
-  if (isComplete) {
-    const correctAnswers = [...answers.entries()].filter(
-      ([index, answer]) => answer === questions[index].correctOptionIndex,
-    ).length;
-
-    return (
-      <div className="container mx-auto max-w-3xl p-6">
-        <Card>
-          <CardContent className="p-6">
-            <h2 className="mb-4 text-2xl font-bold">Fim do Simulado</h2>
-            <div className="space-y-6">
-              <p className="text-lg font-medium">
-                Sua nota: {correctAnswers} de {questions.length} (
-                {Math.round((correctAnswers / questions.length) * 100)}%)
-              </p>
-
-              <QuizResults
-                questions={questions}
-                answers={answers}
-                correctAnswers={
-                  new Map(
-                    questions.map((q, index) => [index, q.correctOptionIndex]),
-                  )
-                }
-              />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto max-w-3xl p-6">
@@ -104,31 +98,45 @@ export function ExamMode({ questions, name }: ExamModeProps) {
                 { length: questions.length },
                 (_, index) => index + 1,
               )}
-              currentStep={currentQuestionIndex + 1}
-              onStepClick={step => setCurrentQuestionIndex(step - 1)}
-              getQuestionStatus={step => getQuestionStatus(step - 1)}
+              currentStep={currentIndex + 1}
+              onStepClick={handlePreviousQuestion}
+              getQuestionStatus={getQuestionStatus}
               showFeedback={false}
             />
             <div className="text-sm text-gray-600">
-              Question {currentQuestionIndex + 1} of {questions.length}
+              Question {currentIndex + 1} of {questions.length}
             </div>
           </div>
 
           <QuestionDisplay
             question={currentQuestion}
-            selectedOption={selectedOption ?? undefined}
+            selectedOption={selectedOption}
             isAnswered={isAnswered}
-            currentAnswer={answers.get(currentQuestionIndex)}
+            currentAnswer={selectedOption}
             onOptionSelect={handleOptionSelect}
             showCorrect={false}
           />
 
           <div className="mt-4">
             <Button
-              onClick={handleNextQuestion}
+              onClick={handleConfirmAnswer}
               disabled={selectedOption === undefined}
             >
-              {currentQuestionIndex === questions.length - 1
+              Verificar Resposta
+            </Button>
+          </div>
+
+          <div className="mt-4 flex justify-between">
+            <Button
+              variant="outline"
+              onClick={handlePreviousQuestion}
+              disabled={currentIndex === 0}
+            >
+              <ChevronLeft className="mr-2 h-4 w-4" />
+              Previous
+            </Button>
+            <Button onClick={handleNextQuestion} disabled={!isAnswered}>
+              {currentIndex === questions.length - 1
                 ? 'Finalizar'
                 : 'Próxima Questão'}
             </Button>

@@ -46,6 +46,11 @@ export default function QuizStepper({
     return steps.slice(start, end);
   };
 
+  const handleStepClick = (stepNumber: number) => {
+    // Convert from 1-based to 0-based index
+    onStepClick(stepNumber - 1);
+  };
+
   const getStepClassName = (stepNumber: number, status: QuestionStatus) => {
     const baseClasses =
       'flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-medium transition-colors';
@@ -59,11 +64,11 @@ export default function QuizStepper({
 
     if (showFeedback) {
       if (status === 'correct') {
-        return cn(baseClasses, 'border-green-500 bg-green-50 text-white');
+        return cn(baseClasses, 'border-green-500 bg-green-500 text-white');
       }
 
       if (status === 'incorrect') {
-        return cn(baseClasses, 'border-red-500 bg-red-50 text-white');
+        return cn(baseClasses, 'border-red-500 bg-red-500 text-white');
       }
     } else if (status !== 'unanswered') {
       // Show gray border for answered questions when feedback is disabled
@@ -93,17 +98,11 @@ export default function QuizStepper({
     return stepNumber;
   };
 
-  const visibleSteps = getVisibleSteps();
-  const showLeftArrow = currentStep > 1;
-  const showRightArrow = currentStep < steps.length;
-
   return (
     <div className="flex items-center gap-2">
-      {showLeftArrow && (
+      {currentStep > 1 && (
         <button
-          onClick={() =>
-            onStepClick(Math.max(1, currentStep - STEPPER_CONFIG.JUMP_SIZE))
-          }
+          onClick={() => handleStepClick(currentStep - 1)}
           className="text-gray-500 hover:text-gray-700"
         >
           <ChevronLeft className="h-5 w-5" />
@@ -114,12 +113,12 @@ export default function QuizStepper({
         ref={scrollRef}
         className="scrollbar-hide flex gap-2 overflow-x-auto"
       >
-        {visibleSteps.map(stepNumber => {
-          const status = getQuestionStatus(stepNumber);
+        {getVisibleSteps().map(stepNumber => {
+          const status = getQuestionStatus(stepNumber - 1); // Convert to 0-based index
           return (
             <button
               key={stepNumber}
-              onClick={() => onStepClick(stepNumber)}
+              onClick={() => handleStepClick(stepNumber)}
               className={getStepClassName(stepNumber, status)}
               aria-current={stepNumber === currentStep ? 'step' : undefined}
             >
@@ -129,13 +128,9 @@ export default function QuizStepper({
         })}
       </div>
 
-      {showRightArrow && (
+      {currentStep < steps.length && (
         <button
-          onClick={() =>
-            onStepClick(
-              Math.min(steps.length, currentStep + STEPPER_CONFIG.JUMP_SIZE),
-            )
-          }
+          onClick={() => handleStepClick(currentStep + 1)}
           className="text-gray-500 hover:text-gray-700"
         >
           <ChevronRight className="h-5 w-5" />

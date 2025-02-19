@@ -1,99 +1,198 @@
-/* eslint-disable unicorn/filename-case */
 import { v } from 'convex/values';
 
-import { mutation, query } from './_generated/server';
-import { getCurrentUser } from './users';
+import { Doc, Id } from './_generated/dataModel';
+import { mutation, query, type QueryCtx } from './_generated/server';
+import { getCurrentUserOrThrow } from './users';
 
-export const create = mutation({
+async function getActiveQuizSession(
+  ctx: QueryCtx,
+  userId: Id<'users'>,
   args: {
-    presetExamId: v.optional(v.id('presetExams')),
-    customExamId: v.optional(v.id('customExams')),
+    presetQuizId?: Id<'presetQuizzes'>;
+    customQuizId?: Id<'customQuizzes'>;
   },
-  handler: async (context, arguments_) => {
-    const user = await getCurrentUser(context);
-    if (!user) throw new Error('Not authenticated');
+): Promise<Id<'quizSessions'> | null> {
+  //eslint-disable-next-line playwright/no-useless-await
+  const session = await ctx.db
+    .query('quizSessions')
+    .withIndex('by_user', q => q.eq('userId', userId))
+    .filter(q =>
+      q.and(
+        q.eq(q.field('status'), 'in_progress'),
+        args.presetQuizId
+          ? q.eq(q.field('presetQuizId'), args.presetQuizId)
+          : q.eq(q.field('customQuizId'), args.customQuizId),
+      ),
+    )
+    .first();
 
-    // Check for existing active session
-    const activeSession = await context.db
-      .query('quizSessions')
-      .withIndex('by_user', q => q.eq('userId', user._id))
-      .filter(q => q.eq(q.field('status'), 'in_progress'))
-      .unique();
+  // eslint-disable-next-line unicorn/no-null
+  return session?._id ?? null;
+}
 
-    if (activeSession) {
-      throw new Error('User already has an active quiz session');
+export const startQuizSession = mutation({
+  args: {
+    presetQuizId: v.optional(v.id('presetQuizzes')),
+    customQuizId: v.optional(v.id('customQuizzes')),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUserOrThrow(ctx);
+
+    if (!args.presetQuizId && !args.customQuizId) {
+      throw new Error('Either presetQuizId or customQuizId must be provided');
     }
 
-    return await context.db.insert('quizSessions', {
-      userId: user._id,
-      presetExamId: arguments_.presetExamId,
-      customExamId: arguments_.customExamId,
-      status: 'in_progress',
-      score: 0,
-    });
-  },
-});
+    let activeSession = await getActiveQuizSession(ctx, user._id, args);
 
-export const getActiveSession = query({
-  args: {},
-  handler: async (context, _) => {
-    const user = await getCurrentUser(context);
-    if (!user) return;
-
-    const activeSession = await context.db
-      .query('quizSessions')
-      .withIndex('by_user', q => q.eq('userId', user._id))
-      .filter(q => q.eq(q.field('status'), 'in_progress'))
-      .unique();
+    if (!activeSession) {
+      activeSession = await ctx.db.insert('quizSessions', {
+        userId: user._id,
+        presetQuizId: args.presetQuizId,
+        customQuizId: args.customQuizId,
+        status: 'in_progress',
+        score: 0,
+        progress: {
+          currentQuestionIndex: 0,
+          answers: [],
+        },
+      });
+    }
 
     return activeSession;
   },
 });
 
-export const completeSession = mutation({
+export const get = query({
   args: {
-    sessionId: v.id('quizSessions'),
-    score: v.number(),
+    presetQuizId: v.optional(v.id('presetQuizzes')),
+    customQuizId: v.optional(v.id('customQuizzes')),
   },
-  handler: async (context, arguments_) => {
-    await context.db.patch(arguments_.sessionId, {
-      status: 'completed',
-      score: arguments_.score,
-      endTime: Date.now(),
-    });
+  handler: async (ctx, args) => {
+    const user = await getCurrentUserOrThrow(ctx);
+
+    if (!args.presetQuizId && !args.customQuizId) {
+      throw new Error('Either presetQuizId or customQuizId must be provided');
+    }
+
+    return ctx.db
+      .query('quizSessions')
+      .withIndex('by_user', q => q.eq('userId', user._id))
+      .filter(q =>
+        q.and(
+          q.eq(q.field('status'), 'in_progress'),
+          args.presetQuizId
+            ? q.eq(q.field('presetQuizId'), args.presetQuizId)
+            : q.eq(q.field('customQuizId'), args.customQuizId),
+        ),
+      )
+      .first();
   },
 });
 
 export const updateProgress = mutation({
   args: {
     sessionId: v.id('quizSessions'),
+    answer: v.object({
+      questionId: v.id('questions'),
+      selectedOption: v.number(),
+      isCorrect: v.boolean(),
+    }),
     currentQuestionIndex: v.number(),
-    answer: v.optional(
-      v.object({
-        questionId: v.id('questions'),
-        selectedOption: v.number(),
-        isCorrect: v.boolean(),
-      }),
-    ),
   },
-  handler: async (context, arguments_) => {
-    const session = await context.db.get(arguments_.sessionId);
-    if (!session) throw new Error('Session not found');
+  handler: async (ctx, args) => {
+    const session = await ctx.db.get(args.sessionId);
+    if (!session) {
+      throw new Error('Session not found');
+    }
 
-    const currentProgress = session.progress ?? {
-      currentQuestionIndex: 0,
-      answers: [],
+    if (session.status !== 'in_progress') {
+      throw new Error('Cannot update completed session');
+    }
+
+    // Update progress
+    const progress = {
+      currentQuestionIndex: args.currentQuestionIndex,
+      answers: [
+        ...(session.progress?.answers || []),
+        {
+          questionId: args.answer.questionId,
+          selectedOption: args.answer.selectedOption,
+          isCorrect: args.answer.isCorrect,
+        },
+      ],
     };
 
-    const newProgress = {
-      currentQuestionIndex: arguments_.currentQuestionIndex,
-      answers: arguments_.answer
-        ? [...currentProgress.answers, arguments_.answer]
-        : currentProgress.answers,
-    };
+    // Calculate new score
+    const score = progress.answers.filter(a => a.isCorrect).length;
 
-    await context.db.patch(arguments_.sessionId, {
-      progress: newProgress,
+    // Update session
+    await ctx.db.patch(args.sessionId, {
+      progress,
+      score,
     });
+
+    return { progress, score };
+  },
+});
+
+export const completeSession = mutation({
+  args: {
+    sessionId: v.id('quizSessions'),
+  },
+  handler: async (ctx, args) => {
+    const session = await ctx.db.get(args.sessionId);
+    if (!session) {
+      throw new Error('Session not found');
+    }
+
+    if (session.status === 'completed') {
+      throw new Error('Session already completed');
+    }
+
+    // Calculate final score from progress
+    const finalScore =
+      session.progress?.answers.filter(a => a.isCorrect).length ?? 0;
+
+    // Update session with completion data
+    await ctx.db.patch(args.sessionId, {
+      status: 'completed',
+      endTime: Date.now(),
+      score: finalScore,
+    });
+
+    return { success: true };
+  },
+});
+
+export const getById = query({
+  args: {
+    sessionId: v.id('quizSessions'),
+  },
+  handler: async (ctx, args) => {
+    const session = await ctx.db.get(args.sessionId);
+    if (!session) {
+      throw new Error('Session not found');
+    }
+    return session;
+  },
+});
+
+export const getCompletedSession = query({
+  args: {
+    presetQuizId: v.id('presetQuizzes'),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUserOrThrow(ctx);
+
+    return ctx.db
+      .query('quizSessions')
+      .withIndex('by_user', q => q.eq('userId', user._id))
+      .filter(q =>
+        q.and(
+          q.eq(q.field('status'), 'completed'),
+          q.eq(q.field('presetQuizId'), args.presetQuizId),
+        ),
+      )
+      .first();
   },
 });

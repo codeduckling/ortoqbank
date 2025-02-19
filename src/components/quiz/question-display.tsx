@@ -1,5 +1,3 @@
-import { Check, X } from 'lucide-react';
-
 import { renderContent } from '@/lib/utils/render-content';
 
 import { ExamQuestion, OptionIndex } from './types';

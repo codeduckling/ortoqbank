@@ -19,44 +19,44 @@ import { useToast } from '@/hooks/use-toast';
 
 import { Id } from '../../../../../../convex/_generated/dataModel';
 
-interface EditExamDialogProps {
+interface EditQuizDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  exam: {
+  quiz: {
     id: string;
     name: string;
     description: string;
   };
   questions: Array<{ _id: Id<'questions'>; title: string; themeId: string }>;
-  presetExams: Array<{
-    _id: Id<'presetExams'>;
+  presetQuizzes: Array<{
+    _id: Id<'presetQuizzes'>;
     name: string;
     description: string;
     questions: string[];
   }>;
-  onUpdateExam: (data: {
+  onUpdateQuiz: (data: {
     name: string;
     description: string;
     questions: string[];
   }) => Promise<void>;
-  onDeleteExam: () => Promise<void>;
+  onDeleteQuiz: () => Promise<void>;
 }
 
 export function EditExamDialog({
   open,
   onOpenChange,
-  exam,
+  quiz,
   questions,
-  presetExams,
-  onUpdateExam,
-  onDeleteExam,
-}: EditExamDialogProps) {
+  presetQuizzes,
+  onUpdateQuiz,
+  onDeleteQuiz,
+}: EditQuizDialogProps) {
   const { toast } = useToast();
   const [searchValue, setSearchValue] = useState('');
-  const [name, setName] = useState(exam.name);
-  const [description, setDescription] = useState(exam.description);
+  const [name, setName] = useState(quiz.name);
+  const [description, setDescription] = useState(quiz.description);
   const [selectedQuestions, setSelectedQuestions] = useState<Set<string>>(
-    new Set(presetExams.find(exam_ => exam_._id === exam.id)?.questions ?? []),
+    new Set(presetQuizzes.find(q => q._id === quiz.id)?.questions ?? []),
   );
 
   const handleToggleQuestion = (questionId: string) => {
@@ -71,7 +71,7 @@ export function EditExamDialog({
 
   const handleSave = async () => {
     try {
-      await onUpdateExam({
+      await onUpdateQuiz({
         name,
         description,
         questions: [...selectedQuestions],
@@ -94,7 +94,7 @@ export function EditExamDialog({
     if (!confirm('Tem certeza que deseja excluir este teste?')) return;
 
     try {
-      await onDeleteExam();
+      await onDeleteQuiz();
       toast({
         title: 'Sucesso',
         description: 'Teste excluído com sucesso!',
