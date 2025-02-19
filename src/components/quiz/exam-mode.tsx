@@ -14,7 +14,7 @@ import { ExamQuestion } from './types';
 interface ExamModeProps {
   questions: ExamQuestion[];
   name: string;
-  onComplete?: (results: {
+  onComplete: (results: {
     answers: Map<number, number>;
     bookmarks?: string[];
   }) => void;

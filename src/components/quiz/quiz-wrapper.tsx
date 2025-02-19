@@ -2,12 +2,14 @@
 
 import { useMutation, useQuery } from 'convex/react';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import { api } from '../../../convex/_generated/api';
 import { Id } from '../../../convex/_generated/dataModel';
 import { Button } from '../ui/button';
+import { Card, CardContent } from '../ui/card';
 import { ExamMode } from './exam-mode';
+import { QuizResults } from './quiz-results';
 import { useQuizStore } from './quiz-store';
 import { StudyMode } from './study-mode';
 import { ExamQuestion, QuestionStatus, QuizMode } from './types';
@@ -29,18 +31,17 @@ export function QuizWrapper({
   const store = useQuizStore();
   const completeQuiz = useMutation(api.quizSessions.completeSession);
   const updateProgress = useMutation(api.quizSessions.updateProgress);
+  const [isCompleting, setIsCompleting] = useState(false);
 
   // Get session from backend using sessionId
-  const session = useQuery(api.quizSessions.getById, {
-    sessionId: sessionId as Id<'quizSessions'>,
-  });
+  const session = useQuery(
+    api.quizSessions.getById,
+    sessionId ? { sessionId: sessionId as Id<'quizSessions'> } : 'skip',
+  );
 
-  // Sync state on mount and when session changes
-  useEffect(() => {
-    if (sessionId && session?.progress) {
-      store.actions.syncQuizState(sessionId, session.progress, session.score);
-    }
-  }, [sessionId, session, store.actions]);
+  const filteredQuestions = questions.filter(
+    (q): q is ExamQuestion => q !== null,
+  );
 
   // Initialize quiz state if needed
   useEffect(() => {
@@ -49,10 +50,19 @@ export function QuizWrapper({
     }
   }, [sessionId, store]);
 
-  const quizState = sessionId ? store.activeQuizzes[sessionId] : undefined;
+  // Sync state on mount and when session changes
+  useEffect(() => {
+    if (sessionId && session?.progress) {
+      store.actions.syncQuizState(
+        sessionId,
+        session.progress,
+        session.score ?? 0,
+      );
+    }
+  }, [sessionId, session, store.actions]);
 
-  // Add early return if no quiz state
-  if (!quizState) {
+  // Show loading only if we're waiting for a session
+  if (sessionId && (!store.activeQuizzes[sessionId] || !session)) {
     return (
       <div className="flex h-64 items-center justify-center">
         <div className="text-lg text-gray-600">Loading quiz state...</div>
@@ -60,9 +70,20 @@ export function QuizWrapper({
     );
   }
 
-  const filteredQuestions = questions.filter(
-    (q): q is ExamQuestion => q !== null,
-  );
+  // If no sessionId, we can start a new quiz
+  if (!sessionId) {
+    // TODO: Create new session
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <div className="text-lg text-gray-600">Starting new quiz...</div>
+      </div>
+    );
+  }
+
+  const quizState = store.activeQuizzes[sessionId];
+  if (!quizState) {
+    return;
+  }
 
   if (filteredQuestions.length === 0) {
     return (
@@ -77,8 +98,6 @@ export function QuizWrapper({
     answer: number,
     isCorrect: boolean,
   ) => {
-    if (!sessionId || !quizState) return;
-
     await updateProgress({
       sessionId,
       answer: {
@@ -98,54 +117,42 @@ export function QuizWrapper({
     );
   };
 
-  const handleComplete = async () => {
-    if (!sessionId) return;
+  const handleComplete = async (results: {
+    answers: Map<number, number>;
+    bookmarks?: string[];
+  }) => {
+    if (isCompleting) return;
 
-    await completeQuiz({ sessionId });
-    store.actions.setIsCompleted(sessionId, true);
+    setIsCompleting(true);
+    try {
+      await completeQuiz({ sessionId });
+      // Get presetQuizId from session and redirect to correct results page
+      if (session?.presetQuizId) {
+        router.push(`/temas/${session.presetQuizId}/results`);
+      }
+    } catch (error) {
+      console.error('Failed to complete quiz:', error);
+    } finally {
+      setIsCompleting(false);
+    }
   };
 
-  // Pass getQuestionStatus to StudyMode
   const getQuestionStatus = (index: number): QuestionStatus => {
     return quizState.questionStatuses.get(index) || 'unanswered';
   };
 
   const handleNextQuestion = () => {
-    if (!sessionId) return;
     store.actions.nextQuestion(sessionId);
   };
 
   const handlePreviousQuestion = () => {
-    if (!sessionId) return;
     store.actions.previousQuestion(sessionId);
   };
 
-  if (quizState.isCompleted) {
-    return (
-      <div className="flex flex-col items-center justify-center space-y-4 p-8">
-        <h1 className="text-2xl font-bold">Quiz Completed!</h1>
-        <p className="text-xl">
-          Your score: {quizState.score} out of {filteredQuestions.length} (
-          {Math.round((quizState.score / filteredQuestions.length) * 100)}%)
-        </p>
-        <Button onClick={() => router.push('/temas')}>Back to Themes</Button>
-      </div>
-    );
-  }
+  const ModeComponent = mode === 'study' ? StudyMode : ExamMode;
 
-  return mode === 'study' ? (
-    <StudyMode
-      questions={filteredQuestions}
-      name={name}
-      onAnswer={handleAnswer}
-      onComplete={handleComplete}
-      currentIndex={quizState.currentIndex}
-      getQuestionStatus={getQuestionStatus}
-      onNext={handleNextQuestion}
-      onPrevious={handlePreviousQuestion}
-    />
-  ) : (
-    <ExamMode
+  return (
+    <ModeComponent
       questions={filteredQuestions}
       name={name}
       onAnswer={handleAnswer}

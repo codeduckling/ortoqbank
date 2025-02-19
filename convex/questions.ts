@@ -131,3 +131,11 @@ export const listAll = query({
     return await context.db.query('questions').collect();
   },
 });
+
+export const getMany = query({
+  args: { ids: v.array(v.id('questions')) },
+  handler: async (ctx, args) => {
+    const questions = await Promise.all(args.ids.map(id => ctx.db.get(id)));
+    return questions;
+  },
+});

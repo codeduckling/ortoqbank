@@ -176,3 +176,23 @@ export const getById = query({
     return session;
   },
 });
+
+export const getCompletedSession = query({
+  args: {
+    presetQuizId: v.id('presetQuizzes'),
+  },
+  handler: async (ctx, args) => {
+    const mockUser = 'j571n8n6pntprjpnv9w22th81n78fq8y' as Id<'users'>;
+
+    return ctx.db
+      .query('quizSessions')
+      .withIndex('by_user', q => q.eq('userId', mockUser))
+      .filter(q =>
+        q.and(
+          q.eq(q.field('status'), 'completed'),
+          q.eq(q.field('presetQuizId'), args.presetQuizId),
+        ),
+      )
+      .first();
+  },
+});

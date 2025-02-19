@@ -20,7 +20,7 @@ export default function QuizPage() {
     presetQuizId: id as Id<'presetQuizzes'>,
   });
 
-  if (!quiz || !user || !session) {
+  if (!quiz || !user) {
     return (
       <div className="flex h-64 items-center justify-center">
         <div className="text-lg text-gray-600">Loading...</div>
@@ -35,7 +35,7 @@ export default function QuizPage() {
       questions={quiz.questions}
       name={quiz.name}
       mode={mode}
-      sessionId={session._id}
+      sessionId={session?._id}
     />
   );
 }

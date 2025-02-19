@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { renderContent } from '@/lib/utils/render-content';
 
+import QuizStepper from './quiz-stepper';
 import { ExamQuestion } from './types';
 
 interface QuizResultsProps {
@@ -38,6 +39,15 @@ export function QuizResults({
     number | undefined
   >();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [showExplanation, setShowExplanation] = useState(false);
+
+  if (!questions?.length || !answers || !correctAnswers) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <div className="text-lg text-gray-600">No results available</div>
+      </div>
+    );
+  }
 
   const isCorrect = (index: number) => {
     const answer = answers.get(index);
@@ -46,16 +56,21 @@ export function QuizResults({
   };
 
   const getFilteredQuestions = () => {
-    return Array.from({ length: questions.length }, (_, index) => index).filter(
-      index => {
-        if (filter === 'all') return true;
-        if (filter === 'correct') return isCorrect(index);
-        return !isCorrect(index);
-      },
-    );
+    switch (filter) {
+      case 'all': {
+        return questions.map((_, i) => i + 1);
+      }
+      case 'correct': {
+        return questions.map((_, i) => i + 1).filter(isCorrect);
+      }
+      case 'incorrect': {
+        return questions
+          .map((_, i) => i + 1)
+          .filter(index => !isCorrect(index));
+      }
+      // No default
+    }
   };
-
-  const filteredQuestions = getFilteredQuestions();
 
   const getStepClassName = (stepNumber: number) => {
     const baseClasses =
@@ -68,17 +83,16 @@ export function QuizResults({
       );
     }
 
-    const correct = isCorrect(stepNumber);
     return cn(
       baseClasses,
-      correct
-        ? 'border border-green-500 bg-green-50'
-        : 'border border-red-500 bg-red-50',
+      isCorrect(stepNumber - 1)
+        ? 'border-green-500 bg-green-500 text-white'
+        : 'border-red-500 bg-red-500 text-white',
     );
   };
 
   const getStepContent = (stepNumber: number) => {
-    return <span>{stepNumber + 1}</span>;
+    return stepNumber;
   };
 
   return (
@@ -97,28 +111,14 @@ export function QuizResults({
             variant={filter === 'correct' ? 'default' : 'outline'}
             onClick={() => setFilter('correct')}
           >
-            Corretas (
-            {
-              Array.from(
-                { length: questions.length },
-                (_, index) => index,
-              ).filter(index => isCorrect(index)).length
-            }
-            )
+            Correctas ({questions.filter(isCorrect).length})
           </Button>
           <Button
             size="sm"
             variant={filter === 'incorrect' ? 'default' : 'outline'}
             onClick={() => setFilter('incorrect')}
           >
-            Incorretas (
-            {
-              Array.from(
-                { length: questions.length },
-                (_, index) => index,
-              ).filter(index => !isCorrect(index)).length
-            }
-            )
+            Incorrectas ({questions.filter(index => !isCorrect(index)).length})
           </Button>
         </div>
 
@@ -127,12 +127,10 @@ export function QuizResults({
             ref={scrollRef}
             className="grid grid-cols-10 gap-2 sm:grid-cols-15 md:grid-cols-20"
           >
-            {filteredQuestions.map(stepNumber => (
+            {getFilteredQuestions().map(stepNumber => (
               <button
                 key={stepNumber}
-                onClick={() => {
-                  setSelectedQuestion(stepNumber);
-                }}
+                onClick={() => setSelectedQuestion(stepNumber)}
                 className={getStepClassName(stepNumber)}
               >
                 {getStepContent(stepNumber)}
@@ -144,58 +142,69 @@ export function QuizResults({
 
       {selectedQuestion !== undefined && (
         <div className="space-y-4 rounded-lg border bg-gray-50 p-4">
-          <div className="prose max-w-none">
+          <div className="prose max-w-none text-sm">
             <div
               dangerouslySetInnerHTML={{
-                __html: renderContent(questions[selectedQuestion].questionText),
+                __html: renderContent(
+                  questions[selectedQuestion - 1].questionText,
+                ),
               }}
             />
           </div>
 
           <div className="space-y-2">
-            {questions[selectedQuestion].options.map((option, optionIndex) => {
-              const isUserAnswer =
-                answers.get(selectedQuestion) === optionIndex;
-              const isCorrectAnswer =
-                correctAnswers.get(selectedQuestion) === optionIndex;
-
-              return (
+            {questions[selectedQuestion - 1].options.map(
+              (option, optionIndex) => (
                 <div
                   key={optionIndex}
                   className={cn(
-                    'rounded-lg border p-3',
-                    getOptionClassName(isCorrectAnswer, isUserAnswer),
+                    'rounded-lg border p-4',
+                    optionIndex === answers.get(selectedQuestion) &&
+                      'border-primary bg-primary/5 border-2',
+                    optionIndex === correctAnswers.get(selectedQuestion) &&
+                      'border-2 border-green-500 bg-green-50',
                   )}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">
-                        {String.fromCodePoint(65 + optionIndex)}
-                      </span>
-                      <span>{option.text}</span>
-                    </div>
-                    {isCorrectAnswer && (
-                      <Check className="h-5 w-5 text-green-600" />
-                    )}
-                    {isUserAnswer && !isCorrectAnswer && (
-                      <X className="h-5 w-5 text-red-600" />
-                    )}
-                  </div>
+                  <div
+                    className="prose max-w-none text-sm"
+                    dangerouslySetInnerHTML={{
+                      __html: renderContent({
+                        type: 'doc',
+                        content: [
+                          {
+                            type: 'paragraph',
+                            content: [{ type: 'text', text: option.text }],
+                          },
+                        ],
+                      }),
+                    }}
+                  />
                 </div>
-              );
-            })}
+              ),
+            )}
           </div>
 
-          <div className="rounded-lg border border-gray-200 bg-white p-4">
-            <h4 className="mb-2 font-medium">Gabarito</h4>
-            <div
-              className="prose max-w-none text-sm text-gray-700"
-              dangerouslySetInnerHTML={{
-                __html: renderContent(
-                  questions[selectedQuestion].explanationText,
-                ),
-              }}
-            />
+          <div className="mt-4 space-y-4">
+            <Button
+              variant="outline"
+              onClick={() => setShowExplanation(!showExplanation)}
+            >
+              {showExplanation ? 'Esconder Explicação' : 'Mostrar Explicação'}
+            </Button>
+
+            {showExplanation && (
+              <div className="rounded-lg border border-gray-200 bg-white p-4">
+                <h4 className="mb-2 font-medium">Gabarito</h4>
+                <div
+                  className="prose max-w-none text-sm text-gray-700"
+                  dangerouslySetInnerHTML={{
+                    __html: renderContent(
+                      questions[selectedQuestion - 1].explanationText,
+                    ),
+                  }}
+                />
+              </div>
+            )}
           </div>
         </div>
       )}
