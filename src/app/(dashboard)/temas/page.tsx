@@ -43,40 +43,30 @@ const THEME_ICONS: Record<
 
 export default function ThemesPage() {
   const themes = useQuery(api.themes.list) || [];
-  const presetExams = useQuery(api.presetExams.list) || [];
+  const presetQuizzes = useQuery(api.presetQuizzes.list) || [];
   const startSession = useMutation(api.quizSessions.create);
-  const activeSession = useQuery(api.quizSessions.getActiveSession);
+
   const router = useRouter();
 
   // Group exams by theme
   const examsByTheme = themes.reduce(
     (accumulator, theme) => {
-      accumulator[theme._id] = presetExams.filter(
-        exam => exam.themeId === theme._id,
+      accumulator[theme._id] = presetQuizzes.filter(
+        quiz => quiz.themeId === theme._id,
       );
       return accumulator;
     },
-    {} as Record<string, typeof presetExams>,
+    {} as Record<string, typeof presetQuizzes>,
   );
 
-  const handleExamClick = async (examId: Id<'presetExams'>) => {
+  const handleExamClick = async (quizId: Id<'presetQuizzes'>) => {
     // If there's an active session for this exam, just navigate to it
-    if (activeSession?.presetExamId === examId) {
-      router.push(`/temas/${examId}`);
-      return;
-    }
-
-    // If there's an active session for another exam, don't create a new one
-    if (activeSession) {
-      // Optionally show a message that they need to complete or cancel the other session first
-      return;
-    }
 
     // Create new session only if there's no active session
     await startSession({
-      presetExamId: examId,
+      presetQuizId: quizId,
     });
-    router.push(`/temas/${examId}`);
+    router.push(`/temas/${quizId}`);
   };
 
   if (!themes) {

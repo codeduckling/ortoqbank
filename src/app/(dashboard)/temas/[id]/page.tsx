@@ -2,7 +2,7 @@
 
 import { useUser } from '@clerk/nextjs';
 import { useQuery } from 'convex/react';
-import { use } from 'react';
+import { useParams } from 'next/navigation';
 
 import { QuizWrapper } from '@/components/quiz/quiz-wrapper';
 import { QuizMode } from '@/components/quiz/types';
@@ -16,15 +16,28 @@ interface PageProps {
   }>;
 }
 
-export default function QuizPage({ params }: PageProps) {
-  const resolvedParams = use(params);
+export default function QuizPage() {
+  const { id } = useParams<{ id: string }>();
   const { user } = useUser();
-  const exam = useQuery(api.presetExams.getWithQuestions, {
-    id: resolvedParams.id as Id<'presetExams'>,
+  const quiz = useQuery(api.presetQuizzes.getWithQuestions, {
+    id: id as Id<'presetQuizzes'>,
   });
-  const activeSession = useQuery(api.quizSessions.getActiveSession);
+  const activeSession = useQuery(api.quizSessions.getActiveSessionForQuiz, {
+    presetQuizId: resolvedParams.id as Id<'presetQuizzes'>,
+    status: 'in_progress',
+  });
 
-  if (!exam || !user || activeSession === undefined) {
+  if (activeSession) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <div className="text-lg text-gray-600">
+          Existe um teste em aberto deseja finalizar?
+        </div>
+      </div>
+    );
+  }
+
+  if (!quiz || !user || activeSession === undefined) {
     return (
       <div className="flex h-64 items-center justify-center">
         <div className="text-lg text-gray-600">Loading...</div>
@@ -36,8 +49,8 @@ export default function QuizPage({ params }: PageProps) {
 
   return (
     <QuizWrapper
-      questions={exam.questions}
-      name={exam.name}
+      questions={quiz.questions}
+      name={quiz.name}
       mode={mode}
       sessionId={activeSession?._id}
     />

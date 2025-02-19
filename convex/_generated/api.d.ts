@@ -15,7 +15,7 @@ import type {
 } from "convex/server";
 import type * as groups from "../groups.js";
 import type * as http from "../http.js";
-import type * as presetQuiz from "../presetQuiz.js";
+import type * as presetQuizzes from "../presetQuizzes.js";
 import type * as questions from "../questions.js";
 import type * as quiz from "../quiz.js";
 import type * as quizSessions from "../quizSessions.js";
@@ -35,7 +35,7 @@ import type * as users from "../users.js";
 declare const fullApi: ApiFromModules<{
   groups: typeof groups;
   http: typeof http;
-  presetQuiz: typeof presetQuiz;
+  presetQuizzes: typeof presetQuizzes;
   questions: typeof questions;
   quiz: typeof quiz;
   quizSessions: typeof quizSessions;
