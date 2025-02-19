@@ -56,7 +56,7 @@ export function EditExamDialog({
   const [name, setName] = useState(quiz.name);
   const [description, setDescription] = useState(quiz.description);
   const [selectedQuestions, setSelectedQuestions] = useState<Set<string>>(
-    new Set(presetQuizzes.find(quiz => quiz._id === quiz.id)?.questions ?? []),
+    new Set(presetQuizzes.find(q => q._id === quiz.id)?.questions ?? []),
   );
 
   const handleToggleQuestion = (questionId: string) => {
