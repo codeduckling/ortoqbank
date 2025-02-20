@@ -14,6 +14,11 @@ interface QuizResultsProps {
 
 type FilterType = 'all' | 'correct' | 'incorrect';
 
+// Move function outside component
+function getAnswerLetter(index: number): string {
+  return String.fromCodePoint(65 + index); // 65 is ASCII for 'A'
+}
+
 export function QuizResults({
   questions,
   answers,
@@ -99,10 +104,6 @@ export function QuizResults({
       </div>
     );
   };
-
-  function getAnswerLetter(index: number): string {
-    return String.fromCodePoint(65 + index); // 65 is ASCII for 'A'
-  }
 
   function ResultCircle({
     isCorrect,

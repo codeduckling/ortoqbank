@@ -16,6 +16,7 @@ interface QuizStepperProps {
   onStepClick: (step: number) => void;
   getQuestionStatus: (step: number) => QuestionStatus;
   showFeedback?: boolean;
+  mode?: 'study' | 'exam';
 }
 
 export default function QuizStepper({
@@ -24,6 +25,7 @@ export default function QuizStepper({
   onStepClick,
   getQuestionStatus,
   showFeedback = true,
+  mode = 'study',
 }: QuizStepperProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -47,7 +49,13 @@ export default function QuizStepper({
   };
 
   const handleStepClick = (stepNumber: number) => {
-    // Convert from 1-based to 0-based index
+    if (mode === 'exam') {
+      const status = getQuestionStatus(stepNumber - 1);
+      if (status === 'unanswered' && stepNumber !== currentStep) {
+        return;
+      }
+    }
+
     onStepClick(stepNumber - 1);
   };
 
@@ -59,6 +67,17 @@ export default function QuizStepper({
       return cn(
         baseClasses,
         'bg-primary text-primary-foreground border-primary',
+      );
+    }
+
+    if (
+      mode === 'exam' &&
+      status === 'unanswered' &&
+      stepNumber !== currentStep
+    ) {
+      return cn(
+        baseClasses,
+        'bg-background text-foreground border-gray-300 cursor-not-allowed opacity-50',
       );
     }
 

@@ -66,13 +66,15 @@ export default function QuizPage() {
     );
   }
 
-  // New quiz
+  // New quiz - this is an edge case that shouldn't happen in normal flow
+  console.error('No active or completed session found for quiz:', id);
   return (
-    <QuizWrapper
-      questions={validQuestions}
-      name={quiz.name}
-      mode={mode}
-      sessionId={inProgressSession?._id}
-    />
+    <div className="flex flex-col items-center gap-6 p-8">
+      <h2 className="text-2xl font-bold">Session Error</h2>
+      <p className="text-gray-600">Unable to find or start quiz session.</p>
+      <Link href="/temas">
+        <Button variant="default">Back to Themes</Button>
+      </Link>
+    </div>
   );
 }
