@@ -35,6 +35,7 @@ interface QuestionDisplayProps {
   currentAnswer?: OptionIndex;
   onOptionSelect: (optionIndex: OptionIndex) => void;
   showCorrect: boolean;
+  showExplanation: boolean;
 }
 
 export function QuestionDisplay({
@@ -44,6 +45,7 @@ export function QuestionDisplay({
   currentAnswer,
   onOptionSelect,
   showCorrect,
+  showExplanation,
 }: QuestionDisplayProps) {
   return (
     <div className="space-y-4">
@@ -78,6 +80,17 @@ export function QuestionDisplay({
           </div>
         ))}
       </div>
+
+      {showExplanation && (
+        <div className="mt-4 rounded-lg border bg-gray-50 p-4">
+          <div
+            className="prose max-w-none"
+            dangerouslySetInnerHTML={{
+              __html: renderContent(question.explanationText),
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }

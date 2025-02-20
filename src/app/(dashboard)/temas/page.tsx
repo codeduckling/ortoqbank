@@ -22,6 +22,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { Button } from '@/components/ui/button';
 
 import { api } from '../../../../convex/_generated/api';
 import { Id } from '../../../../convex/_generated/dataModel';
@@ -45,6 +46,7 @@ export default function ThemesPage() {
   const themes = useQuery(api.themes.list) || [];
   const presetQuizzes = useQuery(api.presetQuizzes.list) || [];
   const startSession = useMutation(api.quizSessions.startQuizSession);
+  const { user } = useUser();
 
   const router = useRouter();
 
@@ -66,7 +68,7 @@ export default function ThemesPage() {
     router.push(`/temas/${quizId}`);
   };
 
-  if (!themes) {
+  if (!themes || !user) {
     return <div>Loading...</div>;
   }
 
@@ -94,17 +96,33 @@ export default function ThemesPage() {
                   {themeExams.map(exam => (
                     <div
                       key={exam._id}
-                      onClick={() => handleExamClick(exam._id)}
-                      className="block cursor-pointer rounded-lg border p-3 text-sm hover:bg-gray-50"
+                      className="block rounded-lg border p-3 text-sm"
                     >
-                      <div className="flex flex-col gap-1">
-                        <span className="font-medium">{exam.name}</span>
-                        <span className="text-muted-foreground">
-                          {exam.description}
-                        </span>
-                        <span className="text-muted-foreground text-xs">
-                          {exam.questions.length} questões
-                        </span>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex flex-col gap-1">
+                          <span className="font-medium">{exam.name}</span>
+                          <span className="text-muted-foreground">
+                            {exam.description}
+                          </span>
+                          <span className="text-muted-foreground text-xs">
+                            {exam.questions.length} questões
+                          </span>
+                        </div>
+
+                        <div className="flex gap-2">
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => handleExamClick(exam._id)}
+                          >
+                            Start New Quiz
+                          </Button>
+                          <Link href={`/temas/${exam._id}/results`}>
+                            <Button variant="outline" size="sm">
+                              Review Previous
+                            </Button>
+                          </Link>
+                        </div>
                       </div>
                     </div>
                   ))}

@@ -1,42 +1,40 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 import { Id } from '../../../convex/_generated/dataModel';
-import { ExamQuestion, QuestionStatus } from './types';
+import { QuestionStatus } from './types';
 
-interface QuizProgress {
+interface SessionState {
   currentIndex: number;
   answers: Map<number, number>;
-  score: number;
-  isCompleted: boolean;
   questionStatuses: Map<number, QuestionStatus>;
+  bookmarkedQuestions: Set<Id<'questions'>>;
+  viewedQuestions: Set<Id<'questions'>>;
 }
 
 interface QuizState {
-  activeQuizzes: Record<Id<'quizSessions'>, QuizProgress>;
+  sessions: Record<string, SessionState>;
+
   actions: {
-    initQuiz: (sessionId: Id<'quizSessions'>) => void;
-    setCurrentIndex: (sessionId: Id<'quizSessions'>, index: number) => void;
+    initSession: (sessionId: Id<'quizSessions'>) => void;
+    setCurrentQuestion: (sessionId: Id<'quizSessions'>, index: number) => void;
     setAnswer: (
       sessionId: Id<'quizSessions'>,
-      index: number,
-      answer: number,
-    ) => void;
-    setScore: (sessionId: Id<'quizSessions'>, score: number) => void;
-    setIsCompleted: (
-      sessionId: Id<'quizSessions'>,
-      isCompleted: boolean,
-    ) => void;
-    removeQuiz: (sessionId: Id<'quizSessions'>) => void;
-    setQuestionStatus: (
-      sessionId: Id<'quizSessions'>,
       questionIndex: number,
-      status: QuestionStatus,
+      answer: number,
+      isCorrect: boolean,
     ) => void;
-    nextQuestion: (sessionId: Id<'quizSessions'>) => void;
-    previousQuestion: (sessionId: Id<'quizSessions'>) => void;
-    syncQuizState: (
+    toggleBookmark: (
       sessionId: Id<'quizSessions'>,
-      progress: {
+      questionId: Id<'questions'>,
+    ) => void;
+    markQuestionViewed: (
+      sessionId: Id<'quizSessions'>,
+      questionId: Id<'questions'>,
+    ) => void;
+    syncWithServer: (
+      sessionId: Id<'quizSessions'>,
+      serverData: {
         currentQuestionIndex: number;
         answers: Array<{
           questionId: Id<'questions'>;
@@ -44,143 +42,143 @@ interface QuizState {
           isCorrect: boolean;
         }>;
       },
-      score: number,
     ) => void;
+    clearSession: (sessionId: Id<'quizSessions'>) => void;
   };
 }
 
-export const useQuizStore = create<QuizState>(set => ({
-  activeQuizzes: {},
+const createEmptySession = (): SessionState => ({
+  currentIndex: 0,
+  answers: new Map(),
+  questionStatuses: new Map(),
+  bookmarkedQuestions: new Set(),
+  viewedQuestions: new Set(),
+});
+
+export const useQuizStore = create<QuizState>()(set => ({
+  sessions: {},
   actions: {
-    initQuiz: sessionId =>
+    initSession: sessionId =>
       set(state => ({
-        activeQuizzes: {
-          ...state.activeQuizzes,
-          [sessionId]: {
-            currentIndex: 0,
-            answers: new Map(),
-            score: 0,
-            isCompleted: false,
-            questionStatuses: new Map(),
-          },
+        sessions: {
+          ...state.sessions,
+          [sessionId]: createEmptySession(),
         },
       })),
-    setCurrentIndex: (sessionId, index) =>
-      set(state => ({
-        activeQuizzes: {
-          ...state.activeQuizzes,
-          [sessionId]: {
-            ...state.activeQuizzes[sessionId],
-            currentIndex: index,
-          },
-        },
-      })),
-    setAnswer: (sessionId, index, answer) =>
+
+    setCurrentQuestion: (sessionId, index) =>
       set(state => {
-        const newAnswers = new Map(state.activeQuizzes[sessionId].answers);
-        newAnswers.set(index, answer);
+        const session = state.sessions[sessionId];
+        if (!session) return state;
+
         return {
-          activeQuizzes: {
-            ...state.activeQuizzes,
+          sessions: {
+            ...state.sessions,
             [sessionId]: {
-              ...state.activeQuizzes[sessionId],
-              answers: newAnswers,
+              ...session,
+              currentIndex: index,
             },
           },
         };
       }),
-    setScore: (sessionId, score) =>
-      set(state => ({
-        activeQuizzes: {
-          ...state.activeQuizzes,
-          [sessionId]: {
-            ...state.activeQuizzes[sessionId],
-            score,
-          },
-        },
-      })),
-    setIsCompleted: (sessionId, isCompleted) =>
-      set(state => ({
-        activeQuizzes: {
-          ...state.activeQuizzes,
-          [sessionId]: {
-            ...state.activeQuizzes[sessionId],
-            isCompleted,
-          },
-        },
-      })),
-    removeQuiz: sessionId =>
+
+    setAnswer: (sessionId, questionIndex, answer, isCorrect) =>
       set(state => {
-        const { [sessionId]: _, ...rest } = state.activeQuizzes;
-        return { activeQuizzes: rest };
-      }),
-    setQuestionStatus: (
-      sessionId: Id<'quizSessions'>,
-      questionIndex: number,
-      status: QuestionStatus,
-    ) =>
-      set(state => {
-        const newStatuses = new Map(
-          state.activeQuizzes[sessionId].questionStatuses,
-        );
-        newStatuses.set(questionIndex, status);
+        const session = state.sessions[sessionId];
+        if (!session) return state;
+
+        const newAnswers = new Map(session.answers);
+        const newStatuses = new Map(session.questionStatuses);
+
+        newAnswers.set(questionIndex, answer);
+        newStatuses.set(questionIndex, isCorrect ? 'correct' : 'incorrect');
+
         return {
-          activeQuizzes: {
-            ...state.activeQuizzes,
+          sessions: {
+            ...state.sessions,
             [sessionId]: {
-              ...state.activeQuizzes[sessionId],
+              ...session,
+              answers: newAnswers,
               questionStatuses: newStatuses,
             },
           },
         };
       }),
-    nextQuestion: sessionId =>
-      set(state => ({
-        activeQuizzes: {
-          ...state.activeQuizzes,
-          [sessionId]: {
-            ...state.activeQuizzes[sessionId],
-            currentIndex: state.activeQuizzes[sessionId].currentIndex + 1,
-          },
-        },
-      })),
-    previousQuestion: sessionId =>
-      set(state => ({
-        activeQuizzes: {
-          ...state.activeQuizzes,
-          [sessionId]: {
-            ...state.activeQuizzes[sessionId],
-            currentIndex: Math.max(
-              0,
-              state.activeQuizzes[sessionId].currentIndex - 1,
-            ),
-          },
-        },
-      })),
-    syncQuizState: (sessionId, progress, score) =>
+
+    toggleBookmark: (sessionId, questionId) =>
       set(state => {
-        const questionStatuses = new Map<number, QuestionStatus>();
-        progress.answers.forEach((answer, index) => {
-          questionStatuses.set(
-            index,
-            answer.isCorrect ? 'correct' : 'incorrect',
-          );
-        });
+        const session = state.sessions[sessionId];
+        if (!session) return state;
+
+        const newBookmarks = new Set(session.bookmarkedQuestions);
+        if (newBookmarks.has(questionId)) {
+          newBookmarks.delete(questionId);
+        } else {
+          newBookmarks.add(questionId);
+        }
 
         return {
-          activeQuizzes: {
-            ...state.activeQuizzes,
+          sessions: {
+            ...state.sessions,
             [sessionId]: {
-              currentIndex: progress.currentQuestionIndex,
-              answers: new Map(
-                progress.answers.map((a, i) => [i, a.selectedOption]),
-              ),
-              score,
-              isCompleted: false,
-              questionStatuses,
+              ...session,
+              bookmarkedQuestions: newBookmarks,
             },
           },
         };
       }),
+
+    markQuestionViewed: (sessionId, questionId) =>
+      set(state => {
+        const session = state.sessions[sessionId];
+        if (!session) return state;
+
+        const newViewed = new Set(session.viewedQuestions);
+        newViewed.add(questionId);
+
+        return {
+          sessions: {
+            ...state.sessions,
+            [sessionId]: {
+              ...session,
+              viewedQuestions: newViewed,
+            },
+          },
+        };
+      }),
+
+    syncWithServer: (sessionId, serverData) =>
+      set(state => {
+        const session = state.sessions[sessionId];
+        if (!session) return state;
+
+        const newAnswers = new Map<number, number>();
+        const newStatuses = new Map<number, QuestionStatus>();
+
+        serverData.answers.forEach((answer, index) => {
+          newAnswers.set(index, answer.selectedOption);
+          newStatuses.set(index, answer.isCorrect ? 'correct' : 'incorrect');
+        });
+
+        return {
+          sessions: {
+            ...state.sessions,
+            [sessionId]: {
+              ...session,
+              currentIndex: serverData.currentQuestionIndex,
+              answers: newAnswers,
+              questionStatuses: newStatuses,
+            },
+          },
+        };
+      }),
+
+    clearSession: sessionId =>
+      set(state => ({
+        sessions: {
+          ...state.sessions,
+          [sessionId]: createEmptySession(),
+        },
+      })),
   },
 }));

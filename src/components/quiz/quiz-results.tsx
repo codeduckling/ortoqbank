@@ -14,10 +14,6 @@ interface QuizResultsProps {
 
 type FilterType = 'all' | 'correct' | 'incorrect';
 
-const getStepContent = (stepNumber: number) => {
-  return stepNumber;
-};
-
 export function QuizResults({
   questions,
   answers,
@@ -92,6 +88,40 @@ export function QuizResults({
     );
   };
 
+  const getStepContent = (stepNumber: number) => {
+    const selectedAnswer = answers.get(stepNumber - 1);
+    return (
+      <div className="flex h-full w-full items-center justify-center gap-0.5">
+        <span className="text-xs font-normal">{stepNumber}</span>
+        <span className="text-xs font-medium">
+          {selectedAnswer === undefined ? '-' : getAnswerLetter(selectedAnswer)}
+        </span>
+      </div>
+    );
+  };
+
+  function getAnswerLetter(index: number): string {
+    return String.fromCodePoint(65 + index); // 65 is ASCII for 'A'
+  }
+
+  function ResultCircle({
+    isCorrect,
+    selectedOption,
+  }: {
+    isCorrect: boolean;
+    selectedOption: number;
+  }) {
+    return (
+      <div
+        className={`flex h-8 w-8 items-center justify-center rounded-full ${
+          isCorrect ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+        }`}
+      >
+        {getAnswerLetter(selectedOption)}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="space-y-4">
@@ -122,13 +152,13 @@ export function QuizResults({
         <div className="flex items-center gap-2">
           <div
             ref={scrollRef}
-            className="grid grid-cols-10 gap-2 sm:grid-cols-15 md:grid-cols-20"
+            className="grid grid-cols-10 gap-10 sm:grid-cols-15 md:grid-cols-20"
           >
             {getFilteredQuestions().map(stepNumber => (
               <button
                 key={stepNumber}
                 onClick={() => setSelectedQuestion(stepNumber)}
-                className={getStepClassName(stepNumber)}
+                className={cn(getStepClassName(stepNumber), 'h-9 w-9')}
               >
                 {getStepContent(stepNumber)}
               </button>

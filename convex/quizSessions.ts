@@ -136,11 +136,9 @@ export const updateProgress = mutation({
 });
 
 export const completeSession = mutation({
-  args: {
-    sessionId: v.id('quizSessions'),
-  },
-  handler: async (ctx, args) => {
-    const session = await ctx.db.get(args.sessionId);
+  args: { sessionId: v.id('quizSessions') },
+  handler: async (ctx, { sessionId }) => {
+    const session = await ctx.db.get(sessionId);
     if (!session) {
       throw new Error('Session not found');
     }
@@ -154,7 +152,7 @@ export const completeSession = mutation({
       session.progress?.answers.filter(a => a.isCorrect).length ?? 0;
 
     // Update session with completion data
-    await ctx.db.patch(args.sessionId, {
+    await ctx.db.patch(sessionId, {
       status: 'completed',
       endTime: Date.now(),
       score: finalScore,
