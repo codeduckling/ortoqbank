@@ -40,7 +40,10 @@ export function QuestionOption({
         render={({ field }) => (
           <FormItem className="flex-1">
             <FormControl>
-              <Input {...field} />
+              <Input
+                {...field}
+                placeholder={`Alternativa ${String.fromCodePoint(ASCII_UPPERCASE_A + index)}`}
+              />
             </FormControl>
             <FormMessage />
           </FormItem>

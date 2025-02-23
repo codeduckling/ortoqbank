@@ -33,6 +33,8 @@ import { Id } from '../../../../../../convex/_generated/dataModel';
 import { QuestionOption } from './question-option';
 import { QuestionFormData, questionSchema } from './schema';
 
+const NUMBER_OF_ALTERNATIVES = 4;
+
 interface QuestionFormProps {
   mode?: 'create' | 'edit';
   defaultValues?: any; // We'll type this properly later
@@ -81,7 +83,7 @@ export function QuestionForm({
         type: 'paragraph',
         content: [{ type: 'text', text: '' }],
       },
-      alternatives: ['', '', '', ''],
+      alternatives: Array.from({ length: NUMBER_OF_ALTERNATIVES }).fill(''),
       correctAlternativeIndex: 0,
       explanationText: {
         type: 'paragraph',
@@ -96,6 +98,7 @@ export function QuestionForm({
   const { fields } = useFieldArray({
     name: 'alternatives',
     control: form.control,
+    rules: { minLength: 4, maxLength: 4 },
   });
 
   // Add refs to store editor instances
@@ -240,9 +243,9 @@ export function QuestionForm({
           <FormLabel>Alternativas</FormLabel>
           <Card>
             <CardContent className="space-y-2 p-2">
-              {fields.map((field, index) => (
+              {Array.from({ length: NUMBER_OF_ALTERNATIVES }, (_, index) => (
                 <QuestionOption
-                  key={field.id}
+                  key={index}
                   control={form.control}
                   index={index}
                   isSelected={form.watch('correctAlternativeIndex') === index}
