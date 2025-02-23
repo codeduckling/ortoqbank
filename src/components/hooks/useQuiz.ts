@@ -20,6 +20,7 @@ export function useQuiz(
 
   const startQuiz = useMutation(api.quizSessions.startQuizSession);
   const submitAnswer = useMutation(api.quizSessions.submitAnswerAndProgress);
+  const completeQuiz = useMutation(api.quizSessions.completeQuizSession);
 
   return {
     quizData,
@@ -27,6 +28,7 @@ export function useQuiz(
     startQuiz: () => startQuiz({ quizId, mode }),
     submitAnswer: (selectedOptionIndex: 0 | 1 | 2 | 3) =>
       submitAnswer({ quizId, selectedOptionIndex }),
+    completeQuiz: () => completeQuiz({ quizId }),
     isLoading: quizData === undefined || progress === undefined,
   };
 }

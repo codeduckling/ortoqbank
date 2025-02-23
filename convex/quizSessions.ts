@@ -89,7 +89,7 @@ export const submitAnswerAndProgress = mutation({
         },
       ],
       currentQuestionIndex: session.currentQuestionIndex + 1,
-      isComplete: session.currentQuestionIndex + 1 >= quiz.questions.length,
+      isComplete: false,
     });
 
     return {
@@ -99,5 +99,31 @@ export const submitAnswerAndProgress = mutation({
       nextQuestionIndex: session.currentQuestionIndex + 1,
       isComplete: session.currentQuestionIndex + 1 >= quiz.questions.length,
     };
+  },
+});
+
+// Add new mutation for explicitly completing the quiz
+export const completeQuizSession = mutation({
+  args: {
+    quizId: v.union(v.id('presetQuizzes'), v.id('customQuizzes')),
+  },
+  handler: async (ctx, args) => {
+    const session = await ctx.db
+      .query('quizSessions')
+      .withIndex('by_user_quiz', q =>
+        q
+          .eq('userId', MOCK_USER_ID)
+          .eq('quizId', args.quizId)
+          .eq('isComplete', false),
+      )
+      .first();
+
+    if (!session) throw new Error('No active quiz session found');
+
+    await ctx.db.patch(session._id, {
+      isComplete: true,
+    });
+
+    return { success: true };
   },
 });

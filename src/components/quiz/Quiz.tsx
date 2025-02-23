@@ -15,12 +15,11 @@ interface QuizProps {
   mode: 'study' | 'exam';
 }
 
-const handleFinish = () => {
-  console.log('finished');
-};
-
 export default function Quiz({ quizId, mode }: QuizProps) {
-  const { quizData, progress, submitAnswer } = useQuiz(quizId, mode);
+  const { quizData, progress, submitAnswer, completeQuiz } = useQuiz(
+    quizId,
+    mode,
+  );
 
   if (!quizData || !progress) return <div>Loading...</div>;
 
@@ -30,6 +29,7 @@ export default function Quiz({ quizId, mode }: QuizProps) {
       progress={progress}
       onSubmitAnswer={submitAnswer}
       mode={mode}
+      completeQuiz={completeQuiz}
     />
   );
 }
@@ -39,11 +39,13 @@ function QuizStepper({
   progress,
   onSubmitAnswer,
   mode,
+  completeQuiz,
 }: {
   quizData: NonNullable<ReturnType<typeof useQuiz>['quizData']>;
   progress: NonNullable<ReturnType<typeof useQuiz>['progress']>;
   onSubmitAnswer: ReturnType<typeof useQuiz>['submitAnswer'];
   mode: 'study' | 'exam';
+  completeQuiz: ReturnType<typeof useQuiz>['completeQuiz'];
 }) {
   const router = useRouter();
   const [selectedOption, setSelectedOption] = useState<
@@ -71,17 +73,29 @@ function QuizStepper({
 
   // Only sync with Convex in exam mode
   useEffect(() => {
-    if (mode === 'exam') {
+    if (
+      mode === 'exam' &&
+      !progress.isComplete &&
+      progress.currentQuestionIndex < quizData.questions.length
+    ) {
       const questionId = `question-${progress.currentQuestionIndex}`;
       stepper.goTo(questionId);
     }
-  }, [mode, progress.currentQuestionIndex, stepper]);
+  }, [
+    mode,
+    stepper,
+    progress.currentQuestionIndex,
+    progress.isComplete,
+    quizData.questions.length,
+  ]);
 
   // Use local state for current question in study mode
-  const currentStepIndex =
+  const currentStepIndex = Math.min(
     mode === 'exam'
       ? progress.currentQuestionIndex
-      : stepper.all.indexOf(stepper.current);
+      : stepper.all.indexOf(stepper.current),
+    quizData.questions.length - 1,
+  );
 
   useEffect(() => {
     const historicalAnswer = progress.answers[currentStepIndex];
@@ -103,7 +117,14 @@ function QuizStepper({
 
   const handleAnswerSubmit = async () => {
     if (selectedOption === undefined) return;
+
     await onSubmitAnswer(selectedOption);
+
+    // Check if this was the last question in exam mode
+    if (mode === 'exam' && currentStepIndex === quizData.questions.length - 1) {
+      await completeQuiz();
+      router.push('/temas');
+    }
   };
 
   // Navigation only allowed in study mode
@@ -112,9 +133,16 @@ function QuizStepper({
     stepper.prev();
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (mode === 'exam') return;
-    stepper.next();
+
+    if (stepper.isLast) {
+      // Handle quiz completion
+      await completeQuiz();
+      router.push('/temas'); // or wherever you want to redirect
+    } else {
+      stepper.next();
+    }
   };
 
   return (
@@ -158,7 +186,7 @@ function QuizStepper({
                     ))}
                   </div>
 
-                  {feedback && (
+                  {feedback && mode !== 'exam' && (
                     <div
                       className={`mt-4 rounded-md p-4 ${
                         feedback.isCorrect ? 'bg-green-50' : 'bg-red-50'
@@ -185,21 +213,21 @@ function QuizStepper({
                     onClick={handlePrevious}
                     disabled={mode === 'exam' || stepper.isFirst}
                   >
-                    Previous
+                    Voltar
                   </Button>
-                  {feedback?.answered ? (
-                    <Button
-                      onClick={stepper.isLast ? handleFinish : handleNext}
-                      disabled={false}
-                    >
-                      {stepper.isLast ? 'Finish Quiz' : 'Next Question'}
+                  {mode === 'study' && feedback?.answered ? (
+                    <Button onClick={handleNext}>
+                      {stepper.isLast ? 'Finalizar' : 'Próxima Questão'}
                     </Button>
                   ) : (
                     <Button
                       onClick={handleAnswerSubmit}
                       disabled={selectedOption === undefined}
                     >
-                      Submit Answer
+                      {mode === 'exam' &&
+                      currentStepIndex === quizData.questions.length - 1
+                        ? 'Finalizar'
+                        : 'Confirmar'}
                     </Button>
                   )}
                 </div>
