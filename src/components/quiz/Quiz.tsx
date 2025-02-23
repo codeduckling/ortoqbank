@@ -15,6 +15,10 @@ interface QuizProps {
   mode: 'study' | 'exam';
 }
 
+const handleFinish = () => {
+  console.log('finished');
+};
+
 export default function Quiz({ quizId, mode }: QuizProps) {
   const { quizData, progress, submitAnswer } = useQuiz(quizId, mode);
 
@@ -111,10 +115,6 @@ function QuizStepper({
   const handleNext = () => {
     if (mode === 'exam') return;
     stepper.next();
-  };
-
-  const handleFinish = () => {
-    router.push(`/temas/${quizId}/results`);
   };
 
   return (
