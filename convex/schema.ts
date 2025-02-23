@@ -64,16 +64,17 @@ export default defineSchema({
     userId: v.id('users'),
     quizId: v.union(v.id('presetQuizzes'), v.id('customQuizzes')),
     mode: v.union(v.literal('exam'), v.literal('study')),
-    currentQuestionIndex: v.float64(),
-    answers: v.array(v.float64()),
+    currentQuestionIndex: v.number(),
+    answers: v.array(v.number()),
     answerFeedback: v.array(
       v.object({
         isCorrect: v.boolean(),
-        explanation: v.optional(v.string()),
+        explanation: v.object({
+          type: v.string(),
+          content: v.array(v.any()),
+        }),
       }),
     ),
     isComplete: v.boolean(),
-  })
-    .index('by_quiz', ['quizId'])
-    .index('by_user_quiz', ['userId', 'quizId', 'isComplete']),
+  }).index('by_user_quiz', ['userId', 'quizId', 'isComplete']),
 });

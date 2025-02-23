@@ -11,29 +11,22 @@ export type SafeQuiz = {
   questions: SafeQuestion[];
 };
 
-export function useQuiz(quizId: Id<'presetQuizzes'> | Id<'customQuizzes'>) {
+export function useQuiz(
+  quizId: Id<'presetQuizzes'> | Id<'customQuizzes'>,
+  mode: 'study' | 'exam',
+) {
   const quizData = useQuery(api.quiz.getQuizData, { quizId });
   const progress = useQuery(api.quizSessions.getCurrentSession, { quizId });
 
   const startQuiz = useMutation(api.quizSessions.startQuizSession);
-  //const submitAnswer = useMutation(api.quizSessions.updateProgress);
+  const submitAnswer = useMutation(api.quizSessions.submitAnswerAndProgress);
 
   return {
     quizData,
     progress,
-    startQuiz: () => startQuiz({ quizId, mode: 'study' }),
-    /* submitAnswer: (selectedOptionIndex: 0 | 1 | 2 | 3) =>
-      submitAnswer({
-        sessionId: progress?._id,
-        answer: {
-          questionId: quizData?.questions[progress?.currentQuestionIndex].id,
-          selectedOption: selectedOptionIndex,
-          isCorrect:
-            quizData?.questions[progress?.currentQuestionIndex]
-              .correctOptionIndex === selectedOptionIndex,
-        },
-        currentQuestionIndex: progress?.currentQuestionIndex,
-      }), */
+    startQuiz: () => startQuiz({ quizId, mode }),
+    submitAnswer: (selectedOptionIndex: 0 | 1 | 2 | 3) =>
+      submitAnswer({ quizId, selectedOptionIndex }),
     isLoading: quizData === undefined || progress === undefined,
   };
 }
