@@ -7,11 +7,8 @@ export const questionSchema = z.object({
   questionText: z.any(),
   alternatives: z
     .array(z.string())
-    .length(4, 'Deve haver exatamente 4 alternativas')
-    .refine(
-      alternatives => new Set(alternatives).size === alternatives.length,
-      'As alternativas não podem ser repetidas',
-    ),
+    .length(4, 'Deve haver exatamente 4 alternativas'),
+
   correctAlternativeIndex: z.number().min(0).max(3),
   explanationText: z.any(),
   themeId: z.string().min(1, 'O tema é obrigatório'),
