@@ -16,8 +16,8 @@ export const create = mutation({
     questionText: v.object({ type: v.string(), content: v.array(v.any()) }),
     title: v.string(),
     explanationText: v.object({ type: v.string(), content: v.array(v.any()) }),
-    options: v.array(v.object({ text: v.string() })),
-    correctOptionIndex: v.number(),
+    alternatives: v.array(v.string()),
+    correctAlternativeIndex: v.number(),
     themeId: v.id('themes'),
     subthemeId: v.optional(v.id('subthemes')),
     groupId: v.optional(v.id('groups')),
@@ -46,6 +46,7 @@ export const create = mutation({
       normalizedTitle: arguments_.title.trim().toLowerCase(),
       authorId: user._id,
       isPublic: false,
+      alternatives: arguments_.alternatives,
     });
   },
 });
@@ -100,8 +101,8 @@ export const update = mutation({
     questionText: v.object({ type: v.string(), content: v.array(v.any()) }),
     title: v.string(),
     explanationText: v.object({ type: v.string(), content: v.array(v.any()) }),
-    options: v.array(v.object({ text: v.string() })),
-    correctOptionIndex: v.number(),
+    alternatives: v.array(v.string()),
+    correctAlternativeIndex: v.number(),
     themeId: v.id('themes'),
     subthemeId: v.optional(v.id('subthemes')),
     groupId: v.optional(v.id('groups')),
@@ -122,6 +123,7 @@ export const update = mutation({
     return await context.db.patch(arguments_.id, {
       ...updateData,
       normalizedTitle: arguments_.title.trim().toLowerCase(),
+      alternatives: arguments_.alternatives,
     });
   },
 });

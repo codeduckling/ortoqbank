@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { renderContent } from '@/lib/utils/render-content';
 
 import { Id } from '../../../convex/_generated/dataModel';
+import { AlternativeIndex } from './types';
 
 interface QuizProps {
   quizId: Id<'presetQuizzes'> | Id<'customQuizzes'>;
@@ -48,8 +49,8 @@ function QuizStepper({
   completeQuiz: ReturnType<typeof useQuiz>['completeQuiz'];
 }) {
   const router = useRouter();
-  const [selectedOption, setSelectedOption] = useState<
-    0 | 1 | 2 | 3 | undefined
+  const [selectedAlternative, setSelectedAlternative] = useState<
+    AlternativeIndex | undefined
   >();
   const [feedback, setFeedback] = useState<
     | {
@@ -65,7 +66,7 @@ function QuizStepper({
     ...quizData.questions.map((q, index) => ({
       id: `question-${index}`,
       questionText: q.questionText,
-      options: q.options || [],
+      alternatives: q.alternatives || [],
     })),
   );
 
@@ -102,7 +103,7 @@ function QuizStepper({
     const historicalFeedback = progress.answerFeedback?.[currentStepIndex];
 
     if (historicalAnswer !== undefined && historicalFeedback) {
-      setSelectedOption(historicalAnswer as 0 | 1 | 2 | 3);
+      setSelectedAlternative(historicalAnswer as AlternativeIndex);
       setFeedback({
         isCorrect: historicalFeedback.isCorrect,
         message: historicalFeedback.isCorrect ? 'Correto!' : 'Incorreto',
@@ -110,15 +111,15 @@ function QuizStepper({
         answered: true,
       });
     } else {
-      setSelectedOption(undefined);
+      setSelectedAlternative(undefined);
       setFeedback(undefined);
     }
   }, [currentStepIndex, progress.answers, progress.answerFeedback]);
 
   const handleAnswerSubmit = async () => {
-    if (selectedOption === undefined) return;
+    if (selectedAlternative === undefined) return;
 
-    await onSubmitAnswer(selectedOption);
+    await onSubmitAnswer(selectedAlternative);
 
     // Check if this was the last question in exam mode
     if (mode === 'exam' && currentStepIndex === quizData.questions.length - 1) {
@@ -170,18 +171,20 @@ function QuizStepper({
                     }}
                   />
                   <div className="mt-4 space-y-2">
-                    {step.options?.map((option, i) => (
+                    {step.alternatives?.map((alternative, i) => (
                       <button
                         key={i}
-                        onClick={() => setSelectedOption(i as 0 | 1 | 2 | 3)}
+                        onClick={() =>
+                          setSelectedAlternative(i as AlternativeIndex)
+                        }
                         disabled={feedback?.answered}
                         className={`w-full rounded-lg border p-4 text-left hover:bg-gray-50 ${
-                          selectedOption === i
+                          selectedAlternative === i
                             ? 'border-blue-500 bg-blue-50'
                             : ''
                         }`}
                       >
-                        {option}
+                        {alternative}
                       </button>
                     ))}
                   </div>
@@ -222,7 +225,7 @@ function QuizStepper({
                   ) : (
                     <Button
                       onClick={handleAnswerSubmit}
-                      disabled={selectedOption === undefined}
+                      disabled={selectedAlternative === undefined}
                     >
                       {mode === 'exam' &&
                       currentStepIndex === quizData.questions.length - 1

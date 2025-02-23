@@ -81,8 +81,8 @@ export function QuestionForm({
         type: 'paragraph',
         content: [{ type: 'text', text: '' }],
       },
-      options: [{ text: '' }, { text: '' }, { text: '' }, { text: '' }],
-      correctOptionIndex: 0,
+      alternatives: ['', '', '', ''],
+      correctAlternativeIndex: 0,
       explanationText: {
         type: 'paragraph',
         content: [{ type: 'text', text: '' }],
@@ -93,7 +93,10 @@ export function QuestionForm({
     },
   });
 
-  const { fields } = useFieldArray({ name: 'options', control: form.control });
+  const { fields } = useFieldArray({
+    name: 'alternatives',
+    control: form.control,
+  });
 
   // Add refs to store editor instances
   const [questionEditor, setQuestionEditor] = useState<any>();
@@ -157,12 +160,21 @@ export function QuestionForm({
         return;
       }
 
-      // Now submit with real URLs
+      const processedData = {
+        ...updatedData,
+        themeId: selectedTheme!,
+        subthemeId: selectedSubtheme,
+        groupId: selectedSubtheme ? (data.groupId as Id<'groups'>) : undefined,
+      };
+
       if (mode === 'edit' && defaultValues) {
-        await updateQuestion({ id: defaultValues._id, ...updatedData });
+        await updateQuestion({
+          id: defaultValues._id,
+          ...processedData,
+        });
         toast({ title: 'Questão atualizada com sucesso!' });
       } else {
-        await createQuestion(updatedData);
+        await createQuestion(processedData);
         toast({ title: 'Questão criada com sucesso!' });
       }
 
@@ -233,8 +245,10 @@ export function QuestionForm({
                   key={field.id}
                   control={form.control}
                   index={index}
-                  isSelected={form.watch('correctOptionIndex') === index}
-                  onSelect={() => form.setValue('correctOptionIndex', index)}
+                  isSelected={form.watch('correctAlternativeIndex') === index}
+                  onSelect={() =>
+                    form.setValue('correctAlternativeIndex', index)
+                  }
                 />
               ))}
             </CardContent>

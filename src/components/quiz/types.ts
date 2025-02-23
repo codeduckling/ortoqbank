@@ -2,7 +2,7 @@ import { Id } from '../../../convex/_generated/dataModel';
 
 export type QuestionStatus = 'unanswered' | 'correct' | 'incorrect';
 
-export type OptionIndex = 0 | 1 | 2 | 3;
+export type AlternativeIndex = 0 | 1 | 2 | 3;
 
 export interface ExamQuestion {
   _id: Id<'questions'>;
@@ -18,8 +18,8 @@ export interface ExamQuestion {
     type: string;
     content: any[];
   };
-  options: { text: string }[];
-  correctOptionIndex: number;
+  alternatives: string[];
+  correctAlternativeIndex: number;
   explanationText: {
     type: string;
     content: any[];
@@ -28,10 +28,10 @@ export interface ExamQuestion {
 
 export interface QuestionDisplayProps {
   question: ExamQuestion;
-  selectedOption?: OptionIndex;
+  selectedAlternative?: AlternativeIndex;
   isAnswered: boolean;
-  currentAnswer?: OptionIndex;
-  onOptionSelect: (optionIndex: OptionIndex) => Promise<void>;
+  currentAnswer?: AlternativeIndex;
+  onAlternativeSelect: (alternativeIndex: AlternativeIndex) => Promise<void>;
   showCorrect: boolean;
   showExplanation: boolean;
 }

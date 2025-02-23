@@ -44,7 +44,7 @@ export const startQuizSession = mutation({
 export const submitAnswerAndProgress = mutation({
   args: {
     quizId: v.union(v.id('presetQuizzes'), v.id('customQuizzes')),
-    selectedOptionIndex: v.union(
+    selectedAlternativeIndex: v.union(
       v.literal(0),
       v.literal(1),
       v.literal(2),
@@ -76,11 +76,11 @@ export const submitAnswerAndProgress = mutation({
 
     // 3. Check if answer is correct and get explanation
     const isAnswerCorrect =
-      args.selectedOptionIndex === currentQuestion.correctOptionIndex;
+      args.selectedAlternativeIndex === currentQuestion.correctAlternativeIndex;
 
     // 4. Save answer and feedback for current question
     await ctx.db.patch(session._id, {
-      answers: [...session.answers, args.selectedOptionIndex],
+      answers: [...session.answers, args.selectedAlternativeIndex],
       answerFeedback: [
         ...session.answerFeedback,
         {

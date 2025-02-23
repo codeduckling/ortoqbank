@@ -26,8 +26,8 @@ export function useQuiz(
     quizData,
     progress,
     startQuiz: () => startQuiz({ quizId, mode }),
-    submitAnswer: (selectedOptionIndex: 0 | 1 | 2 | 3) =>
-      submitAnswer({ quizId, selectedOptionIndex }),
+    submitAnswer: (selectedAlternativeIndex: 0 | 1 | 2 | 3) =>
+      submitAnswer({ quizId, selectedAlternativeIndex }),
     completeQuiz: () => completeQuiz({ quizId }),
     isLoading: quizData === undefined || progress === undefined,
   };
