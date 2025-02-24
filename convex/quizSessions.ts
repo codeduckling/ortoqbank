@@ -3,19 +3,17 @@ import { v } from 'convex/values';
 
 import { Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
-
-const MOCK_USER_ID = 'j571n8n6pntprjpnv9w22th81n78fq8y' as Id<'users'>;
+import { getCurrentUserOrThrow } from './users';
 
 export const getCurrentSession = query({
   args: { quizId: v.union(v.id('presetQuizzes'), v.id('customQuizzes')) },
   handler: async (ctx, { quizId }) => {
+    const userId = await getCurrentUserOrThrow(ctx);
+
     return ctx.db
       .query('quizSessions')
       .withIndex('by_user_quiz', q =>
-        q
-          .eq('userId', MOCK_USER_ID)
-          .eq('quizId', quizId)
-          .eq('isComplete', false),
+        q.eq('userId', userId._id).eq('quizId', quizId).eq('isComplete', false),
       )
       .first();
   },
@@ -27,8 +25,10 @@ export const startQuizSession = mutation({
     mode: v.union(v.literal('study'), v.literal('exam')),
   },
   handler: async (ctx, { quizId, mode }) => {
+    const userId = await getCurrentUserOrThrow(ctx);
+
     const sessionId = await ctx.db.insert('quizSessions', {
-      userId: MOCK_USER_ID,
+      userId: userId._id,
       quizId,
       mode,
       currentQuestionIndex: 0,
@@ -52,12 +52,14 @@ export const submitAnswerAndProgress = mutation({
     ),
   },
   handler: async (ctx, args) => {
+    const userId = await getCurrentUserOrThrow(ctx);
+
     // 1. Get current session
     const session = await ctx.db
       .query('quizSessions')
       .withIndex('by_user_quiz', q =>
         q
-          .eq('userId', MOCK_USER_ID)
+          .eq('userId', userId._id)
           .eq('quizId', args.quizId)
           .eq('isComplete', false),
       )
@@ -108,11 +110,13 @@ export const completeQuizSession = mutation({
     quizId: v.union(v.id('presetQuizzes'), v.id('customQuizzes')),
   },
   handler: async (ctx, args) => {
+    const userId = await getCurrentUserOrThrow(ctx);
+
     const session = await ctx.db
       .query('quizSessions')
       .withIndex('by_user_quiz', q =>
         q
-          .eq('userId', MOCK_USER_ID)
+          .eq('userId', userId._id)
           .eq('quizId', args.quizId)
           .eq('isComplete', false),
       )
