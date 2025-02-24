@@ -1,14 +1,21 @@
 'use client';
 
 import { defineStepper } from '@stepperize/react';
+import { BookmarkCheckIcon, BookmarkIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+import BookmarkButton from '@/components/common/BookmarkButton';
 import { useQuiz } from '@/components/hooks/useQuiz';
 import { Button } from '@/components/ui/button';
 import { renderContent } from '@/lib/utils/render-content';
 
 import { Id } from '../../../convex/_generated/dataModel';
+import QuestionContent from './QuestionContent';
+import QuizAlternatives from './QuizAlternatives';
+import QuizFeedback from './QuizFeedback';
+import QuizNavigation from './QuizNavigation';
+import QuizProgress from './QuizProgress';
 import { AlternativeIndex } from './types';
 
 interface QuizProps {
@@ -17,10 +24,14 @@ interface QuizProps {
 }
 
 export default function Quiz({ quizId, mode }: QuizProps) {
-  const { quizData, progress, submitAnswer, completeQuiz } = useQuiz(
-    quizId,
-    mode,
-  );
+  const {
+    quizData,
+    progress,
+    submitAnswer,
+    completeQuiz,
+    bookmarkStatuses,
+    toggleBookmark,
+  } = useQuiz(quizId, mode);
 
   if (!quizData || !progress) return <div>Loading...</div>;
 
@@ -31,6 +42,8 @@ export default function Quiz({ quizId, mode }: QuizProps) {
       onSubmitAnswer={submitAnswer}
       mode={mode}
       completeQuiz={completeQuiz}
+      bookmarkStatuses={bookmarkStatuses}
+      toggleBookmark={toggleBookmark}
     />
   );
 }
@@ -41,12 +54,16 @@ function QuizStepper({
   onSubmitAnswer,
   mode,
   completeQuiz,
+  bookmarkStatuses,
+  toggleBookmark,
 }: {
   quizData: NonNullable<ReturnType<typeof useQuiz>['quizData']>;
   progress: NonNullable<ReturnType<typeof useQuiz>['progress']>;
   onSubmitAnswer: ReturnType<typeof useQuiz>['submitAnswer'];
   mode: 'study' | 'exam';
   completeQuiz: ReturnType<typeof useQuiz>['completeQuiz'];
+  bookmarkStatuses: ReturnType<typeof useQuiz>['bookmarkStatuses'];
+  toggleBookmark: ReturnType<typeof useQuiz>['toggleBookmark'];
 }) {
   const router = useRouter();
   const [selectedAlternative, setSelectedAlternative] = useState<
@@ -146,6 +163,8 @@ function QuizStepper({
     }
   };
 
+  const currentQuestion = quizData.questions[currentStepIndex];
+
   return (
     <div className="container mx-auto max-w-3xl p-6">
       {stepper.switch({
@@ -154,86 +173,60 @@ function QuizStepper({
             `question-${index}`,
             step => (
               <>
-                <div className="mb-6">
-                  <h1 className="text-2xl font-bold">
-                    Questão {currentStepIndex + 1}
-                  </h1>
-                  <p className="text-muted-foreground text-sm">
-                    {currentStepIndex + 1} de {quizData.questions.length}
-                  </p>
+                <div className="mb-6 flex items-center justify-between">
+                  <QuizProgress
+                    currentIndex={currentStepIndex}
+                    totalQuestions={quizData.questions.length}
+                    mode={mode}
+                    answerFeedback={progress.answerFeedback}
+                    onNavigate={index => {
+                      if (mode === 'study') {
+                        stepper.goTo(`question-${index}`);
+                      }
+                    }}
+                  />
+
+                  <BookmarkButton
+                    questionId={currentQuestion._id}
+                    isBookmarked={
+                      bookmarkStatuses[currentQuestion._id] || false
+                    }
+                  />
                 </div>
 
                 <div className="my-6">
-                  <div
-                    className="prose max-w-none"
-                    dangerouslySetInnerHTML={{
-                      __html: renderContent(step.questionText),
-                    }}
+                  <QuestionContent content={step.questionText} />
+
+                  <QuizAlternatives
+                    alternatives={step.alternatives || []}
+                    selectedAlternative={selectedAlternative}
+                    onSelect={i => setSelectedAlternative(i)}
+                    disabled={!!feedback?.answered}
                   />
-                  <div className="mt-4 space-y-2">
-                    {step.alternatives?.map((alternative, i) => (
-                      <button
-                        key={i}
-                        onClick={() =>
-                          setSelectedAlternative(i as AlternativeIndex)
-                        }
-                        disabled={feedback?.answered}
-                        className={`w-full rounded-lg border p-4 text-left hover:bg-gray-50 ${
-                          selectedAlternative === i
-                            ? 'border-blue-500 bg-blue-50'
-                            : ''
-                        }`}
-                      >
-                        {alternative}
-                      </button>
-                    ))}
-                  </div>
-
-                  {feedback && mode !== 'exam' && (
-                    <div
-                      className={`mt-4 rounded-md p-4 ${
-                        feedback.isCorrect ? 'bg-green-50' : 'bg-red-50'
-                      }`}
-                    >
-                      <p className="font-medium">{feedback.message}</p>
-                      {feedback.explanation && (
-                        <div
-                          className="prose mt-2 text-sm"
-                          dangerouslySetInnerHTML={{
-                            __html: renderContent(
-                              JSON.parse(feedback.explanation),
-                            ),
-                          }}
-                        />
-                      )}
-                    </div>
-                  )}
                 </div>
 
-                <div className="mt-4 flex justify-between">
-                  <Button
-                    variant="outline"
-                    onClick={handlePrevious}
-                    disabled={mode === 'exam' || stepper.isFirst}
-                  >
-                    Voltar
-                  </Button>
-                  {mode === 'study' && feedback?.answered ? (
-                    <Button onClick={handleNext}>
-                      {stepper.isLast ? 'Finalizar' : 'Próxima Questão'}
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={handleAnswerSubmit}
-                      disabled={selectedAlternative === undefined}
-                    >
-                      {mode === 'exam' &&
-                      currentStepIndex === quizData.questions.length - 1
-                        ? 'Finalizar'
-                        : 'Confirmar'}
-                    </Button>
-                  )}
-                </div>
+                {feedback && mode !== 'exam' && (
+                  <QuizFeedback
+                    isCorrect={feedback.isCorrect}
+                    message={feedback.message}
+                    explanationHtml={
+                      feedback.explanation
+                        ? renderContent(JSON.parse(feedback.explanation))
+                        : ''
+                    }
+                  />
+                )}
+
+                <QuizNavigation
+                  mode={mode}
+                  isFirst={stepper.isFirst}
+                  isLast={stepper.isLast}
+                  hasAnswered={!!feedback?.answered}
+                  hasSelectedOption={selectedAlternative !== undefined}
+                  onPrevious={handlePrevious}
+                  onNext={handleNext}
+                  onSubmit={handleAnswerSubmit}
+                />
               </>
             ),
           ]),
