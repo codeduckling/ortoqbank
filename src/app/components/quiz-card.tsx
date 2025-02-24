@@ -7,18 +7,18 @@ import { Button } from '@/components/ui/button';
 const questions = [
   {
     question: 'Quantos ossos tem o corpo humano adulto?',
-    options: ['206', '208', '212', '200'],
-    correctAnswer: 0,
+    alternatives: ['206', '208', '212', '200'],
+    correctAlternativeIndex: 0,
   },
   {
     question: 'Qual é a articulação mais móvel do corpo humano?',
-    options: ['Ombro', 'Quadril', 'Joelho', 'Cotovelo'],
-    correctAnswer: 0,
+    alternatives: ['Ombro', 'Quadril', 'Joelho', 'Cotovelo'],
+    correctAlternativeIndex: 0,
   },
   {
     question: 'Qual é o osso mais longo do corpo humano?',
-    options: ['Fêmur', 'Tíbia', 'Fíbula', 'Úmero'],
-    correctAnswer: 0,
+    alternatives: ['Fêmur', 'Tíbia', 'Fíbula', 'Úmero'],
+    correctAlternativeIndex: 0,
   },
 ];
 
@@ -40,7 +40,7 @@ export default function QuizCard() {
 
   const handleAnswer = (index: number) => {
     const currentQuestion = remainingQuestions[0];
-    const correct = index === currentQuestion.correctAnswer;
+    const correct = index === currentQuestion.correctAlternativeIndex;
     setSelectedAnswer(index);
     setIsCorrect(correct);
 
@@ -97,19 +97,20 @@ export default function QuizCard() {
               {question.question}
             </h3>
             <div className="space-y-1.5">
-              {question.options.map((option, optionIndex) => (
+              {question.alternatives.map((alternative, alternativeIndex) => (
                 <Button
-                  key={optionIndex}
+                  key={alternativeIndex}
                   className={`w-full justify-start ${getButtonStyle(
-                    index === 0 && selectedAnswer === optionIndex,
+                    index === 0 && selectedAnswer === alternativeIndex,
                     isCorrect,
                   )} border border-[#2196F3]`}
-                  onClick={() => index === 0 && handleAnswer(optionIndex)}
+                  onClick={() => index === 0 && handleAnswer(alternativeIndex)}
                   disabled={
-                    index !== 0 || (selectedAnswer === optionIndex && isCorrect)
+                    index !== 0 ||
+                    (selectedAnswer === alternativeIndex && isCorrect)
                   }
                 >
-                  {option}
+                  {alternative}
                 </Button>
               ))}
             </div>

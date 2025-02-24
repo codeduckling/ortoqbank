@@ -31,9 +31,8 @@ export default defineSchema({
     normalizedTitle: v.string(),
     questionText: v.object({ type: v.string(), content: v.array(v.any()) }),
     explanationText: v.object({ type: v.string(), content: v.array(v.any()) }),
-    options: v.array(v.object({ text: v.string() })),
-
-    correctOptionIndex: v.number(),
+    alternatives: v.array(v.string()),
+    correctAlternativeIndex: v.number(),
     themeId: v.id('themes'),
     subthemeId: v.optional(v.id('subthemes')),
     groupId: v.optional(v.id('groups')),
@@ -62,24 +61,19 @@ export default defineSchema({
 
   quizSessions: defineTable({
     userId: v.id('users'),
-    presetQuizId: v.optional(v.id('presetQuizzes')),
-    customQuizId: v.optional(v.id('customQuizzes')),
-    status: v.union(v.literal('in_progress'), v.literal('completed')),
-    score: v.number(),
-    endTime: v.optional(v.number()),
-    progress: v.optional(
+    quizId: v.union(v.id('presetQuizzes'), v.id('customQuizzes')),
+    mode: v.union(v.literal('exam'), v.literal('study')),
+    currentQuestionIndex: v.number(),
+    answers: v.array(v.number()),
+    answerFeedback: v.array(
       v.object({
-        currentQuestionIndex: v.number(),
-        answers: v.array(
-          v.object({
-            questionId: v.id('questions'),
-            selectedOption: v.number(),
-            isCorrect: v.boolean(),
-          }),
-        ),
+        isCorrect: v.boolean(),
+        explanation: v.object({
+          type: v.string(),
+          content: v.array(v.any()),
+        }),
       }),
     ),
-  })
-    .index('by_user', ['userId'])
-    .index('by_status', ['status']),
+    isComplete: v.boolean(),
+  }).index('by_user_quiz', ['userId', 'quizId', 'isComplete']),
 });

@@ -62,17 +62,17 @@ export default function ViewQuestion() {
         <div className="rounded-lg border p-4">
           <h2 className="mb-2 font-semibold">Opções:</h2>
           <ul className="space-y-2">
-            {question.options.map((option, index) => (
+            {question.alternatives?.map((alternative, index) => (
               <li
                 key={index}
                 className={
-                  index === question.correctOptionIndex
+                  index === question.correctAlternativeIndex
                     ? 'font-medium text-green-600'
                     : ''
                 }
               >
-                {index + 1}. {option.text}
-                {index === question.correctOptionIndex && ' (Correta)'}
+                {index + 1}. {alternative}
+                {index === question.correctAlternativeIndex && ' (Correta)'}
               </li>
             ))}
           </ul>

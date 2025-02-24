@@ -1,198 +1,133 @@
+/* eslint-disable playwright/no-useless-await */
 import { v } from 'convex/values';
 
-import { Doc, Id } from './_generated/dataModel';
-import { mutation, query, type QueryCtx } from './_generated/server';
+import { Id } from './_generated/dataModel';
+import { mutation, query } from './_generated/server';
 import { getCurrentUserOrThrow } from './users';
 
-async function getActiveQuizSession(
-  ctx: QueryCtx,
-  userId: Id<'users'>,
-  args: {
-    presetQuizId?: Id<'presetQuizzes'>;
-    customQuizId?: Id<'customQuizzes'>;
-  },
-): Promise<Id<'quizSessions'> | null> {
-  //eslint-disable-next-line playwright/no-useless-await
-  const session = await ctx.db
-    .query('quizSessions')
-    .withIndex('by_user', q => q.eq('userId', userId))
-    .filter(q =>
-      q.and(
-        q.eq(q.field('status'), 'in_progress'),
-        args.presetQuizId
-          ? q.eq(q.field('presetQuizId'), args.presetQuizId)
-          : q.eq(q.field('customQuizId'), args.customQuizId),
-      ),
-    )
-    .first();
+export const getCurrentSession = query({
+  args: { quizId: v.union(v.id('presetQuizzes'), v.id('customQuizzes')) },
+  handler: async (ctx, { quizId }) => {
+    const userId = await getCurrentUserOrThrow(ctx);
 
-  // eslint-disable-next-line unicorn/no-null
-  return session?._id ?? null;
-}
+    return ctx.db
+      .query('quizSessions')
+      .withIndex('by_user_quiz', q =>
+        q.eq('userId', userId._id).eq('quizId', quizId).eq('isComplete', false),
+      )
+      .first();
+  },
+});
 
 export const startQuizSession = mutation({
   args: {
-    presetQuizId: v.optional(v.id('presetQuizzes')),
-    customQuizId: v.optional(v.id('customQuizzes')),
+    quizId: v.union(v.id('presetQuizzes'), v.id('customQuizzes')),
+    mode: v.union(v.literal('study'), v.literal('exam')),
   },
-  handler: async (ctx, args) => {
-    const user = await getCurrentUserOrThrow(ctx);
+  handler: async (ctx, { quizId, mode }) => {
+    const userId = await getCurrentUserOrThrow(ctx);
 
-    if (!args.presetQuizId && !args.customQuizId) {
-      throw new Error('Either presetQuizId or customQuizId must be provided');
-    }
-
-    let activeSession = await getActiveQuizSession(ctx, user._id, args);
-
-    if (!activeSession) {
-      activeSession = await ctx.db.insert('quizSessions', {
-        userId: user._id,
-        presetQuizId: args.presetQuizId,
-        customQuizId: args.customQuizId,
-        status: 'in_progress',
-        score: 0,
-        progress: {
-          currentQuestionIndex: 0,
-          answers: [],
-        },
-      });
-    }
-
-    return activeSession;
-  },
-});
-
-export const get = query({
-  args: {
-    presetQuizId: v.optional(v.id('presetQuizzes')),
-    customQuizId: v.optional(v.id('customQuizzes')),
-  },
-  handler: async (ctx, args) => {
-    const user = await getCurrentUserOrThrow(ctx);
-
-    if (!args.presetQuizId && !args.customQuizId) {
-      throw new Error('Either presetQuizId or customQuizId must be provided');
-    }
-
-    return ctx.db
-      .query('quizSessions')
-      .withIndex('by_user', q => q.eq('userId', user._id))
-      .filter(q =>
-        q.and(
-          q.eq(q.field('status'), 'in_progress'),
-          args.presetQuizId
-            ? q.eq(q.field('presetQuizId'), args.presetQuizId)
-            : q.eq(q.field('customQuizId'), args.customQuizId),
-        ),
-      )
-      .first();
-  },
-});
-
-export const updateProgress = mutation({
-  args: {
-    sessionId: v.id('quizSessions'),
-    answer: v.object({
-      questionId: v.id('questions'),
-      selectedOption: v.number(),
-      isCorrect: v.boolean(),
-    }),
-    currentQuestionIndex: v.number(),
-  },
-  handler: async (ctx, args) => {
-    const session = await ctx.db.get(args.sessionId);
-    if (!session) {
-      throw new Error('Session not found');
-    }
-
-    if (session.status !== 'in_progress') {
-      throw new Error('Cannot update completed session');
-    }
-
-    // Update progress
-    const progress = {
-      currentQuestionIndex: args.currentQuestionIndex,
-      answers: [
-        ...(session.progress?.answers || []),
-        {
-          questionId: args.answer.questionId,
-          selectedOption: args.answer.selectedOption,
-          isCorrect: args.answer.isCorrect,
-        },
-      ],
-    };
-
-    // Calculate new score
-    const score = progress.answers.filter(a => a.isCorrect).length;
-
-    // Update session
-    await ctx.db.patch(args.sessionId, {
-      progress,
-      score,
+    const sessionId = await ctx.db.insert('quizSessions', {
+      userId: userId._id,
+      quizId,
+      mode,
+      currentQuestionIndex: 0,
+      answers: [],
+      answerFeedback: [],
+      isComplete: false,
     });
 
-    return { progress, score };
+    return { sessionId };
   },
 });
 
-export const completeSession = mutation({
+export const submitAnswerAndProgress = mutation({
   args: {
-    sessionId: v.id('quizSessions'),
+    quizId: v.union(v.id('presetQuizzes'), v.id('customQuizzes')),
+    selectedAlternativeIndex: v.union(
+      v.literal(0),
+      v.literal(1),
+      v.literal(2),
+      v.literal(3),
+    ),
   },
   handler: async (ctx, args) => {
-    const session = await ctx.db.get(args.sessionId);
-    if (!session) {
-      throw new Error('Session not found');
-    }
+    const userId = await getCurrentUserOrThrow(ctx);
 
-    if (session.status === 'completed') {
-      throw new Error('Session already completed');
-    }
+    // 1. Get current session
+    const session = await ctx.db
+      .query('quizSessions')
+      .withIndex('by_user_quiz', q =>
+        q
+          .eq('userId', userId._id)
+          .eq('quizId', args.quizId)
+          .eq('isComplete', false),
+      )
+      .first();
 
-    // Calculate final score from progress
-    const finalScore =
-      session.progress?.answers.filter(a => a.isCorrect).length ?? 0;
+    if (!session) throw new Error('No active quiz progress found');
 
-    // Update session with completion data
-    await ctx.db.patch(args.sessionId, {
-      status: 'completed',
-      endTime: Date.now(),
-      score: finalScore,
+    // 2. Get quiz and current question
+    const quiz = await ctx.db.get(args.quizId);
+    if (!quiz) throw new Error('Quiz not found');
+
+    const currentQuestion = await ctx.db.get(
+      quiz.questions[session.currentQuestionIndex],
+    );
+    if (!currentQuestion) throw new Error('Question not found');
+
+    // 3. Check if answer is correct and get explanation
+    const isAnswerCorrect =
+      args.selectedAlternativeIndex === currentQuestion.correctAlternativeIndex;
+
+    // 4. Save answer and feedback for current question
+    await ctx.db.patch(session._id, {
+      answers: [...session.answers, args.selectedAlternativeIndex],
+      answerFeedback: [
+        ...session.answerFeedback,
+        {
+          isCorrect: isAnswerCorrect,
+          explanation: currentQuestion.explanationText,
+        },
+      ],
+      currentQuestionIndex: session.currentQuestionIndex + 1,
+      isComplete: false,
+    });
+
+    return {
+      isAnswerCorrect,
+      feedback: isAnswerCorrect ? 'Correct!' : 'Incorrect',
+      explanation: currentQuestion.explanationText,
+      nextQuestionIndex: session.currentQuestionIndex + 1,
+      isComplete: session.currentQuestionIndex + 1 >= quiz.questions.length,
+    };
+  },
+});
+
+// Add new mutation for explicitly completing the quiz
+export const completeQuizSession = mutation({
+  args: {
+    quizId: v.union(v.id('presetQuizzes'), v.id('customQuizzes')),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getCurrentUserOrThrow(ctx);
+
+    const session = await ctx.db
+      .query('quizSessions')
+      .withIndex('by_user_quiz', q =>
+        q
+          .eq('userId', userId._id)
+          .eq('quizId', args.quizId)
+          .eq('isComplete', false),
+      )
+      .first();
+
+    if (!session) throw new Error('No active quiz session found');
+
+    await ctx.db.patch(session._id, {
+      isComplete: true,
     });
 
     return { success: true };
-  },
-});
-
-export const getById = query({
-  args: {
-    sessionId: v.id('quizSessions'),
-  },
-  handler: async (ctx, args) => {
-    const session = await ctx.db.get(args.sessionId);
-    if (!session) {
-      throw new Error('Session not found');
-    }
-    return session;
-  },
-});
-
-export const getCompletedSession = query({
-  args: {
-    presetQuizId: v.id('presetQuizzes'),
-  },
-  handler: async (ctx, args) => {
-    const user = await getCurrentUserOrThrow(ctx);
-
-    return ctx.db
-      .query('quizSessions')
-      .withIndex('by_user', q => q.eq('userId', user._id))
-      .filter(q =>
-        q.and(
-          q.eq(q.field('status'), 'completed'),
-          q.eq(q.field('presetQuizId'), args.presetQuizId),
-        ),
-      )
-      .first();
   },
 });

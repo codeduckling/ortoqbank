@@ -22,6 +22,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { Button } from '@/components/ui/button';
 
 import { api } from '../../../../convex/_generated/api';
 import { Id } from '../../../../convex/_generated/dataModel';
@@ -45,7 +46,7 @@ export default function ThemesPage() {
   const themes = useQuery(api.themes.list) || [];
   const presetQuizzes = useQuery(api.presetQuizzes.list) || [];
   const startSession = useMutation(api.quizSessions.startQuizSession);
-
+  const { user } = useUser();
   const router = useRouter();
 
   // Group exams by theme
@@ -60,14 +61,15 @@ export default function ThemesPage() {
   );
 
   const handleExamClick = async (quizId: Id<'presetQuizzes'>) => {
-    await startSession({
-      presetQuizId: quizId,
+    const { sessionId } = await startSession({
+      quizId,
+      mode: 'study',
     });
     router.push(`/temas/${quizId}`);
   };
 
-  if (!themes) {
-    return <div>Loading...</div>;
+  if (!themes || !user) {
+    return <div>Carregando temas...</div>;
   }
 
   return (
@@ -91,23 +93,37 @@ export default function ThemesPage() {
               </AccordionTrigger>
               <AccordionContent>
                 <div className="mt-2 ml-8 space-y-2">
-                  {themeExams.map(exam => (
-                    <div
-                      key={exam._id}
-                      onClick={() => handleExamClick(exam._id)}
-                      className="block cursor-pointer rounded-lg border p-3 text-sm hover:bg-gray-50"
-                    >
-                      <div className="flex flex-col gap-1">
-                        <span className="font-medium">{exam.name}</span>
-                        <span className="text-muted-foreground">
-                          {exam.description}
-                        </span>
-                        <span className="text-muted-foreground text-xs">
-                          {exam.questions.length} questões
-                        </span>
+                  {themeExams.map(exam => {
+                    return (
+                      <div
+                        key={exam._id}
+                        className="block rounded-lg border p-3 text-sm"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex flex-col gap-1">
+                            <span className="font-medium">{exam.name}</span>
+                            <span className="text-muted-foreground">
+                              {exam.description}
+                            </span>
+                            <span className="text-muted-foreground text-xs">
+                              {exam.questions.length} questões
+                            </span>
+                          </div>
+
+                          <div className="flex gap-2">
+                            <Button onClick={() => handleExamClick(exam._id)}>
+                              Iniciar Teste
+                            </Button>
+                            <Link href={`/temas/${exam._id}/results`}>
+                              <Button variant="outline" size="sm">
+                                Revisar Anteriores
+                              </Button>
+                            </Link>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   {themeExams.length === 0 && (
                     <div className="text-muted-foreground text-sm">
                       Nenhum teste disponível para este tema

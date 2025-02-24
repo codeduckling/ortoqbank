@@ -33,6 +33,8 @@ import { Id } from '../../../../../../convex/_generated/dataModel';
 import { QuestionOption } from './question-option';
 import { QuestionFormData, questionSchema } from './schema';
 
+const NUMBER_OF_ALTERNATIVES = 4;
+
 interface QuestionFormProps {
   mode?: 'create' | 'edit';
   defaultValues?: any; // We'll type this properly later
@@ -81,8 +83,8 @@ export function QuestionForm({
         type: 'paragraph',
         content: [{ type: 'text', text: '' }],
       },
-      options: [{ text: '' }, { text: '' }, { text: '' }, { text: '' }],
-      correctOptionIndex: 0,
+      alternatives: Array.from({ length: NUMBER_OF_ALTERNATIVES }).fill(''),
+      correctAlternativeIndex: 0,
       explanationText: {
         type: 'paragraph',
         content: [{ type: 'text', text: '' }],
@@ -93,7 +95,11 @@ export function QuestionForm({
     },
   });
 
-  const { fields } = useFieldArray({ name: 'options', control: form.control });
+  const { fields } = useFieldArray({
+    name: 'alternatives',
+    control: form.control,
+    rules: { minLength: 4, maxLength: 4 },
+  });
 
   // Add refs to store editor instances
   const [questionEditor, setQuestionEditor] = useState<any>();
@@ -157,12 +163,21 @@ export function QuestionForm({
         return;
       }
 
-      // Now submit with real URLs
+      const processedData = {
+        ...updatedData,
+        themeId: selectedTheme!,
+        subthemeId: selectedSubtheme,
+        groupId: selectedSubtheme ? (data.groupId as Id<'groups'>) : undefined,
+      };
+
       if (mode === 'edit' && defaultValues) {
-        await updateQuestion({ id: defaultValues._id, ...updatedData });
+        await updateQuestion({
+          id: defaultValues._id,
+          ...processedData,
+        });
         toast({ title: 'Questão atualizada com sucesso!' });
       } else {
-        await createQuestion(updatedData);
+        await createQuestion(processedData);
         toast({ title: 'Questão criada com sucesso!' });
       }
 
@@ -228,13 +243,15 @@ export function QuestionForm({
           <FormLabel>Alternativas</FormLabel>
           <Card>
             <CardContent className="space-y-2 p-2">
-              {fields.map((field, index) => (
+              {Array.from({ length: NUMBER_OF_ALTERNATIVES }, (_, index) => (
                 <QuestionOption
-                  key={field.id}
+                  key={index}
                   control={form.control}
                   index={index}
-                  isSelected={form.watch('correctOptionIndex') === index}
-                  onSelect={() => form.setValue('correctOptionIndex', index)}
+                  isSelected={form.watch('correctAlternativeIndex') === index}
+                  onSelect={() =>
+                    form.setValue('correctAlternativeIndex', index)
+                  }
                 />
               ))}
             </CardContent>

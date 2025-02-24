@@ -10,18 +10,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
-interface Option {
-  id: string;
-  text: string;
-  imageUrl?: string;
-}
-
 interface Question {
   id: string;
   statement: string;
   statementImageUrl?: string;
-  options: Option[];
-  correctAnswer: string;
+  alternatives: string[];
+  correctAlternativeIndex: number;
   explanation: string;
   explanationImageUrl?: string;
   tags: string[];
@@ -32,13 +26,13 @@ const question: Question = {
   id: '1',
   statement:
     'Em um paciente com fratura exposta de tíbia, qual é a primeira conduta a ser tomada no atendimento inicial?',
-  options: [
-    { id: 'a', text: 'Limpeza e desbridamento cirúrgico' },
-    { id: 'b', text: 'Antibioticoterapia endovenosa' },
-    { id: 'c', text: 'Fixação externa' },
-    { id: 'd', text: 'Redução fechada e imobilização' },
+  alternatives: [
+    'Limpeza e desbridamento cirúrgico',
+    'Antibioticoterapia endovenosa',
+    'Fixação externa',
+    'Redução fechada e imobilização',
   ],
-  correctAnswer: 'b',
+  correctAlternativeIndex: 1,
   explanation:
     'A antibioticoterapia endovenosa deve ser iniciada o mais precocemente possível, idealmente na primeira hora após o trauma, para prevenir infecção. O desbridamento cirúrgico, embora fundamental, é realizado após a estabilização inicial do paciente.',
   tags: ['Trauma', 'Urgência', 'Antibioticoterapia', 'Fratura Exposta'],
@@ -92,7 +86,7 @@ export default function SimulationPage({
           </CardContent>
         </Card>
 
-        {/* Options */}
+        {/* Alternatives */}
         <Card>
           <CardContent className="pt-6">
             <RadioGroup
@@ -100,25 +94,27 @@ export default function SimulationPage({
               onValueChange={setSelectedAnswer}
               className="space-y-4"
             >
-              {question.options.map(option => (
+              {question.alternatives.map((alternative, index) => (
                 <div
-                  key={option.id}
+                  key={index}
                   className={`flex items-start space-x-3 rounded-lg border p-4 ${
-                    showAnswer && option.id === question.correctAnswer
+                    showAnswer && index === question.correctAlternativeIndex
                       ? 'border-green-500 bg-green-50'
                       : 'border-gray-200'
                   }`}
                 >
-                  <RadioGroupItem value={option.id} id={option.id} />
+                  <RadioGroupItem value={alternative} id={alternative} />
                   <div className="flex-1">
-                    <Label htmlFor={option.id} className="text-base">
-                      {option.text}
+                    <Label htmlFor={alternative} className="text-base">
+                      {alternative}
                     </Label>
-                    {option.imageUrl && (
+                    {question.explanationImageUrl && (
                       <div className="relative mt-2 h-48 w-full">
                         <Image
-                          src={option.imageUrl || '/placeholder.svg'}
-                          alt={`Imagem da opção ${option.id}`}
+                          src={
+                            question.explanationImageUrl || '/placeholder.svg'
+                          }
+                          alt={`Imagem da opção ${alternative}`}
                           fill
                           className="object-contain"
                         />
