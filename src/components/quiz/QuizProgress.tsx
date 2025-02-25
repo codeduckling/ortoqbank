@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 interface QuizProgressProps {
   currentIndex: number;
   totalQuestions: number;
-  mode?: 'study' | 'exam';
+  mode: 'study' | 'exam';
   onNavigate?: (index: number) => void;
   answerFeedback?: Array<{ isCorrect: boolean } | undefined>;
   visibleCount?: number; // Number of questions to show at once
@@ -13,11 +13,13 @@ interface QuizProgressProps {
 export default function QuizProgress({
   currentIndex,
   totalQuestions,
-  mode = 'study',
+  mode,
   onNavigate,
   answerFeedback = [],
   visibleCount = 5, // Default to showing 5 questions at a time
 }: QuizProgressProps) {
+  const isExamMode = mode === 'exam';
+
   // State to track the first visible question index
   const [startIndex, setStartIndex] = useState(0);
 
@@ -86,8 +88,7 @@ export default function QuizProgress({
           { length: Math.min(visibleCount, totalQuestions - validStartIndex) },
           (_, i) => {
             const questionIndex = validStartIndex + i;
-            const isNavigable =
-              mode === 'study' && questionIndex <= maxAllowedIndex;
+            const isNavigable = !isExamMode && questionIndex <= maxAllowedIndex;
 
             // Determine button color based on answer status
             let buttonColorClass = '';
@@ -110,11 +111,9 @@ export default function QuizProgress({
               <button
                 key={questionIndex}
                 onClick={() => isNavigable && onNavigate?.(questionIndex)}
-                disabled={!isNavigable || mode === 'exam'}
+                disabled={!isNavigable || isExamMode}
                 className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${buttonColorClass} ${
-                  isNavigable && mode !== 'exam'
-                    ? 'cursor-pointer'
-                    : 'cursor-default'
+                  isNavigable ? 'cursor-pointer' : 'cursor-default'
                 }`}
                 aria-label={`Go to question ${questionIndex + 1}`}
               >
