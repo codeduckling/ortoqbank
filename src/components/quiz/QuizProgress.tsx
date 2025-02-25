@@ -80,9 +80,6 @@ export default function QuizProgress({
           </button>
         )}
 
-        {/* Indicator for more questions on the left */}
-        {showLeftArrow && <span className="text-gray-400">...</span>}
-
         {/* Visible question buttons */}
         {Array.from(
           { length: Math.min(visibleCount, totalQuestions - validStartIndex) },
@@ -122,9 +119,6 @@ export default function QuizProgress({
             );
           },
         )}
-
-        {/* Indicator for more questions on the right */}
-        {showRightArrow && <span className="text-gray-400">...</span>}
 
         {/* Right arrow */}
         {showRightArrow && (

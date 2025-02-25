@@ -140,8 +140,7 @@ function QuizStepper({
 
     // Check if this was the last question in exam mode
     if (mode === 'exam' && currentStepIndex === quizData.questions.length - 1) {
-      await completeQuiz();
-      router.push('/temas');
+      await handleComplete();
     }
   };
 
@@ -156,14 +155,18 @@ function QuizStepper({
 
     if (stepper.isLast) {
       // Handle quiz completion
-      await completeQuiz();
-      router.push('/temas'); // or wherever you want to redirect
+      await handleComplete();
     } else {
       stepper.next();
     }
   };
 
   const currentQuestion = quizData.questions[currentStepIndex];
+
+  const handleComplete = async () => {
+    await completeQuiz();
+    router.push(`/temas/${quizData._id}/results`);
+  };
 
   return (
     <div className="container mx-auto max-w-3xl p-6">
