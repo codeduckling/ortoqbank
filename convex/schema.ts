@@ -76,4 +76,12 @@ export default defineSchema({
     ),
     isComplete: v.boolean(),
   }).index('by_user_quiz', ['userId', 'quizId', 'isComplete']),
+
+  userBookmarks: defineTable({
+    userId: v.id('users'),
+    questionId: v.id('questions'),
+  })
+    .index('by_user_question', ['userId', 'questionId'])
+    .index('by_user', ['userId'])
+    .index('by_question', ['questionId']),
 });

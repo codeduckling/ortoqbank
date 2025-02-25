@@ -35,6 +35,7 @@ export default [
       'unicorn/no-array-reduce': 'off',
       'unicorn/prevent-abbreviations': 'off',
       'unicorn/filename-case': 'off',
+      'playwright/no-useless-await': 'off',
     },
   },
   {
