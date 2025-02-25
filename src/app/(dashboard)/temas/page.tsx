@@ -49,6 +49,19 @@ export default function ThemesPage() {
   const { user } = useUser();
   const router = useRouter();
 
+  // Query to get incomplete sessions for the current user
+  const incompleteSessions =
+    useQuery(api.quizSessions.listIncompleteSessions) || [];
+
+  // Create a map of quizId to sessionId for incomplete sessions
+  const incompleteSessionMap = incompleteSessions.reduce(
+    (map: Record<string, Id<'quizSessions'>>, session) => {
+      map[session.quizId] = session._id;
+      return map;
+    },
+    {} as Record<string, Id<'quizSessions'>>,
+  );
+
   // Group exams by theme
   const examsByTheme = themes.reduce(
     (accumulator, theme) => {
@@ -61,11 +74,18 @@ export default function ThemesPage() {
   );
 
   const handleExamClick = async (quizId: Id<'presetQuizzes'>) => {
-    const { sessionId } = await startSession({
-      quizId,
-      mode: 'study',
-    });
-    router.push(`/temas/${quizId}`);
+    // Check if there's an incomplete session for this quiz
+    if (incompleteSessionMap[quizId]) {
+      // Navigate to the existing quiz
+      router.push(`/temas/${quizId}`);
+    } else {
+      // Start a new session
+      const { sessionId } = await startSession({
+        quizId,
+        mode: 'study',
+      });
+      router.push(`/temas/${quizId}`);
+    }
   };
 
   if (!themes || !user) {
@@ -94,6 +114,10 @@ export default function ThemesPage() {
               <AccordionContent>
                 <div className="mt-2 ml-8 space-y-2">
                   {themeExams.map(exam => {
+                    // Check if there's an incomplete session for this quiz
+                    const hasIncompleteSession =
+                      !!incompleteSessionMap[exam._id];
+
                     return (
                       <div
                         key={exam._id}
@@ -112,7 +136,9 @@ export default function ThemesPage() {
 
                           <div className="flex gap-2">
                             <Button onClick={() => handleExamClick(exam._id)}>
-                              Iniciar Teste
+                              {hasIncompleteSession
+                                ? 'Retomar Teste'
+                                : 'Iniciar Teste'}
                             </Button>
                             <Link href={`/temas/${exam._id}/results`}>
                               <Button variant="outline" size="sm">

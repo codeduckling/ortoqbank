@@ -1,4 +1,3 @@
-/* eslint-disable playwright/no-useless-await */
 import { v } from 'convex/values';
 
 import { Id } from './_generated/dataModel';
@@ -129,5 +128,22 @@ export const completeQuizSession = mutation({
     });
 
     return { success: true };
+  },
+});
+
+// Add this new query function to list incomplete sessions for current user
+export const listIncompleteSessions = query({
+  args: {},
+  handler: async ctx => {
+    const userId = await getCurrentUserOrThrow(ctx);
+
+    // Query for all incomplete sessions for this user
+    const sessions = await ctx.db
+      .query('quizSessions')
+      .withIndex('by_user_quiz', q => q.eq('userId', userId._id))
+      .filter(q => q.eq(q.field('isComplete'), false))
+      .collect();
+
+    return sessions;
   },
 });
