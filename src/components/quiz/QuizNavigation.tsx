@@ -6,6 +6,7 @@ interface QuizNavigationProps {
   isLast: boolean;
   hasAnswered: boolean;
   hasSelectedOption: boolean;
+  isLoading?: boolean;
   onPrevious: () => void;
   onNext: () => void;
   onSubmit: () => void;
@@ -17,6 +18,7 @@ export default function QuizNavigation({
   isLast,
   hasAnswered,
   hasSelectedOption,
+  isLoading = false,
   onPrevious,
   onNext,
   onSubmit,
@@ -26,16 +28,16 @@ export default function QuizNavigation({
       <Button
         variant="outline"
         onClick={onPrevious}
-        disabled={mode === 'exam' || isFirst}
+        disabled={mode === 'exam' || isFirst || isLoading}
       >
         Voltar
       </Button>
       {mode === 'study' && hasAnswered ? (
-        <Button onClick={onNext}>
+        <Button onClick={onNext} disabled={isLoading}>
           {isLast ? 'Finalizar' : 'Próxima Questão'}
         </Button>
       ) : (
-        <Button onClick={onSubmit} disabled={!hasSelectedOption}>
+        <Button onClick={onSubmit} disabled={!hasSelectedOption || isLoading}>
           {mode === 'exam' && isLast ? 'Finalizar' : 'Confirmar'}
         </Button>
       )}

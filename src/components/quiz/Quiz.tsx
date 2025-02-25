@@ -66,6 +66,7 @@ function QuizStepper({
   toggleBookmark: ReturnType<typeof useQuiz>['toggleBookmark'];
 }) {
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
   const [selectedAlternative, setSelectedAlternative] = useState<
     AlternativeIndex | undefined
   >();
@@ -136,11 +137,19 @@ function QuizStepper({
   const handleAnswerSubmit = async () => {
     if (selectedAlternative === undefined) return;
 
-    await onSubmitAnswer(selectedAlternative);
+    setIsLoading(true);
+    try {
+      await onSubmitAnswer(selectedAlternative);
 
-    // Check if this was the last question in exam mode
-    if (mode === 'exam' && currentStepIndex === quizData.questions.length - 1) {
-      await handleComplete();
+      // Check if this was the last question in exam mode
+      if (
+        mode === 'exam' &&
+        currentStepIndex === quizData.questions.length - 1
+      ) {
+        await handleComplete();
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -153,19 +162,29 @@ function QuizStepper({
   const handleNext = async () => {
     if (mode === 'exam') return;
 
-    if (stepper.isLast) {
-      // Handle quiz completion
-      await handleComplete();
-    } else {
-      stepper.next();
+    setIsLoading(true);
+    try {
+      if (stepper.isLast) {
+        // Handle quiz completion
+        await handleComplete();
+      } else {
+        stepper.next();
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const currentQuestion = quizData.questions[currentStepIndex];
 
   const handleComplete = async () => {
-    await completeQuiz();
-    router.push(`/temas/${quizData._id}/results`);
+    try {
+      await completeQuiz();
+      router.push(`/temas/${quizData._id}/results`);
+    } catch (error) {
+      console.error('Error completing quiz:', error);
+      // Error handling is managed by the caller functions through finally blocks
+    }
   };
 
   return (
@@ -226,6 +245,7 @@ function QuizStepper({
                   isLast={stepper.isLast}
                   hasAnswered={!!feedback?.answered}
                   hasSelectedOption={selectedAlternative !== undefined}
+                  isLoading={isLoading}
                   onPrevious={handlePrevious}
                   onNext={handleNext}
                   onSubmit={handleAnswerSubmit}
