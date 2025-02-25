@@ -21,6 +21,19 @@ export default function QuizProgress({
   // State to track the first visible question index
   const [startIndex, setStartIndex] = useState(0);
 
+  // Find the furthest answered question index
+  const furthestAnsweredIndex = answerFeedback.reduce(
+    (maxIndex, feedback, index) =>
+      feedback ? Math.max(maxIndex, index) : maxIndex,
+    -1,
+  );
+
+  // Next allowed question is the one after the furthest answered
+  const maxAllowedIndex = Math.min(
+    furthestAnsweredIndex + 1,
+    totalQuestions - 1,
+  );
+
   // Ensure current question is always visible
   useEffect(() => {
     if (currentIndex < startIndex) {
@@ -73,6 +86,8 @@ export default function QuizProgress({
           { length: Math.min(visibleCount, totalQuestions - validStartIndex) },
           (_, i) => {
             const questionIndex = validStartIndex + i;
+            const isNavigable =
+              mode === 'study' && questionIndex <= maxAllowedIndex;
 
             // Determine button color based on answer status
             let buttonColorClass = '';
@@ -85,16 +100,22 @@ export default function QuizProgress({
                 : 'bg-red-500 text-white';
             } else if (mode === 'exam' && answerFeedback[questionIndex]) {
               buttonColorClass = 'bg-gray-300 text-gray-800';
-            } else {
+            } else if (isNavigable) {
               buttonColorClass = 'bg-gray-100 text-gray-700 hover:bg-gray-200';
+            } else {
+              buttonColorClass = 'bg-gray-100 text-gray-400'; // Disabled look
             }
 
             return (
               <button
                 key={questionIndex}
-                onClick={() => mode === 'study' && onNavigate?.(questionIndex)}
-                disabled={mode === 'exam'}
-                className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${buttonColorClass} ${mode === 'exam' ? 'cursor-default' : 'cursor-pointer'}`}
+                onClick={() => isNavigable && onNavigate?.(questionIndex)}
+                disabled={!isNavigable || mode === 'exam'}
+                className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${buttonColorClass} ${
+                  isNavigable && mode !== 'exam'
+                    ? 'cursor-pointer'
+                    : 'cursor-default'
+                }`}
                 aria-label={`Go to question ${questionIndex + 1}`}
               >
                 {questionIndex + 1}
