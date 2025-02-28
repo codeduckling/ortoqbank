@@ -1,8 +1,9 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useQuery } from 'convex/react';
+import { useMutation, useQuery } from 'convex/react';
 import { InfoIcon as InfoCircle, Plus } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
@@ -12,8 +13,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
 
 import { api } from '../../../../../../convex/_generated/api';
+import { Id } from '../../../../../../convex/_generated/dataModel';
 import { type TestFormData, testFormSchema } from '../schema';
 
 type Theme = { _id: string; name: string };
@@ -23,7 +26,12 @@ type Subtheme = { _id: string; name: string; themeId: string };
 type Group = { _id: string; name: string; subthemeId: string };
 
 export default function TestForm() {
+  const router = useRouter();
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [expandedSubthemes, setExpandedSubthemes] = useState<string[]>([]);
+
+  const createCustomQuiz = useMutation(api.customQuizzes.create);
 
   const {
     register,
@@ -34,8 +42,8 @@ export default function TestForm() {
   } = useForm<TestFormData>({
     resolver: zodResolver(testFormSchema),
     defaultValues: {
-      testMode: 'simulado',
-      questionMode: [],
+      testMode: 'study',
+      questionMode: ['all'], // Default to 'all' questions
       selectedThemes: [],
       selectedSubthemes: [],
       selectedGroups: [],
@@ -57,8 +65,59 @@ export default function TestForm() {
     groups: [],
   };
 
-  const onSubmit = (data: TestFormData) => {
-    console.log('Form Data:', JSON.stringify(data, undefined, 2));
+  const onSubmit = async (data: TestFormData) => {
+    try {
+      setIsSubmitting(true);
+
+      // Map string arrays to appropriate ID types
+      const formattedData = {
+        name: `Quiz Personalizado - ${new Date().toLocaleDateString()}`,
+        description: `Quiz criado em ${new Date().toLocaleDateString()}`,
+        testMode: data.testMode,
+        questionMode: data.questionMode.map(mode => {
+          // Map UI question modes to API question modes
+          switch (mode) {
+            case 'marked': {
+              return 'bookmarked';
+            }
+            case 'unused': {
+              return 'unanswered';
+            }
+            default: {
+              return mode as 'all' | 'incorrect';
+            }
+          }
+        }),
+        selectedThemes: data.selectedThemes as Id<'themes'>[],
+        selectedSubthemes: data.selectedSubthemes as Id<'subthemes'>[],
+        selectedGroups: data.selectedGroups as Id<'groups'>[],
+      };
+
+      // Create the custom quiz
+      const result = await createCustomQuiz(formattedData);
+
+      if (result.quizId) {
+        toast({
+          title: 'Quiz criado com sucesso!',
+          description: `Seu quiz com ${result.questionCount} questões foi criado.`,
+        });
+
+        // Navigate to the quiz - no need to pass mode as it's stored in the database
+        router.push(`/criar-teste/${result.quizId}`);
+      }
+    } catch (error) {
+      console.error('Erro ao criar quiz:', error);
+      toast({
+        title: 'Erro ao criar quiz',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Ocorreu um erro ao criar o quiz.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const toggleTheme = (themeId: string) => {
@@ -182,14 +241,14 @@ export default function TestForm() {
               <Tabs
                 value={testMode}
                 onValueChange={value =>
-                  setValue('testMode', value as 'simulado' | 'estudo', {
+                  setValue('testMode', value as 'study' | 'exam', {
                     shouldValidate: true,
                   })
                 }
               >
                 <TabsList className="grid grid-cols-2">
-                  <TabsTrigger value="simulado">Simulado</TabsTrigger>
-                  <TabsTrigger value="estudo">Estudo</TabsTrigger>
+                  <TabsTrigger value="exam">Simulado</TabsTrigger>
+                  <TabsTrigger value="study">Estudo</TabsTrigger>
                 </TabsList>
               </Tabs>
             </div>
@@ -208,9 +267,9 @@ export default function TestForm() {
             >
               {[
                 { id: 'all', label: 'Todas', count: 3896 },
-                { id: 'unanswered', label: 'Não respondidas', count: 30 },
+                { id: 'unused', label: 'Não respondidas', count: 30 },
                 { id: 'incorrect', label: 'Incorretas', count: 3 },
-                { id: 'bookmarked', label: 'Marcadas', count: 3 },
+                { id: 'marked', label: 'Marcadas', count: 3 },
               ].map(({ id, label, count }) => (
                 <div key={id} className="flex items-center gap-2">
                   <Checkbox
@@ -293,8 +352,9 @@ export default function TestForm() {
           <Button
             type="submit"
             className="w-full bg-blue-500 hover:bg-blue-600"
+            disabled={isSubmitting}
           >
-            Gerar Teste
+            {isSubmitting ? 'Gerando...' : 'Gerar Teste'}
           </Button>
         </CardContent>
       </Card>

@@ -22,7 +22,7 @@ export const create = mutation({
 });
 
 export const getById = query({
-  args: { id: v.id('presetQuizzes') },
+  args: { id: v.union(v.id('presetQuizzes'), v.id('customQuizzes')) },
   handler: async (ctx, { id }) => {
     const quiz = await ctx.db.get(id);
     if (!quiz) {

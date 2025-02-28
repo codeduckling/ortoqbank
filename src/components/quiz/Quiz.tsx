@@ -180,7 +180,8 @@ function QuizStepper({
   const handleComplete = async () => {
     try {
       await completeQuiz();
-      router.push(`/temas/${quizData._id}/results`);
+      // Use a generic route for all quiz results instead of the theme-specific route
+      router.push(`/quiz-results/${quizData._id}`);
     } catch (error) {
       console.error('Error completing quiz:', error);
       // Error handling is managed by the caller functions through finally blocks
