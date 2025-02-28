@@ -1,4 +1,3 @@
-import { paginationOptsValidator } from 'convex/server';
 import { v } from 'convex/values';
 
 import { Doc, Id } from './_generated/dataModel';
@@ -9,7 +8,6 @@ type QuestionMode = 'all' | 'unanswered' | 'incorrect' | 'bookmarked';
 
 // Maximum number of questions allowed in a custom quiz
 const MAX_QUESTIONS = 120;
-const MOCK_USER_ID = 'j571n8n6pntprjpnv9w22th81n78fq8y' as Id<'users'>;
 
 /**
  * Randomly shuffle an array using Fisher-Yates algorithm
@@ -41,8 +39,7 @@ export const create = mutation({
     selectedGroups: v.optional(v.array(v.id('groups'))),
   },
   handler: async (ctx, args) => {
-    //const userId = await getCurrentUserOrThrow(ctx);
-    const mockUser = MOCK_USER_ID;
+    const userId = await getCurrentUserOrThrow(ctx);
 
     // Process themes one at a time to avoid large scans
     const allQuestions: Doc<'questions'>[] = [];
@@ -128,7 +125,7 @@ export const create = mutation({
           // Get bookmarked questions - use the by_user index to limit scanning
           const bookmarks = await ctx.db
             .query('userBookmarks')
-            .withIndex('by_user', q => q.eq('userId', mockUser))
+            .withIndex('by_user', q => q.eq('userId', userId._id))
             .collect();
 
           // Create a Set for faster lookups
@@ -153,7 +150,7 @@ export const create = mutation({
           // Only query completed sessions - use take instead of pagination to avoid cursor issues
           const completedSessions = await ctx.db
             .query('quizSessions')
-            .withIndex('by_user_quiz', q => q.eq('userId', mockUser))
+            .withIndex('by_user_quiz', q => q.eq('userId', userId._id))
             .filter(q => q.eq(q.field('isComplete'), true))
             .take(100); // Limit to most recent 100 sessions for performance
 
@@ -239,12 +236,12 @@ export const create = mutation({
       name: quizName,
       description: quizDescription,
       questions: uniqueQuestionIds,
-      authorId: mockUser,
+      authorId: userId._id,
     });
 
     // If the user selected study or exam mode, create a session immediately
     await ctx.db.insert('quizSessions', {
-      userId: mockUser,
+      userId: userId._id,
       quizId,
       mode: args.testMode,
       currentQuestionIndex: 0,
@@ -262,7 +259,7 @@ export const getCustomQuizzes = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    //const userId = await getCurrentUserOrThrow(ctx);
+    const userId = await getCurrentUserOrThrow(ctx);
 
     // Use an index on authorId if available or limit the number of results
     // to avoid a full table scan
@@ -271,7 +268,7 @@ export const getCustomQuizzes = query({
     // Get custom quizzes created by this user with pagination
     const quizzes = await ctx.db
       .query('customQuizzes')
-      .filter(q => q.eq(q.field('authorId'), MOCK_USER_ID))
+      .filter(q => q.eq(q.field('authorId'), userId._id))
       .order('desc') // Most recent first
       .take(limit);
 
@@ -284,7 +281,7 @@ export const deleteCustomQuiz = mutation({
     quizId: v.id('customQuizzes'),
   },
   handler: async (ctx, args) => {
-    // const userId = await getCurrentUserOrThrow(ctx);
+    const userId = await getCurrentUserOrThrow(ctx);
 
     const quiz = await ctx.db.get(args.quizId);
 
@@ -292,7 +289,7 @@ export const deleteCustomQuiz = mutation({
       throw new Error('Quiz not found');
     }
 
-    if (quiz.authorId !== MOCK_USER_ID) {
+    if (quiz.authorId !== userId._id) {
       throw new Error('You are not authorized to delete this quiz');
     }
 
@@ -300,7 +297,7 @@ export const deleteCustomQuiz = mutation({
     const sessions = await ctx.db
       .query('quizSessions')
       .withIndex('by_user_quiz', q =>
-        q.eq('userId', MOCK_USER_ID).eq('quizId', args.quizId),
+        q.eq('userId', userId._id).eq('quizId', args.quizId),
       )
       .collect();
 
