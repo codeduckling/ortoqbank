@@ -10,8 +10,8 @@ import {
   XCircle,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import { useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 import QuestionContent from '@/components/quiz/QuestionContent';
 import QuizProgressResults from '@/components/quiz/QuizProgressResults';
@@ -19,8 +19,8 @@ import { Button } from '@/components/ui/button';
 import { formatDate } from '@/lib/utils';
 import { renderContent } from '@/lib/utils/render-content';
 
-import { api } from '../../../../../../convex/_generated/api';
-import { Id } from '../../../../../../convex/_generated/dataModel';
+import { api } from '../../../../../convex/_generated/api';
+import { Id } from '../../../../../convex/_generated/dataModel';
 
 // Helper function for styling answers
 const getAlternativeClassName = (isUserAnswer: boolean, isCorrect: boolean) => {
@@ -30,20 +30,46 @@ const getAlternativeClassName = (isUserAnswer: boolean, isCorrect: boolean) => {
   return '';
 };
 
-export default function QuizResultsPage() {
+// Helper to determine if quiz ID is a customQuiz ID
+const isCustomQuiz = (
+  id: Id<'presetQuizzes'> | Id<'customQuizzes'>,
+): boolean => {
+  // The Id type from Convex includes table information
+  // We can check if it contains the table name 'customQuizzes'
+  return id.includes('customQuizzes:');
+};
+
+export default function UniversalQuizResultsPage() {
+  const router = useRouter();
   const { id } = useParams();
-  const quizId = id as Id<'presetQuizzes'>;
+  const quizId = id as Id<'presetQuizzes'> | Id<'customQuizzes'>;
   const { user } = useUser();
 
   // State for current question
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
-  // Get the quiz details
-  const quiz = useQuery(api.quiz.getById, { id: quizId });
+  // Determine the quiz type and fetch the appropriate data
+  const isCustom = isCustomQuiz(quizId);
+
+  // Use conditional queries with "skip" to skip execution
+  const presetQuizResult = useQuery(
+    api.quiz.getById,
+    isCustom ? 'skip' : { id: quizId as Id<'presetQuizzes'> },
+  );
+
+  const customQuizResult = useQuery(
+    api.customQuizzes.getById,
+    isCustom ? { id: quizId as Id<'customQuizzes'> } : 'skip',
+  );
+
+  // Combined quiz data - use the appropriate result based on quiz type
+  const quiz = isCustom ? customQuizResult : presetQuizResult;
 
   // Get the completed sessions for this quiz
   const completedSessions =
-    useQuery(api.quizSessions.getCompletedSessions, { quizId }) || [];
+    useQuery(api.quizSessions.getCompletedSessions, {
+      quizId: quizId as Id<'presetQuizzes'> | Id<'customQuizzes'>,
+    }) || [];
 
   // Get the most recent session (index 0)
   const session = completedSessions[0];
@@ -77,13 +103,16 @@ export default function QuizResultsPage() {
     setCurrentQuestionIndex(prev => Math.min(totalQuestions - 1, prev + 1));
   };
 
+  // Determine the appropriate return link based on quiz type using ternary
+  const getReturnLink = () => (isCustom ? '/criar-teste' : '/temas');
+
   return (
     <div className="container mx-auto max-w-3xl p-6">
       <div className="mb-4">
-        <Link href="/temas">
+        <Link href={getReturnLink()}>
           <Button variant="ghost" size="sm" className="gap-2">
             <ArrowLeft className="h-4 w-4" />
-            Voltar para Temas
+            Voltar
           </Button>
         </Link>
       </div>
@@ -210,7 +239,7 @@ export default function QuizResultsPage() {
       </div>
 
       <div className="mt-8 flex justify-center">
-        <Link href={`/temas`}>
+        <Link href={getReturnLink()}>
           <Button>Voltar</Button>
         </Link>
       </div>

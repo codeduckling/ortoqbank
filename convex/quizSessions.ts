@@ -169,3 +169,21 @@ export const getCompletedSessions = query({
     return sessions;
   },
 });
+
+// Get all completed sessions for the current user
+export const getAllCompletedSessions = query({
+  args: {},
+  handler: async ctx => {
+    const userId = await getCurrentUserOrThrow(ctx);
+
+    // Get all completed sessions for this user, ordered by newest first
+    const sessions = await ctx.db
+      .query('quizSessions')
+      .withIndex('by_user_quiz', q => q.eq('userId', userId._id))
+      .filter(q => q.eq(q.field('isComplete'), true))
+      .order('desc')
+      .collect();
+
+    return sessions;
+  },
+});

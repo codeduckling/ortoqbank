@@ -237,6 +237,11 @@ export const create = mutation({
       description: quizDescription,
       questions: uniqueQuestionIds,
       authorId: userId._id,
+      testMode: args.testMode,
+      questionMode: args.questionMode,
+      selectedThemes: args.selectedThemes,
+      selectedSubthemes: args.selectedSubthemes,
+      selectedGroups: args.selectedGroups,
     });
 
     // If the user selected study or exam mode, create a session immediately
@@ -309,5 +314,32 @@ export const deleteCustomQuiz = mutation({
     await ctx.db.delete(args.quizId);
 
     return { success: true };
+  },
+});
+
+export const getById = query({
+  args: { id: v.id('customQuizzes') },
+  handler: async (ctx, { id }) => {
+    const userId = await getCurrentUserOrThrow(ctx);
+    const quiz = await ctx.db.get(id);
+
+    if (!quiz) {
+      throw new Error('Quiz not found');
+    }
+
+    // Verify that the user has access to this quiz
+    if (quiz.authorId !== userId._id) {
+      throw new Error('Not authorized to access this quiz');
+    }
+
+    // Fetch all questions data
+    const questions = await Promise.all(
+      quiz.questions.map(questionId => ctx.db.get(questionId)),
+    );
+
+    return {
+      ...quiz,
+      questions: questions.filter(Boolean), // Remove any null values
+    };
   },
 });
