@@ -14,6 +14,7 @@ import type {
   FunctionReference,
 } from "convex/server";
 import type * as bookmark from "../bookmark.js";
+import type * as customQuizzes from "../customQuizzes.js";
 import type * as groups from "../groups.js";
 import type * as http from "../http.js";
 import type * as presetQuizzes from "../presetQuizzes.js";
@@ -35,6 +36,7 @@ import type * as users from "../users.js";
  */
 declare const fullApi: ApiFromModules<{
   bookmark: typeof bookmark;
+  customQuizzes: typeof customQuizzes;
   groups: typeof groups;
   http: typeof http;
   presetQuizzes: typeof presetQuizzes;
