@@ -8,7 +8,6 @@ import {
   SidebarRail,
 } from '@/components/ui/sidebar';
 
-import NavAdmin from './nav-admin';
 import NavLogo from './nav-logo';
 import NavMain from './nav-main';
 import NavSecondary from './nav-secondary';
@@ -28,7 +27,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarFooter>
         <NavThird />
 
-        <NavAdmin />
         <NavUser />
       </SidebarFooter>
       <SidebarRail />

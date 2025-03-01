@@ -1,5 +1,8 @@
+import { SignInButton } from '@clerk/nextjs';
 import Image from 'next/image';
 import Link from 'next/link';
+
+import { Button } from '@/components/ui/button';
 
 export default function Header() {
   return (
@@ -38,12 +41,11 @@ export default function Header() {
               </li>
             </ul>
           </nav>
-          <Link
-            href="/criar-teste"
-            className="rounded-full border border-white px-4 py-1.5 text-sm font-medium transition-colors hover:bg-white hover:text-[#2196F3]"
-          >
-            Entrar
-          </Link>
+          <SignInButton forceRedirectUrl="/criar-teste">
+            <Button className="rounded-full border border-white px-4 py-1.5 text-sm font-medium transition-colors hover:bg-white hover:text-[#2196F3]">
+              Entrar
+            </Button>
+          </SignInButton>
         </div>
       </div>
     </header>
