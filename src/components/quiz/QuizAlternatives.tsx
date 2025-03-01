@@ -1,4 +1,5 @@
 import { CheckCircle2Icon, XCircleIcon } from 'lucide-react';
+
 import { AlternativeIndex } from './types';
 
 interface QuizAlternativesProps {
