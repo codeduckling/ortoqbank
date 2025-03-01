@@ -80,10 +80,8 @@ export default defineSchema({
     answerFeedback: v.array(
       v.object({
         isCorrect: v.boolean(),
-        explanation: v.object({
-          type: v.string(),
-          content: v.array(v.any()),
-        }),
+        explanation: v.object({ type: v.string(), content: v.array(v.any()) }),
+        correctAlternative: v.optional(v.number()),
       }),
     ),
     isComplete: v.boolean(),

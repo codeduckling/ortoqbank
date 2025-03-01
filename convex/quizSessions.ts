@@ -87,6 +87,7 @@ export const submitAnswerAndProgress = mutation({
         {
           isCorrect: isAnswerCorrect,
           explanation: currentQuestion.explanationText,
+          correctAlternative: currentQuestion.correctAlternativeIndex,
         },
       ],
       currentQuestionIndex: session.currentQuestionIndex + 1,
@@ -97,6 +98,7 @@ export const submitAnswerAndProgress = mutation({
       isAnswerCorrect,
       feedback: isAnswerCorrect ? 'Correct!' : 'Incorrect',
       explanation: currentQuestion.explanationText,
+      correctAlternative: currentQuestion.correctAlternativeIndex,
       nextQuestionIndex: session.currentQuestionIndex + 1,
       isComplete: session.currentQuestionIndex + 1 >= quiz.questions.length,
     };
@@ -105,9 +107,7 @@ export const submitAnswerAndProgress = mutation({
 
 // Add new mutation for explicitly completing the quiz
 export const completeQuizSession = mutation({
-  args: {
-    quizId: v.union(v.id('presetQuizzes'), v.id('customQuizzes')),
-  },
+  args: { quizId: v.union(v.id('presetQuizzes'), v.id('customQuizzes')) },
   handler: async (ctx, args) => {
     const userId = await getCurrentUserOrThrow(ctx);
 
@@ -123,9 +123,7 @@ export const completeQuizSession = mutation({
 
     if (!session) throw new Error('No active quiz session found');
 
-    await ctx.db.patch(session._id, {
-      isComplete: true,
-    });
+    await ctx.db.patch(session._id, { isComplete: true });
 
     return { success: true };
   },
@@ -150,9 +148,7 @@ export const listIncompleteSessions = query({
 
 // Add this function to get completed sessions for a quiz
 export const getCompletedSessions = query({
-  args: {
-    quizId: v.union(v.id('presetQuizzes'), v.id('customQuizzes')),
-  },
+  args: { quizId: v.union(v.id('presetQuizzes'), v.id('customQuizzes')) },
   handler: async (ctx, { quizId }) => {
     const userId = await getCurrentUserOrThrow(ctx);
 
