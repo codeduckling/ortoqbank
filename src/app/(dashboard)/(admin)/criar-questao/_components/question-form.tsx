@@ -38,6 +38,7 @@ const NUMBER_OF_ALTERNATIVES = 4;
 interface QuestionFormProps {
   mode?: 'create' | 'edit';
   defaultValues?: any; // We'll type this properly later
+  onSuccess?: () => void; // New callback for handling successful submission
 }
 
 const hasBlobUrls = (content: any[]): boolean => {
@@ -52,6 +53,7 @@ const hasBlobUrls = (content: any[]): boolean => {
 export function QuestionForm({
   mode = 'create',
   defaultValues,
+  onSuccess,
 }: QuestionFormProps) {
   const { toast } = useToast();
 
@@ -176,11 +178,17 @@ export function QuestionForm({
           ...processedData,
         });
         toast({ title: 'Questão atualizada com sucesso!' });
+
+        // Call the success callback if provided
+        if (onSuccess) {
+          onSuccess();
+        }
       } else {
         await createQuestion(processedData);
         toast({ title: 'Questão criada com sucesso!' });
       }
 
+      // Only clear the form if we're in create mode
       if (mode === 'create') {
         form.reset();
         // Clear editors

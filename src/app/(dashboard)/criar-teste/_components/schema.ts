@@ -2,9 +2,8 @@ import { z } from 'zod';
 
 export const testFormSchema = z.object({
   testMode: z.enum(['study', 'exam']),
-  questionMode: z
-    .array(z.enum(['unused', 'incorrect', 'marked', 'all']))
-    .min(1, 'Selecione pelo menos um modo'),
+  questionMode: z.enum(['unused', 'incorrect', 'marked', 'all']),
+  numQuestions: z.number().min(1).max(120).default(30),
   selectedThemes: z.array(z.string()),
   selectedSubthemes: z.array(z.string()),
   selectedGroups: z.array(z.string()),

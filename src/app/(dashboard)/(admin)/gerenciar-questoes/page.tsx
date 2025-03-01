@@ -16,7 +16,7 @@ import {
 import { api } from '../../../../../convex/_generated/api';
 import { Id } from '../../../../../convex/_generated/dataModel';
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 200;
 
 const getButtonText = (status: string) => {
   switch (status) {

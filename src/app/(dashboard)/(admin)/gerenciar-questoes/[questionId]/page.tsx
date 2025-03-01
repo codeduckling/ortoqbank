@@ -31,7 +31,14 @@ export default function ViewQuestion() {
             Cancelar
           </Button>
         </div>
-        <QuestionForm defaultValues={question} mode="edit" />
+        <QuestionForm
+          defaultValues={question}
+          mode="edit"
+          onSuccess={() => {
+            // Exit edit mode when question is successfully updated
+            setIsEditing(false);
+          }}
+        />
       </div>
     );
   }
