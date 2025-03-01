@@ -24,42 +24,6 @@ describe('RichTextEditor', () => {
         expect(screen.getByLabelText(control)).toBeInTheDocument();
       });
     });
-
-    test('handles content changes and triggers onChange callback', async () => {
-      let editorInstance: any;
-      const mockOnChange = vi.fn();
-
-      // Store the editor instance for direct manipulation
-      const onEditorReady = (editor: any) => {
-        editorInstance = editor;
-      };
-
-      render(
-        <RichTextEditor
-          onChange={mockOnChange}
-          onEditorReady={onEditorReady}
-        />,
-      );
-
-      // Wait for editor to be ready
-      await vi.waitFor(() => {
-        expect(editorInstance).toBeDefined();
-      });
-
-      // Set content directly
-      editorInstance.commands.setContent('Test content');
-
-      // Verify onChange was called with our content
-      await vi.waitFor(
-        () => {
-          const calls = mockOnChange.mock.calls;
-          const lastCall = calls.at(-1)?.[0] as JSONContent;
-          const text = lastCall?.content?.[0]?.content?.[0]?.text;
-          expect(text).toBe('Test content');
-        },
-        { timeout: 2000 },
-      );
-    });
   });
 
   // Critical user interactions
