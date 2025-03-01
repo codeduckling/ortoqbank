@@ -3,13 +3,14 @@ import { redirect } from 'next/navigation';
 import { AdminNav } from '@/components/admin/admin-nav';
 import { checkRole } from '@/utils/roles';
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   // Check if user has admin role
-  if (!checkRole('admin')) {
+  const isAdmin = await checkRole('admin');
+  if (!isAdmin) {
     redirect('/');
   }
 
