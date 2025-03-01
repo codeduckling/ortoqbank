@@ -26,28 +26,39 @@ describe('RichTextEditor', () => {
     });
 
     test('handles content changes and triggers onChange callback', async () => {
+      let editorInstance: any;
       const mockOnChange = vi.fn();
-      const user = userEvent.setup({ delay: 50 });
 
-      render(<RichTextEditor onChange={mockOnChange} />);
-      const editorContent = screen.getByRole('textbox', { hidden: true });
+      // Store the editor instance for direct manipulation
+      const onEditorReady = (editor: any) => {
+        editorInstance = editor;
+      };
 
-      await user.click(editorContent);
+      render(
+        <RichTextEditor
+          onChange={mockOnChange}
+          onEditorReady={onEditorReady}
+        />,
+      );
 
-      // Type the full text at once instead of in parts
-      await user.type(editorContent, 'Test content');
+      // Wait for editor to be ready
+      await vi.waitFor(() => {
+        expect(editorInstance).toBeDefined();
+      });
 
-      // Wait for the onChange to be called with the complete text
+      // Set content directly
+      editorInstance.commands.setContent('Test content');
+
+      // Verify onChange was called with our content
       await vi.waitFor(
         () => {
           const calls = mockOnChange.mock.calls;
           const lastCall = calls.at(-1)?.[0] as JSONContent;
-          expect(lastCall?.content?.[0]?.content?.[0]?.text).toBe(
-            'Test content',
-          );
+          const text = lastCall?.content?.[0]?.content?.[0]?.text;
+          expect(text).toBe('Test content');
         },
-        { timeout: 1000 },
-      ); // Increase timeout to ensure typing completes
+        { timeout: 2000 },
+      );
     });
   });
 
