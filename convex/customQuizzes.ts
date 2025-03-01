@@ -1,4 +1,4 @@
-import { v } from 'convex/values';
+import { ConvexError, v } from 'convex/values';
 
 import { Doc, Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
@@ -34,12 +34,18 @@ export const create = mutation({
         v.literal('bookmarked'),
       ),
     ),
+    numQuestions: v.optional(v.number()),
     selectedThemes: v.optional(v.array(v.id('themes'))),
     selectedSubthemes: v.optional(v.array(v.id('subthemes'))),
     selectedGroups: v.optional(v.array(v.id('groups'))),
   },
   handler: async (ctx, args) => {
     const userId = await getCurrentUserOrThrow(ctx);
+
+    // Use the requested number of questions or default to MAX_QUESTIONS
+    const requestedQuestions = args.numQuestions
+      ? Math.min(args.numQuestions, MAX_QUESTIONS)
+      : MAX_QUESTIONS;
 
     // Process themes one at a time to avoid large scans
     const allQuestions: Doc<'questions'>[] = [];
@@ -104,7 +110,9 @@ export const create = mutation({
 
     // If there are no questions matching the criteria, throw an error
     if (allQuestions.length === 0) {
-      throw new Error('No questions found matching the selected criteria');
+      throw new ConvexError(
+        'Nenhuma questão encontrada com os critérios selecionados',
+      );
     }
 
     // Apply different filters based on question modes
@@ -215,12 +223,12 @@ export const create = mutation({
     // Remove duplicates
     let uniqueQuestionIds = [...new Set(filteredQuestionIds)];
 
-    // If we have more than the maximum allowed questions, randomly select MAX_QUESTIONS
-    if (uniqueQuestionIds.length > MAX_QUESTIONS) {
-      // Randomly shuffle the array and take the first MAX_QUESTIONS elements
+    // If we have more than the requested number of questions, randomly select the desired amount
+    if (uniqueQuestionIds.length > requestedQuestions) {
+      // Randomly shuffle the array and take the first requestedQuestions elements
       uniqueQuestionIds = shuffleArray(uniqueQuestionIds).slice(
         0,
-        MAX_QUESTIONS,
+        requestedQuestions,
       );
     }
 

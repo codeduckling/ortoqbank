@@ -2,6 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery } from 'convex/react';
+import { ConvexError } from 'convex/values';
 import { InfoIcon as InfoCircle, Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -10,7 +11,10 @@ import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
@@ -43,7 +47,8 @@ export default function TestForm() {
     resolver: zodResolver(testFormSchema),
     defaultValues: {
       testMode: 'study',
-      questionMode: ['all'], // Default to 'all' questions
+      questionMode: 'all',
+      numQuestions: 30,
       selectedThemes: [],
       selectedSubthemes: [],
       selectedGroups: [],
@@ -56,6 +61,7 @@ export default function TestForm() {
   const selectedSubthemes = watch('selectedSubthemes');
   const selectedGroups = watch('selectedGroups');
   const questionMode = watch('questionMode');
+  const numQuestions = watch('numQuestions');
 
   // Fetch hierarchical data
   const hierarchicalData = useQuery(api.themes.getHierarchicalData);
@@ -74,7 +80,7 @@ export default function TestForm() {
         name: `Quiz Personalizado - ${new Date().toLocaleDateString()}`,
         description: `Quiz criado em ${new Date().toLocaleDateString()}`,
         testMode: data.testMode,
-        questionMode: data.questionMode.map(mode => {
+        questionMode: [data.questionMode].map(mode => {
           // Map UI question modes to API question modes
           switch (mode) {
             case 'marked': {
@@ -88,6 +94,7 @@ export default function TestForm() {
             }
           }
         }),
+        numQuestions: data.numQuestions,
         selectedThemes: data.selectedThemes as Id<'themes'>[],
         selectedSubthemes: data.selectedSubthemes as Id<'subthemes'>[],
         selectedGroups: data.selectedGroups as Id<'groups'>[],
@@ -107,14 +114,31 @@ export default function TestForm() {
       }
     } catch (error) {
       console.error('Erro ao criar quiz:', error);
-      toast({
-        title: 'Erro ao criar quiz',
-        description:
-          error instanceof Error
-            ? error.message
-            : 'Ocorreu um erro ao criar o quiz.',
-        variant: 'destructive',
-      });
+
+      if (error instanceof ConvexError) {
+        // ConvexError stores the message in the data property
+        // It can be either a string or an object with a message property
+        const errorMessage =
+          typeof error.data === 'string'
+            ? error.data
+            : error.data?.message ||
+              'Nenhuma questão encontrada com os critérios selecionados';
+
+        toast({
+          title: 'Erro ao criar quiz',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Erro ao criar quiz',
+          description:
+            error instanceof Error
+              ? error.message
+              : 'Ocorreu um erro ao criar o quiz.',
+          variant: 'destructive',
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -127,17 +151,6 @@ export default function TestForm() {
       current.includes(themeId)
         ? current.filter(id => id !== themeId)
         : [...current, themeId],
-      { shouldValidate: true },
-    );
-  };
-
-  const toggleQuestionMode = (mode: string, checked: boolean) => {
-    const current = questionMode || [];
-    setValue(
-      'questionMode',
-      checked
-        ? [...current, mode as TestFormData['questionMode'][number]]
-        : current.filter(m => m !== mode),
       { shouldValidate: true },
     );
   };
@@ -247,8 +260,18 @@ export default function TestForm() {
                 }
               >
                 <TabsList className="grid grid-cols-2">
-                  <TabsTrigger value="exam">Simulado</TabsTrigger>
-                  <TabsTrigger value="study">Estudo</TabsTrigger>
+                  <TabsTrigger
+                    value="exam"
+                    className="data-[state=active]:bg-blue-500 data-[state=active]:text-white"
+                  >
+                    Simulado
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="study"
+                    className="data-[state=active]:bg-blue-500 data-[state=active]:text-white"
+                  >
+                    Estudo
+                  </TabsTrigger>
                 </TabsList>
               </Tabs>
             </div>
@@ -258,12 +281,17 @@ export default function TestForm() {
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-sm font-medium">Questões</h3>
-              <InfoCircle className="text-muted-foreground h-4 w-4" />
             </div>
-            <div
+            <RadioGroup
+              value={questionMode}
+              onValueChange={value =>
+                setValue(
+                  'questionMode',
+                  value as 'all' | 'incorrect' | 'unused' | 'marked',
+                  { shouldValidate: true },
+                )
+              }
               className="flex flex-wrap gap-4"
-              role="group"
-              aria-label="Questões"
             >
               {[
                 { id: 'all', label: 'Todas', count: 3896 },
@@ -272,29 +300,53 @@ export default function TestForm() {
                 { id: 'marked', label: 'Marcadas', count: 3 },
               ].map(({ id, label, count }) => (
                 <div key={id} className="flex items-center gap-2">
-                  <Checkbox
-                    id={id}
-                    checked={questionMode?.includes(
-                      id as TestFormData['questionMode'][number],
-                    )}
-                    onCheckedChange={checked =>
-                      toggleQuestionMode(id, checked as boolean)
-                    }
-                  />
+                  <RadioGroupItem id={id} value={id} />
                   <Label htmlFor={id} className="flex items-center gap-2">
                     <span>{label}</span>
-                    {count && (
+                    {/*    {count && (
                       <span className="bg-secondary rounded px-1.5 py-0.5 text-xs">
                         {count}
                       </span>
-                    )}
+                    )} */}
                   </Label>
                 </div>
               ))}
-            </div>
+            </RadioGroup>
             {errors.questionMode && (
               <p className="text-destructive text-sm">
                 {errors.questionMode.message}
+              </p>
+            )}
+          </div>
+
+          {/* Number of Questions */}
+          <div className="space-y-4">
+            <div className="flex flex-col gap-2">
+              <h3 className="text-sm font-medium">
+                Quantidade Máxima de Questões
+              </h3>
+              <div className="w-24">
+                <Input
+                  type="number"
+                  min={1}
+                  max={120}
+                  value={numQuestions}
+                  onChange={e => {
+                    const value = Number.parseInt(e.target.value);
+                    if (!Number.isNaN(value)) {
+                      setValue(
+                        'numQuestions',
+                        Math.min(Math.max(value, 1), 120),
+                        { shouldValidate: true },
+                      );
+                    }
+                  }}
+                />
+              </div>
+            </div>
+            {errors.numQuestions && (
+              <p className="text-destructive text-sm">
+                {errors.numQuestions.message}
               </p>
             )}
           </div>
