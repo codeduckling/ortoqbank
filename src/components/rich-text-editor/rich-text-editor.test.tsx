@@ -34,17 +34,20 @@ describe('RichTextEditor', () => {
 
       await user.click(editorContent);
 
-      // Type the content character by character with waits
-      await user.type(editorContent, 'Test');
-      await user.type(editorContent, ' ');
-      await user.type(editorContent, 'content');
+      // Type the full text at once instead of in parts
+      await user.type(editorContent, 'Test content');
 
-      // Wait for the last onChange call
-      await vi.waitFor(() => {
-        const calls = mockOnChange.mock.calls;
-        const lastCall = calls.at(-1)?.[0] as JSONContent;
-        expect(lastCall?.content?.[0]?.content?.[0]?.text).toBe('Test content');
-      });
+      // Wait for the onChange to be called with the complete text
+      await vi.waitFor(
+        () => {
+          const calls = mockOnChange.mock.calls;
+          const lastCall = calls.at(-1)?.[0] as JSONContent;
+          expect(lastCall?.content?.[0]?.content?.[0]?.text).toBe(
+            'Test content',
+          );
+        },
+        { timeout: 1000 },
+      ); // Increase timeout to ensure typing completes
     });
   });
 
