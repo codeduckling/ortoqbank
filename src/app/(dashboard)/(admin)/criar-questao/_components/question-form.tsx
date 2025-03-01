@@ -176,6 +176,7 @@ export function QuestionForm({
           ...processedData,
         });
         toast({ title: 'Questão atualizada com sucesso!' });
+        form.reset();
       } else {
         await createQuestion(processedData);
         toast({ title: 'Questão criada com sucesso!' });
