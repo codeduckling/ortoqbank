@@ -4,14 +4,14 @@ import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 
 const isProtectedRoute = createRouteMatcher([
-  //'/dashboard(.*)',
-  //'/criar-teste(.*)',
-  //'/perfil(.*)',
-  //'/simulados(.*)',
-  //'/suporte(.*)',
-  //'/temas(.*)',
-  //'/testes-previos(.*)',
-  //'/quiz-results(.*)',
+  '/dashboard(.*)',
+  '/criar-teste(.*)',
+  '/perfil(.*)',
+  '/simulados(.*)',
+  '/suporte(.*)',
+  '/temas(.*)',
+  '/testes-previos(.*)',
+  '/quiz-results(.*)',
 ]);
 
 const isAdminRoute = createRouteMatcher(['/admin(.*)']);
