@@ -1,5 +1,3 @@
-import { renderContent } from '@/lib/utils/render-content';
-
 interface QuizFeedbackProps {
   isCorrect: boolean;
   explanationHtml: string;
@@ -11,6 +9,8 @@ export default function QuizFeedback({
   explanationHtml,
   message,
 }: QuizFeedbackProps) {
+  // This component only handles the text feedback and explanation,
+  // not the visual feedback for the alternatives
   return (
     <div
       className={`mt-6 rounded-lg border p-4 ${

@@ -76,6 +76,7 @@ function QuizStepper({
         message: string;
         explanation?: string;
         answered: boolean;
+        correctAlternative?: AlternativeIndex;
       }
     | undefined
   >();
@@ -127,6 +128,8 @@ function QuizStepper({
         message: historicalFeedback.isCorrect ? 'Correto!' : 'Incorreto',
         explanation: JSON.stringify(historicalFeedback.explanation),
         answered: true,
+        correctAlternative:
+          historicalFeedback.correctAlternative as AlternativeIndex,
       });
     } else {
       setSelectedAlternative(undefined);
@@ -225,6 +228,8 @@ function QuizStepper({
                     selectedAlternative={selectedAlternative}
                     onSelect={i => setSelectedAlternative(i)}
                     disabled={!!feedback?.answered}
+                    showFeedback={!!feedback?.answered && mode === 'study'}
+                    correctAlternative={feedback?.correctAlternative}
                   />
                 </div>
 
