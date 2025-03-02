@@ -4,9 +4,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery } from 'convex/react';
 import { ConvexError } from 'convex/values';
 import {
-  InfoIcon as InfoCircle,
-  Plus,
   CheckCircle2,
+  InfoIcon as InfoCircle,
+  Loader2,
+  Plus,
   XCircle,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -16,6 +17,12 @@ import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -23,13 +30,6 @@ import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Loader2 } from 'lucide-react';
 
 import { api } from '../../../../../../convex/_generated/api';
 import { Id } from '../../../../../../convex/_generated/dataModel';
@@ -40,6 +40,26 @@ type Theme = { _id: string; name: string };
 type Subtheme = { _id: string; name: string; themeId: string };
 
 type Group = { _id: string; name: string; subthemeId: string };
+
+// Map UI question modes to API question modes
+const mapQuestionMode = (
+  mode: string,
+): 'all' | 'unanswered' | 'incorrect' | 'bookmarked' => {
+  switch (mode) {
+    case 'marked': {
+      return 'bookmarked';
+    }
+    case 'unused': {
+      return 'unanswered';
+    }
+    case 'incorrect': {
+      return 'incorrect';
+    }
+    default: {
+      return 'all';
+    }
+  }
+};
 
 export default function TestForm() {
   const router = useRouter();
@@ -91,22 +111,6 @@ export default function TestForm() {
     themes: [],
     subthemes: [],
     groups: [],
-  };
-
-  // Map UI question modes to API question modes
-  const mapQuestionMode = (
-    mode: string,
-  ): 'all' | 'unanswered' | 'incorrect' | 'bookmarked' => {
-    switch (mode) {
-      case 'marked':
-        return 'bookmarked';
-      case 'unused':
-        return 'unanswered';
-      case 'incorrect':
-        return 'incorrect';
-      default:
-        return 'all';
-    }
   };
 
   const onSubmit = async (data: TestFormData) => {

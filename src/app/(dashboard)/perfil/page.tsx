@@ -1,11 +1,13 @@
 'use client';
 
 import { useQuery } from 'convex/react';
+
+import { Skeleton } from '@/components/ui/skeleton';
+
 import { api } from '../../../../convex/_generated/api';
 import { PieChartDemo } from './charts/pie-chart-demo';
 import { ThemeBarChart } from './charts/theme-bar-chart';
 import { StatCard } from './components/stat-card';
-import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ProfilePage() {
   const stats = useQuery(api.userStats.getUserStats);
@@ -21,7 +23,7 @@ export default function ProfilePage() {
       {isLoading ? (
         // Loading state
         <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
+          {Array.from({length: 4}).map((_, i) => (
             <Skeleton key={i} className="h-32 w-full rounded-lg" />
           ))}
         </div>

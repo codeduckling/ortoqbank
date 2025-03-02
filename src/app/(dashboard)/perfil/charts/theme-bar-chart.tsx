@@ -48,7 +48,7 @@ export function ThemeBarChart({ themeStats = [] }: ThemeBarChartProps) {
               dataKey="name"
               tick={{ fontSize: 12 }}
               tickFormatter={value =>
-                value.length > 15 ? `${value.substring(0, 15)}...` : value
+                value.length > 15 ? `${value.slice(0, 15)}...` : value
               }
             />
             <YAxis tickFormatter={value => `${value}%`} domain={[0, 100]} />
@@ -72,9 +72,9 @@ export function ThemeBarChart({ themeStats = [] }: ThemeBarChartProps) {
                   fill={
                     entry.percentage > 70
                       ? '#4ade80'
-                      : entry.percentage > 40
+                      : (entry.percentage > 40
                         ? '#facc15'
-                        : '#f87171'
+                        : '#f87171')
                   }
                 />
               ))}
