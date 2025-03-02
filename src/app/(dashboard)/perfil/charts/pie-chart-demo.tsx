@@ -1,97 +1,63 @@
 'use client';
 
-import { TrendingUp } from 'lucide-react';
-import * as React from 'react';
-import { Label, Pie, PieChart } from 'recharts';
-
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import {
-  ChartConfig,
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from '@/components/ui/chart';
-const desktopData = [
-  { month: 'january', desktop: 186, fill: 'var(--color-january)' },
-  { month: 'february', desktop: 305, fill: 'var(--color-february)' },
-];
+  Cell,
+  Legend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+} from 'recharts';
 
-const mobileData = [
-  { month: 'january', mobile: 80, fill: 'var(--color-january)' },
-  { month: 'february', mobile: 200, fill: 'var(--color-february)' },
-];
+interface PieChartDemoProps {
+  correctCount: number;
+  incorrectCount: number;
+  unansweredCount: number;
+}
 
-const chartConfig = {
-  visitors: {
-    label: 'Visitors',
-  },
-  desktop: {
-    label: 'Desktop',
-  },
-  mobile: {
-    label: 'Mobile',
-  },
-  january: {
-    label: 'January',
-    color: 'hsl(var(--chart-1))',
-  },
-  february: {
-    label: 'February',
-    color: 'hsl(var(--chart-2))',
-  },
-} satisfies ChartConfig;
+export function PieChartDemo({
+  correctCount,
+  incorrectCount,
+  unansweredCount,
+}: PieChartDemoProps) {
+  const data = [
+    { name: 'Corretas', value: correctCount, color: '#4ade80' },
+    { name: 'Incorretas', value: incorrectCount, color: '#f87171' },
+    { name: 'Não Respondidas', value: unansweredCount, color: '#93c5fd' },
+  ];
 
-export function PieChartDemo() {
   return (
-    <Card className="flex flex-col">
-      <CardHeader className="items-center pb-0">
-        <CardTitle>Progresso por acertos</CardTitle>
-      </CardHeader>
-      <CardContent className="flex-1 pb-0">
-        <ChartContainer
-          config={chartConfig}
-          className="mx-auto aspect-square max-h-[250px]"
-        >
+    <div className="bg-card text-card-foreground rounded-lg border p-4 shadow-sm">
+      <div className="mb-4">
+        <h3 className="text-lg font-semibold">Distribuição de Respostas</h3>
+        <p className="text-muted-foreground text-sm">
+          Visão geral do seu desempenho
+        </p>
+      </div>
+      <div className="h-[300px]">
+        <ResponsiveContainer width="100%" height="100%">
           <PieChart>
-            <ChartTooltip
-              content={
-                <ChartTooltipContent
-                  labelKey="visitors"
-                  nameKey="month"
-                  indicator="line"
-                  labelFormatter={(_, payload) => {
-                    return chartConfig[
-                      payload?.[0].dataKey as keyof typeof chartConfig
-                    ].label;
-                  }}
-                />
-              }
-            />
-            <Pie data={desktopData} dataKey="desktop" outerRadius={60} />
             <Pie
-              data={mobileData}
-              dataKey="mobile"
-              innerRadius={70}
-              outerRadius={90}
-            />
+              data={data}
+              cx="50%"
+              cy="50%"
+              labelLine={false}
+              outerRadius={80}
+              fill="#8884d8"
+              dataKey="value"
+              label={({ name, percent }) =>
+                `${name}: ${(percent * 100).toFixed(0)}%`
+              }
+            >
+              {data.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.color} />
+              ))}
+            </Pie>
+            <Tooltip formatter={value => [`${value} questões`, '']} />
+            <Legend />
           </PieChart>
-        </ChartContainer>
-      </CardContent>
-      <CardFooter className="flex-col gap-2 text-sm">
-        <div className="flex items-center gap-2 leading-none font-medium">
-          Trending up by 5.2% this month <TrendingUp className="h-4 w-4" />
-        </div>
-        <div className="text-muted-foreground leading-none">
-          Showing total visitors for the last 6 months
-        </div>
-      </CardFooter>
-    </Card>
+        </ResponsiveContainer>
+      </div>
+    </div>
   );
 }

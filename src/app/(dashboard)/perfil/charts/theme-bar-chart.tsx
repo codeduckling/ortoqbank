@@ -1,137 +1,94 @@
 'use client';
 
-import { TrendingUp } from 'lucide-react';
 import {
   Bar,
   BarChart,
   CartesianGrid,
-  LabelList,
+  Cell,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
 } from 'recharts';
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import {
-  ChartConfig,
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from '@/components/ui/chart';
-const chartData = [
-  { theme: 'Ciências Básicas', percentage: 25 },
-  { theme: 'Tumores', percentage: 30 },
-  { theme: 'Coluna', percentage: 23 },
-  { theme: 'Mão', percentage: 100 },
-  { theme: 'Ombro e Cotovelo', percentage: 20 },
-  { theme: 'Joelho', percentage: 80 },
-  { theme: 'Quadril', percentage: 100 },
-  { theme: 'Pé e Tornozelo', percentage: 20 },
-  { theme: 'Ortopedia Pediátrica', percentage: 80 },
-];
+interface ThemeStats {
+  themeId: string;
+  themeName: string;
+  total: number;
+  correct: number;
+  percentage: number;
+}
 
-const chartConfig = {
-  percentage: {
-    label: 'porcentagem',
-    color: 'hsl(var(--chart-1))',
-  },
-  label: {
-    color: 'hsl(var(--background))',
-  },
-} satisfies ChartConfig;
+interface ThemeBarChartProps {
+  themeStats: ThemeStats[];
+}
 
-export function ThemeBarChart() {
+export function ThemeBarChart({ themeStats = [] }: ThemeBarChartProps) {
+  // Get top 10 themes by question count
+  const data = (themeStats || []).slice(0, 10).map(theme => ({
+    name: theme.themeName,
+    percentage: theme.percentage,
+    total: theme.total,
+  }));
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Progresso por temas</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig} className="min-h-[400px] w-full">
-          <BarChart
-            accessibilityLayer
-            data={chartData}
-            layout="vertical"
-            margin={{
-              right: 40,
-              left: 0,
-              top: 16,
-              bottom: 16,
-            }}
-          >
-            <CartesianGrid horizontal={false} />
-            <YAxis
-              dataKey="theme"
-              type="category"
-              tickLine={false}
-              tickMargin={10}
-              axisLine={false}
-              width={70}
-              tick={{
-                fontSize: 11,
-                width: 65,
-                fill: 'hsl(var(--muted-foreground))',
-              }}
-              tickFormatter={(value: string) => {
-                const maxCharsPerLine = 14;
-                const words = value.split(' ');
-                let lines = [];
-                let currentLine = words[0];
-
-                for (let index = 1; index < words.length; index++) {
-                  if (
-                    (currentLine + ' ' + words[index]).length <= maxCharsPerLine
-                  ) {
-                    currentLine += ' ' + words[index];
-                  } else {
-                    lines.push(currentLine);
-                    currentLine = words[index];
-                  }
-                }
-                lines.push(currentLine);
-
-                return lines.join('\n');
-              }}
-            />
+    <div className="bg-card text-card-foreground rounded-lg border p-4 shadow-sm">
+      <div className="mb-4">
+        <h3 className="text-lg font-semibold">Desempenho por Tema</h3>
+        <p className="text-muted-foreground text-sm">
+          Porcentagem de acerto por tema
+        </p>
+      </div>
+      <div className="h-[300px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis
-              dataKey="percentage"
-              type="number"
-              tickMargin={10}
-              tickLine={false}
-              axisLine={false}
-              tickFormatter={value => value.toString() + '%'}
-              ticks={[0, 25, 50, 75, 100]}
-              minTickGap={0}
-              interval={0}
+              dataKey="name"
+              tick={{ fontSize: 12 }}
+              tickFormatter={value =>
+                value.length > 15 ? `${value.substring(0, 15)}...` : value
+              }
             />
-            <ChartTooltip
-              cursor={false}
-              content={<ChartTooltipContent indicator="line" />}
+            <YAxis tickFormatter={value => `${value}%`} domain={[0, 100]} />
+            <Tooltip
+              formatter={(value, name) => {
+                if (name === 'percentage')
+                  return [`${value}%`, 'Taxa de Acerto'];
+                return [`${value} questões`, 'Total de Questões'];
+              }}
+              labelFormatter={label => `Tema: ${label}`}
             />
+            <Legend />
             <Bar
+              name="Taxa de Acerto"
               dataKey="percentage"
-              layout="vertical"
-              fill="var(--color-percentage)"
-              radius={4}
+              radius={[4, 4, 0, 0]}
             >
-              <LabelList
-                dataKey="percentage"
-                position="right"
-                offset={8}
-                className="fill-foreground"
-                fontSize={12}
-                formatter={(value: number) => value.toString() + '%'}
-              />
+              {data.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={
+                    entry.percentage > 70
+                      ? '#4ade80'
+                      : entry.percentage > 40
+                        ? '#facc15'
+                        : '#f87171'
+                  }
+                />
+              ))}
             </Bar>
+            <Bar
+              name="Total de Questões"
+              dataKey="total"
+              fill="#93c5fd"
+              radius={[4, 4, 0, 0]}
+              opacity={0.7}
+            />
           </BarChart>
-        </ChartContainer>
-      </CardContent>
-    </Card>
+        </ResponsiveContainer>
+      </div>
+    </div>
   );
 }

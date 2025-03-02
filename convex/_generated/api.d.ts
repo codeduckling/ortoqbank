@@ -25,6 +25,7 @@ import type * as subthemes from "../subthemes.js";
 import type * as tags from "../tags.js";
 import type * as themes from "../themes.js";
 import type * as users from "../users.js";
+import type * as userStats from "../userStats.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -47,6 +48,7 @@ declare const fullApi: ApiFromModules<{
   tags: typeof tags;
   themes: typeof themes;
   users: typeof users;
+  userStats: typeof userStats;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,

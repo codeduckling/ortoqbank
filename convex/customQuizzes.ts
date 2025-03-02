@@ -26,13 +26,11 @@ export const create = mutation({
     name: v.string(),
     description: v.string(),
     testMode: v.union(v.literal('study'), v.literal('exam')),
-    questionMode: v.array(
-      v.union(
-        v.literal('all'),
-        v.literal('unanswered'),
-        v.literal('incorrect'),
-        v.literal('bookmarked'),
-      ),
+    questionMode: v.union(
+      v.literal('all'),
+      v.literal('unanswered'),
+      v.literal('incorrect'),
+      v.literal('bookmarked'),
     ),
     numQuestions: v.optional(v.number()),
     selectedThemes: v.optional(v.array(v.id('themes'))),
@@ -115,110 +113,108 @@ export const create = mutation({
       );
     }
 
-    // Apply different filters based on question modes
+    // Apply different filters based on question mode
     const filteredQuestionIds: Id<'questions'>[] = [];
 
-    // Process each question mode
-    for (const mode of args.questionMode) {
-      let modeQuestions: Id<'questions'>[] = [];
+    // Process the single mode
+    let modeQuestions: Id<'questions'>[] = [];
 
-      switch (mode) {
-        case 'all': {
-          // Include all questions matching theme/subtheme/group criteria
-          modeQuestions = allQuestions.map(q => q._id);
-          break;
-        }
-
-        case 'bookmarked': {
-          // Get bookmarked questions - use the by_user index to limit scanning
-          const bookmarks = await ctx.db
-            .query('userBookmarks')
-            .withIndex('by_user', q => q.eq('userId', userId._id))
-            .collect();
-
-          // Create a Set for faster lookups
-          const bookmarkedIds = new Set(bookmarks.map(b => b.questionId));
-
-          // Filter questions to only include those that are bookmarked
-          modeQuestions = allQuestions
-            .filter(q => bookmarkedIds.has(q._id))
-            .map(q => q._id);
-          break;
-        }
-
-        case 'incorrect':
-        case 'unanswered': {
-          // Create a map to track question status
-          const answeredQuestions = new Map<Id<'questions'>, boolean>();
-
-          // First get the IDs of all questions we're interested in
-          const questionIdsSet = new Set(allQuestions.map(q => q._id));
-          const questionIds = [...questionIdsSet];
-
-          // Only query completed sessions - use take instead of pagination to avoid cursor issues
-          const completedSessions = await ctx.db
-            .query('quizSessions')
-            .withIndex('by_user_quiz', q => q.eq('userId', userId._id))
-            .filter(q => q.eq(q.field('isComplete'), true))
-            .take(100); // Limit to most recent 100 sessions for performance
-
-          // Process each session
-          for (const session of completedSessions) {
-            // Get the quiz to access questions
-            const quiz = await ctx.db.get(session.quizId);
-            if (!quiz || !quiz.questions) continue;
-
-            // Only process questions that are in our filtered set
-            const relevantQuestions = quiz.questions.filter(qId =>
-              questionIdsSet.has(qId),
-            );
-
-            // Process each relevant question in this quiz
-            for (const questionId of relevantQuestions) {
-              const questionIndex = quiz.questions.indexOf(questionId);
-
-              // Skip if the question wasn't found in the quiz
-              if (questionIndex === -1) continue;
-
-              const wasAnswered = questionIndex < session.answers.length;
-
-              // For incorrectly answered questions
-              if (wasAnswered && session.answerFeedback[questionIndex]) {
-                const wasCorrect =
-                  session.answerFeedback[questionIndex].isCorrect;
-                // If this is the first time seeing this question or we're updating from correct to incorrect
-                if (
-                  !answeredQuestions.has(questionId) ||
-                  (answeredQuestions.get(questionId) && !wasCorrect)
-                ) {
-                  answeredQuestions.set(questionId, wasCorrect);
-                }
-              } else if (wasAnswered) {
-                // Question was answered but no feedback available (shouldn't happen)
-                answeredQuestions.set(questionId, true);
-              } else if (!answeredQuestions.has(questionId)) {
-                // Question wasn't answered in this session and no previous record
-                answeredQuestions.set(questionId, false);
-              }
-            }
-          }
-
-          // Use ternary instead of if/else for better code style
-          modeQuestions = allQuestions
-            .filter(q =>
-              mode === 'incorrect'
-                ? answeredQuestions.has(q._id) && !answeredQuestions.get(q._id)
-                : !answeredQuestions.has(q._id),
-            )
-            .map(q => q._id);
-          break;
-        }
-        // No default
+    switch (args.questionMode) {
+      case 'all': {
+        // Include all questions matching theme/subtheme/group criteria
+        modeQuestions = allQuestions.map(q => q._id);
+        break;
       }
 
-      // Add questions from this mode to the overall filtered list
-      filteredQuestionIds.push(...modeQuestions);
+      case 'bookmarked': {
+        // Get bookmarked questions - use the by_user index to limit scanning
+        const bookmarks = await ctx.db
+          .query('userBookmarks')
+          .withIndex('by_user', q => q.eq('userId', userId._id))
+          .collect();
+
+        // Create a Set for faster lookups
+        const bookmarkedIds = new Set(bookmarks.map(b => b.questionId));
+
+        // Filter questions to only include those that are bookmarked
+        modeQuestions = allQuestions
+          .filter(q => bookmarkedIds.has(q._id))
+          .map(q => q._id);
+        break;
+      }
+
+      case 'incorrect':
+      case 'unanswered': {
+        // Create a map to track question status
+        const answeredQuestions = new Map<Id<'questions'>, boolean>();
+
+        // First get the IDs of all questions we're interested in
+        const questionIdsSet = new Set(allQuestions.map(q => q._id));
+        const questionIds = [...questionIdsSet];
+
+        // Only query completed sessions - use take instead of pagination to avoid cursor issues
+        const completedSessions = await ctx.db
+          .query('quizSessions')
+          .withIndex('by_user_quiz', q => q.eq('userId', userId._id))
+          .filter(q => q.eq(q.field('isComplete'), true))
+          .take(100); // Limit to most recent 100 sessions for performance
+
+        // Process each session
+        for (const session of completedSessions) {
+          // Get the quiz to access questions
+          const quiz = await ctx.db.get(session.quizId);
+          if (!quiz || !quiz.questions) continue;
+
+          // Only process questions that are in our filtered set
+          const relevantQuestions = quiz.questions.filter(qId =>
+            questionIdsSet.has(qId),
+          );
+
+          // Process each relevant question in this quiz
+          for (const questionId of relevantQuestions) {
+            const questionIndex = quiz.questions.indexOf(questionId);
+
+            // Skip if the question wasn't found in the quiz
+            if (questionIndex === -1) continue;
+
+            const wasAnswered = questionIndex < session.answers.length;
+
+            // For incorrectly answered questions
+            if (wasAnswered && session.answerFeedback[questionIndex]) {
+              const wasCorrect =
+                session.answerFeedback[questionIndex].isCorrect;
+              // If this is the first time seeing this question or we're updating from correct to incorrect
+              if (
+                !answeredQuestions.has(questionId) ||
+                (answeredQuestions.get(questionId) && !wasCorrect)
+              ) {
+                answeredQuestions.set(questionId, wasCorrect);
+              }
+            } else if (wasAnswered) {
+              // Question was answered but no feedback available (shouldn't happen)
+              answeredQuestions.set(questionId, true);
+            } else if (!answeredQuestions.has(questionId)) {
+              // Question wasn't answered in this session and no previous record
+              answeredQuestions.set(questionId, false);
+            }
+          }
+        }
+
+        // Use ternary instead of if/else for better code style
+        modeQuestions = allQuestions
+          .filter(q =>
+            args.questionMode === 'incorrect'
+              ? answeredQuestions.has(q._id) && !answeredQuestions.get(q._id)
+              : !answeredQuestions.has(q._id),
+          )
+          .map(q => q._id);
+        break;
+      }
+      // No default
     }
+
+    // Add questions from this mode to the filtered list
+    filteredQuestionIds.push(...modeQuestions);
 
     // Remove duplicates
     let uniqueQuestionIds = [...new Set(filteredQuestionIds)];
@@ -239,14 +235,14 @@ export const create = mutation({
       args.description ||
       `Custom quiz with ${uniqueQuestionIds.length} questions`;
 
-    // Create the custom quiz
+    // Create the custom quiz with a single mode
     const quizId = await ctx.db.insert('customQuizzes', {
       name: quizName,
       description: quizDescription,
       questions: uniqueQuestionIds,
       authorId: userId._id,
       testMode: args.testMode,
-      questionMode: args.questionMode,
+      questionMode: args.questionMode, // Store a single mode instead of array
       selectedThemes: args.selectedThemes,
       selectedSubthemes: args.selectedSubthemes,
       selectedGroups: args.selectedGroups,
