@@ -3,7 +3,13 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery } from 'convex/react';
 import { ConvexError } from 'convex/values';
-import { InfoIcon as InfoCircle, Plus } from 'lucide-react';
+import {
+  CheckCircle2,
+  InfoIcon as InfoCircle,
+  Loader2,
+  Plus,
+  XCircle,
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -11,6 +17,12 @@ import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -29,10 +41,40 @@ type Subtheme = { _id: string; name: string; themeId: string };
 
 type Group = { _id: string; name: string; subthemeId: string };
 
+// Map UI question modes to API question modes
+const mapQuestionMode = (
+  mode: string,
+): 'all' | 'unanswered' | 'incorrect' | 'bookmarked' => {
+  switch (mode) {
+    case 'marked': {
+      return 'bookmarked';
+    }
+    case 'unused': {
+      return 'unanswered';
+    }
+    case 'incorrect': {
+      return 'incorrect';
+    }
+    default: {
+      return 'all';
+    }
+  }
+};
+
 export default function TestForm() {
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionState, setSubmissionState] = useState<
+    'idle' | 'loading' | 'success' | 'error'
+  >('idle');
+  const [resultMessage, setResultMessage] = useState<{
+    title: string;
+    description: string;
+  }>({
+    title: '',
+    description: '',
+  });
   const [expandedSubthemes, setExpandedSubthemes] = useState<string[]>([]);
 
   const createCustomQuiz = useMutation(api.customQuizzes.create);
@@ -74,26 +116,14 @@ export default function TestForm() {
   const onSubmit = async (data: TestFormData) => {
     try {
       setIsSubmitting(true);
+      setSubmissionState('loading');
 
       // Map string arrays to appropriate ID types
       const formattedData = {
         name: `Quiz Personalizado - ${new Date().toLocaleDateString()}`,
         description: `Quiz criado em ${new Date().toLocaleDateString()}`,
         testMode: data.testMode,
-        questionMode: [data.questionMode].map(mode => {
-          // Map UI question modes to API question modes
-          switch (mode) {
-            case 'marked': {
-              return 'bookmarked';
-            }
-            case 'unused': {
-              return 'unanswered';
-            }
-            default: {
-              return mode as 'all' | 'incorrect';
-            }
-          }
-        }),
+        questionMode: mapQuestionMode(data.questionMode),
         numQuestions: data.numQuestions,
         selectedThemes: data.selectedThemes as Id<'themes'>[],
         selectedSubthemes: data.selectedSubthemes as Id<'subthemes'>[],
@@ -104,42 +134,42 @@ export default function TestForm() {
       const result = await createCustomQuiz(formattedData);
 
       if (result.quizId) {
-        toast({
+        setSubmissionState('success');
+        setResultMessage({
           title: 'Quiz criado com sucesso!',
           description: `Seu quiz com ${result.questionCount} questões foi criado.`,
         });
 
-        // Navigate to the quiz - no need to pass mode as it's stored in the database
-        router.push(`/criar-teste/${result.quizId}`);
+        // Navigate after a short delay to show success
+        setTimeout(() => {
+          router.push(`/criar-teste/${result.quizId}`);
+          setIsSubmitting(false);
+        }, 1500);
       }
     } catch (error) {
       console.error('Erro ao criar quiz:', error);
+      setSubmissionState('error');
 
       if (error instanceof ConvexError) {
-        // ConvexError stores the message in the data property
-        // It can be either a string or an object with a message property
         const errorMessage =
           typeof error.data === 'string'
             ? error.data
             : error.data?.message ||
               'Nenhuma questão encontrada com os critérios selecionados';
 
-        toast({
+        setResultMessage({
           title: 'Erro ao criar quiz',
           description: errorMessage,
-          variant: 'destructive',
         });
       } else {
-        toast({
+        setResultMessage({
           title: 'Erro ao criar quiz',
           description:
             error instanceof Error
               ? error.message
               : 'Ocorreu um erro ao criar o quiz.',
-          variant: 'destructive',
         });
       }
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -242,6 +272,60 @@ export default function TestForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
+      {/* Modal for all feedback states */}
+      <Dialog
+        open={isSubmitting || submissionState === 'error'}
+        onOpenChange={open => {
+          if (!open) {
+            setIsSubmitting(false);
+            if (submissionState === 'error') {
+              setSubmissionState('idle');
+            }
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <div className="flex flex-col items-center justify-center space-y-4 py-6">
+            {submissionState === 'loading' && (
+              <>
+                <Loader2 className="h-12 w-12 animate-spin text-blue-500" />
+                <DialogTitle>Criando seu quiz</DialogTitle>
+                <DialogDescription>
+                  Estamos processando as questões e criando seu quiz
+                  personalizado. Isso pode levar alguns segundos...
+                </DialogDescription>
+              </>
+            )}
+
+            {submissionState === 'success' && (
+              <>
+                <CheckCircle2 className="h-12 w-12 text-green-500" />
+                <DialogTitle>{resultMessage.title}</DialogTitle>
+                <DialogDescription>
+                  {resultMessage.description}
+                </DialogDescription>
+              </>
+            )}
+
+            {submissionState === 'error' && (
+              <>
+                <XCircle className="h-12 w-12 text-red-500" />
+                <DialogTitle>{resultMessage.title}</DialogTitle>
+                <DialogDescription>
+                  {resultMessage.description}
+                </DialogDescription>
+                <Button
+                  onClick={() => setSubmissionState('idle')}
+                  variant="outline"
+                >
+                  Fechar
+                </Button>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Card>
         <CardContent className="space-y-12 p-4 sm:space-y-14 sm:p-6">
           {/* Modo */}

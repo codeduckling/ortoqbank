@@ -58,13 +58,11 @@ export default defineSchema({
     questions: v.array(v.id('questions')),
     authorId: v.id('users'),
     testMode: v.union(v.literal('exam'), v.literal('study')),
-    questionMode: v.array(
-      v.union(
-        v.literal('all'),
-        v.literal('unanswered'),
-        v.literal('incorrect'),
-        v.literal('bookmarked'),
-      ),
+    questionMode: v.union(
+      v.literal('all'),
+      v.literal('unanswered'),
+      v.literal('incorrect'),
+      v.literal('bookmarked'),
     ),
     selectedThemes: v.optional(v.array(v.id('themes'))),
     selectedSubthemes: v.optional(v.array(v.id('subthemes'))),
