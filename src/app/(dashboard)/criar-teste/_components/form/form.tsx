@@ -137,14 +137,14 @@ export default function TestForm() {
         setSubmissionState('success');
         setResultMessage({
           title: 'Quiz criado com sucesso!',
-          description: `Seu quiz com ${result.questionCount} questões foi criado.`,
+          description: `Seu quiz com ${result.questionCount} questões foi criado. Aguarde, você será redirecionado automaticamente...`,
         });
 
         // Navigate after a short delay to show success
         setTimeout(() => {
           router.push(`/criar-teste/${result.quizId}`);
           setIsSubmitting(false);
-        }, 1500);
+        }, 2000);
       }
     } catch (error) {
       console.error('Erro ao criar quiz:', error);
@@ -289,10 +289,10 @@ export default function TestForm() {
             {submissionState === 'loading' && (
               <>
                 <Loader2 className="h-12 w-12 animate-spin text-blue-500" />
-                <DialogTitle>Criando seu quiz</DialogTitle>
+                <DialogTitle>Criando seu quiz...</DialogTitle>
                 <DialogDescription>
-                  Estamos processando as questões e criando seu quiz
-                  personalizado. Isso pode levar alguns segundos...
+                  Estamos preparando seu teste personalizado. Você será
+                  redirecionado automaticamente assim que estiver pronto.
                 </DialogDescription>
               </>
             )}
@@ -490,7 +490,7 @@ export default function TestForm() {
             className="w-full bg-blue-500 hover:bg-blue-600"
             disabled={isSubmitting}
           >
-            {isSubmitting ? 'Gerando...' : 'Gerar Teste'}
+            {isSubmitting ? 'Gerando seu teste...' : 'Gerar Teste'}
           </Button>
         </CardContent>
       </Card>

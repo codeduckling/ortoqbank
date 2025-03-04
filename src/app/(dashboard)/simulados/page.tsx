@@ -133,9 +133,9 @@ function SimuladoList({
               key={simulado.id}
               className="flex flex-col space-y-3 px-4 py-4"
             >
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
                 <div className="flex flex-col">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <h3 className="font-medium">
                       {simulado.name} {simulado.year}
                     </h3>
@@ -155,19 +155,27 @@ function SimuladoList({
                   )}
                 </div>
 
-                <div className="flex gap-2">
+                <div className="mt-3 flex w-full flex-wrap gap-2 md:mt-0 md:w-auto">
                   {simulado.status === 'not_started' && (
-                    <Button>Iniciar Simulado</Button>
+                    <Button className="flex-1 md:flex-none">
+                      Iniciar Simulado
+                    </Button>
                   )}
 
                   {simulado.status === 'in_progress' && (
-                    <Button>Continuar Simulado</Button>
+                    <Button className="flex-1 md:flex-none">
+                      Continuar Simulado
+                    </Button>
                   )}
 
                   {simulado.status === 'completed' && (
                     <>
-                      <Button variant="outline">Refazer</Button>
-                      <Button>Ver Resultados</Button>
+                      <Button variant="outline" className="flex-1 md:flex-none">
+                        Refazer
+                      </Button>
+                      <Button className="flex-1 md:flex-none">
+                        Ver Resultados
+                      </Button>
                     </>
                   )}
                 </div>

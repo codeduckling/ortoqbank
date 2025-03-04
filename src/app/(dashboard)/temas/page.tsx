@@ -131,9 +131,9 @@ export default function ThemesPage() {
                         key={exam._id}
                         className="flex flex-col space-y-3 px-4 py-4"
                       >
-                        <div className="flex items-start justify-between gap-4">
+                        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
                           <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               <h3 className="font-medium">{exam.name}</h3>
                               {hasIncompleteSession ? (
                                 <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
@@ -159,14 +159,22 @@ export default function ThemesPage() {
                             </div>
                           </div>
 
-                          <div className="flex gap-2">
-                            <Button onClick={() => handleExamClick(exam._id)}>
+                          <div className="mt-2 flex w-full flex-wrap gap-2 md:mt-0 md:w-auto">
+                            <Button
+                              onClick={() => handleExamClick(exam._id)}
+                              className="flex-1 md:flex-none"
+                            >
                               {hasIncompleteSession
                                 ? 'Retomar Teste'
                                 : 'Iniciar Teste'}
                             </Button>
-                            <Link href={`/temas/${exam._id}/results`}>
-                              <Button variant="outline">Ver Resultados</Button>
+                            <Link
+                              href={`/temas/${exam._id}/results`}
+                              className="flex-1 md:flex-none"
+                            >
+                              <Button variant="outline" className="w-full">
+                                Ver Resultados
+                              </Button>
                             </Link>
                           </div>
                         </div>

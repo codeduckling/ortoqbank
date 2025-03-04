@@ -45,7 +45,7 @@ export default function GerenciarQuestoes() {
   );
 
   const handleView = (questionId: Id<'questions'>) => {
-    router.push(`/gerenciar-questoes/${questionId}`);
+    router.push(`/admin/gerenciar-questoes/${questionId}`);
   };
 
   return (
