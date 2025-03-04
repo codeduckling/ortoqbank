@@ -120,8 +120,8 @@ export default function TestForm() {
 
       // Map string arrays to appropriate ID types
       const formattedData = {
-        name: `Quiz Personalizado - ${new Date().toLocaleDateString()}`,
-        description: `Quiz criado em ${new Date().toLocaleDateString()}`,
+        name: `Teste Personalizado - ${new Date().toLocaleDateString()}`,
+        description: `Teste criado em ${new Date().toLocaleDateString()}`,
         testMode: data.testMode,
         questionMode: mapQuestionMode(data.questionMode),
         numQuestions: data.numQuestions,

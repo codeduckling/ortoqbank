@@ -5,8 +5,11 @@ import { useMutation, useQuery } from 'convex/react';
 import {
   Baby,
   Bone,
+  BookOpen,
   CircleArrowOutDownRight,
+  Clock,
   Dna,
+  FileText,
   Footprints,
   Hand,
   Rotate3d,
@@ -22,6 +25,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 import { api } from '../../../../convex/_generated/api';
@@ -93,7 +97,7 @@ export default function ThemesPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-3xl p-6">
+    <div className="container mx-auto p-6">
       <h1 className="mb-6 text-2xl font-bold">Temas</h1>
       <Accordion type="single" collapsible className="space-y-4">
         {themes?.map(theme => {
@@ -101,18 +105,22 @@ export default function ThemesPage() {
           const themeExams = examsByTheme[theme._id] || [];
 
           return (
-            <AccordionItem key={theme._id} value={theme._id}>
-              <AccordionTrigger className="rounded-lg px-4 hover:bg-gray-50 hover:no-underline">
+            <AccordionItem
+              key={theme._id}
+              value={theme._id}
+              className="overflow-hidden"
+            >
+              <AccordionTrigger className="hover:bg-muted/20 px-4 py-3 hover:no-underline">
                 <div className="flex items-center gap-3">
                   <Icon className="h-5 w-5" />
-                  <span>{theme.name}</span>
+                  <span className="font-medium">{theme.name}</span>
                   <span className="text-muted-foreground text-sm">
                     ({themeExams.length} testes)
                   </span>
                 </div>
               </AccordionTrigger>
               <AccordionContent>
-                <div className="mt-2 ml-8 space-y-2">
+                <div className="divide-y">
                   {themeExams.map(exam => {
                     // Check if there's an incomplete session for this quiz
                     const hasIncompleteSession =
@@ -121,17 +129,34 @@ export default function ThemesPage() {
                     return (
                       <div
                         key={exam._id}
-                        className="block rounded-lg border p-3 text-sm"
+                        className="flex flex-col space-y-3 px-4 py-4"
                       >
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex flex-col gap-1">
-                            <span className="font-medium">{exam.name}</span>
-                            <span className="text-muted-foreground">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-medium">{exam.name}</h3>
+                              {hasIncompleteSession ? (
+                                <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+                                  <Clock className="mr-1 h-3 w-3" />
+                                  Em andamento
+                                </Badge>
+                              ) : (
+                                <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                                  <BookOpen className="mr-1 h-3 w-3" />
+                                  Não iniciado
+                                </Badge>
+                              )}
+                            </div>
+
+                            <p className="text-muted-foreground text-sm">
                               {exam.description}
-                            </span>
-                            <span className="text-muted-foreground text-xs">
-                              {exam.questions.length} questões
-                            </span>
+                            </p>
+                            <div className="mt-1 flex items-center gap-2">
+                              <FileText className="text-muted-foreground h-3 w-3" />
+                              <span className="text-muted-foreground text-xs">
+                                {exam.questions.length} questões
+                              </span>
+                            </div>
                           </div>
 
                           <div className="flex gap-2">
@@ -141,9 +166,7 @@ export default function ThemesPage() {
                                 : 'Iniciar Teste'}
                             </Button>
                             <Link href={`/temas/${exam._id}/results`}>
-                              <Button variant="outline" size="sm">
-                                Revisar Anteriores
-                              </Button>
+                              <Button variant="outline">Ver Resultados</Button>
                             </Link>
                           </div>
                         </div>
@@ -151,7 +174,7 @@ export default function ThemesPage() {
                     );
                   })}
                   {themeExams.length === 0 && (
-                    <div className="text-muted-foreground text-sm">
+                    <div className="text-muted-foreground px-4 py-4 text-sm">
                       Nenhum teste disponível para este tema
                     </div>
                   )}

@@ -6,6 +6,7 @@ import { BookOpen, Calendar, Clock, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -41,6 +42,33 @@ export default function TestesPreviosPage() {
 
   // Fetch user's custom quizzes
   const customQuizzes = useQuery(api.customQuizzes.getCustomQuizzes, {}) || [];
+
+  // Fetch theme, subtheme and group data for name lookups
+  const themes = useQuery(api.themes.list, {}) || [];
+  const subthemes = useQuery(api.subthemes.list, {}) || [];
+  const groups = useQuery(api.groups.list, {}) || [];
+
+  // Create lookup functions for resolving IDs to names
+  const getThemeName = (id: string) => {
+    const theme = themes.find(
+      (t: { _id: string; name: string }) => t._id === id,
+    );
+    return theme ? theme.name : 'Tema';
+  };
+
+  const getSubthemeName = (id: string) => {
+    const subtheme = subthemes.find(
+      (s: { _id: string; name: string }) => s._id === id,
+    );
+    return subtheme ? subtheme.name : 'Subtema';
+  };
+
+  const getGroupName = (id: string) => {
+    const group = groups.find(
+      (g: { _id: string; name: string }) => g._id === id,
+    );
+    return group ? group.name : 'Grupo';
+  };
 
   // Fetch completed quiz sessions to show results link when available
   const completedSessions =
@@ -124,6 +152,9 @@ export default function TestesPreviosPage() {
                 key={quiz._id}
                 quiz={quiz}
                 hasResults={completedQuizIds.has(quiz._id)}
+                getThemeName={getThemeName}
+                getSubthemeName={getSubthemeName}
+                getGroupName={getGroupName}
               />
             ))}
           </div>
@@ -138,6 +169,9 @@ export default function TestesPreviosPage() {
                   key={quiz._id}
                   quiz={quiz}
                   hasResults={completedQuizIds.has(quiz._id)}
+                  getThemeName={getThemeName}
+                  getSubthemeName={getSubthemeName}
+                  getGroupName={getGroupName}
                 />
               ))}
           </div>
@@ -152,6 +186,9 @@ export default function TestesPreviosPage() {
                   key={quiz._id}
                   quiz={quiz}
                   hasResults={completedQuizIds.has(quiz._id)}
+                  getThemeName={getThemeName}
+                  getSubthemeName={getSubthemeName}
+                  getGroupName={getGroupName}
                 />
               ))}
           </div>
@@ -164,6 +201,9 @@ export default function TestesPreviosPage() {
 function QuizCard({
   quiz,
   hasResults,
+  getThemeName,
+  getSubthemeName,
+  getGroupName,
 }: {
   quiz: {
     _id: Id<'customQuizzes'>;
@@ -171,22 +211,87 @@ function QuizCard({
     description: string;
     questions: Id<'questions'>[];
     testMode: 'study' | 'exam';
+    questionMode?: string;
     _creationTime: number;
+    // We'll keep these fields optional
+    themes?: any;
+    subthemes?: any;
+    groups?: any;
+    selectedThemes?: any;
+    selectedSubthemes?: any;
+    selectedGroups?: any;
   };
   hasResults: boolean;
+  getThemeName: (id: string) => string;
+  getSubthemeName: (id: string) => string;
+  getGroupName: (id: string) => string;
 }) {
+  // Get access to the lookup maps from parent component
+  const themes = useQuery(api.themes.list, {}) || [];
+  const subthemes = useQuery(api.subthemes.list, {}) || [];
+  const groups = useQuery(api.groups.list, {}) || [];
+
+  // Create lookup maps for name resolution
+  const themeMap: Record<string, string> = {};
+  themes.forEach((theme: { _id: string; name: string }) => {
+    themeMap[theme._id] = theme.name;
+  });
+
+  const subthemeMap: Record<string, string> = {};
+  subthemes.forEach((subtheme: { _id: string; name: string }) => {
+    subthemeMap[subtheme._id] = subtheme.name;
+  });
+
+  const groupMap: Record<string, string> = {};
+  groups.forEach((group: { _id: string; name: string }) => {
+    groupMap[group._id] = group.name;
+  });
+
+  // Simplified approach to get theme IDs
+  let themeIds: string[] = [];
+  if (quiz.themes && Array.isArray(quiz.themes)) {
+    themeIds = quiz.themes;
+  } else if (quiz.selectedThemes && Array.isArray(quiz.selectedThemes)) {
+    themeIds = quiz.selectedThemes;
+  }
+
+  // Simplified approach to get subtheme IDs
+  let subthemeIds: string[] = [];
+  if (quiz.subthemes && Array.isArray(quiz.subthemes)) {
+    subthemeIds = quiz.subthemes;
+  } else if (quiz.selectedSubthemes && Array.isArray(quiz.selectedSubthemes)) {
+    subthemeIds = quiz.selectedSubthemes;
+  }
+
+  // Simplified approach to get group IDs
+  let groupIds: string[] = [];
+  if (quiz.groups && Array.isArray(quiz.groups)) {
+    groupIds = quiz.groups;
+  } else if (quiz.selectedGroups && Array.isArray(quiz.selectedGroups)) {
+    groupIds = quiz.selectedGroups;
+  }
+
+  // Map IDs to actual names using the lookup maps
+  const themeNames = themeIds.map(id => themeMap[id] || 'Tema').filter(Boolean);
+  const subthemeNames = subthemeIds
+    .map(id => subthemeMap[id] || 'Subtema')
+    .filter(Boolean);
+  const groupNames = groupIds
+    .map(id => groupMap[id] || 'Grupo')
+    .filter(Boolean);
+
   return (
     <Card className="overflow-hidden">
       <CardHeader className="bg-muted/40 pb-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-1">
             {quiz.testMode === 'exam' ? (
               <Clock className="h-4 w-4 text-amber-500" />
             ) : (
               <BookOpen className="h-4 w-4 text-emerald-500" />
             )}
-            <span className="text-sm font-medium capitalize">
-              {quiz.testMode === 'exam' ? 'Simulado' : 'Estudo'}
+            <span className="text-muted-foreground text-xs">
+              Criado {formatRelativeTime(quiz._creationTime)}
             </span>
           </div>
           <div className="text-muted-foreground flex items-center gap-1">
@@ -200,12 +305,54 @@ function QuizCard({
         <p className="text-muted-foreground line-clamp-2 text-sm">
           {quiz.description}
         </p>
-        <div className="mt-2 flex items-center gap-2">
-          <span className="bg-secondary rounded-full px-2 py-0.5 text-xs font-medium">
-            {quiz.questions.length} questões
+
+        {/* Quiz Configuration Options */}
+        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
+          <span
+            className={`rounded-full px-2 py-0.5 font-medium ${
+              quiz.testMode === 'exam'
+                ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400'
+                : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
+            }`}
+          >
+            {quiz.testMode === 'exam' ? 'Simulado' : 'Estudo'}
           </span>
-          <span className="text-muted-foreground text-xs">
-            {formatRelativeTime(quiz._creationTime)}
+
+          {quiz.questionMode && (
+            <span className="rounded-full bg-indigo-100 px-2 py-0.5 font-medium text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400">
+              {quiz.questionMode === 'all' && 'Todas'}
+              {quiz.questionMode === 'incorrect' && 'Incorretas'}
+              {quiz.questionMode === 'bookmarked' && 'Favoritadas'}
+              {quiz.questionMode === 'unanswered' && 'Não Respondidas'}
+            </span>
+          )}
+
+          {themeNames.length > 0 && (
+            <span className="rounded-full bg-green-100 px-2 py-0.5 font-medium text-green-800 dark:bg-green-900/30 dark:text-green-400">
+              {themeNames.length > 1
+                ? `${themeNames.length} temas`
+                : themeNames[0]}
+            </span>
+          )}
+
+          {subthemeNames.length > 0 && (
+            <span className="rounded-full bg-purple-100 px-2 py-0.5 font-medium text-purple-800 dark:bg-purple-900/30 dark:text-purple-400">
+              {subthemeNames.length > 1
+                ? `${subthemeNames.length} subtemas`
+                : subthemeNames[0]}
+            </span>
+          )}
+
+          {groupNames.length > 0 && (
+            <span className="rounded-full bg-amber-100 px-2 py-0.5 font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+              {groupNames.length > 1
+                ? `${groupNames.length} grupos`
+                : groupNames[0]}
+            </span>
+          )}
+
+          <span className="bg-secondary rounded-full px-2 py-0.5 font-medium">
+            {quiz.questions.length} questões
           </span>
         </div>
       </CardContent>
@@ -217,9 +364,7 @@ function QuizCard({
         </Link>
         {hasResults && (
           <Link href={`/quiz-results/${quiz._id}`} className="flex-1">
-            <Button variant="secondary" className="w-full">
-              Resultados
-            </Button>
+            <Button className="w-full">Ver Resultados</Button>
           </Link>
         )}
       </CardFooter>
