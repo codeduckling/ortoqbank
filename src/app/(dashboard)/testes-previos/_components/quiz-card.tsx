@@ -1,8 +1,17 @@
 'use client';
 
-import { useMutation } from 'convex/react';
-import { BookOpen, Calendar, Check, Clock, Edit, X } from 'lucide-react';
+import { useMutation, useQuery } from 'convex/react';
+import {
+  BookOpen,
+  Calendar,
+  Check,
+  Clock,
+  Edit,
+  RotateCcw,
+  X,
+} from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -12,6 +21,14 @@ import {
   CardFooter,
   CardHeader,
 } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { formatDate } from '@/lib/utils';
@@ -51,14 +68,24 @@ export function QuizCard({
   groupMap,
   formatRelativeTime,
 }: QuizCardProps) {
-  // Add state for editing mode and new name
+  const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [newName, setNewName] = useState(quiz.name);
   const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const [showDialog, setShowDialog] = useState(false);
 
   // Get the update mutation from Convex
   const updateQuizName = useMutation(api.customQuizzes.updateName);
+  const startQuizSession = useMutation(api.quizSessions.startQuizSession);
+
+  // Check if there's a completed session for this quiz
+  const completedSession = useQuery(
+    api.quizSessions.getLatestCompletedSession,
+    {
+      quizId: quiz._id,
+    },
+  );
 
   // Focus the input when editing starts
   useEffect(() => {
@@ -118,6 +145,41 @@ export function QuizCard({
     }
   };
 
+  // Handle start quiz click
+  const handleStartQuiz = () => {
+    if (hasResults) {
+      // If there are results, show the dialog
+      setShowDialog(true);
+    } else {
+      // If no results, start new session immediately
+      router.push(`/criar-teste/${quiz._id}`);
+    }
+  };
+
+  // Start a new session
+  const handleStartNewSession = async () => {
+    try {
+      await startQuizSession({
+        quizId: quiz._id,
+        mode: quiz.testMode,
+      });
+      router.push(`/criar-teste/${quiz._id}`);
+    } catch (error) {
+      console.error('Error starting new session:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível iniciar uma nova sessão.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // View previous results
+  const handleViewResults = () => {
+    router.push(`/quiz-results/${quiz._id}`);
+    setShowDialog(false);
+  };
+
   // Simplified approach to get theme IDs
   let themeIds: string[] = [];
   if (quiz.themes && Array.isArray(quiz.themes)) {
@@ -152,124 +214,172 @@ export function QuizCard({
     .filter(Boolean);
 
   return (
-    <Card className="group overflow-hidden">
-      <CardHeader className="bg-muted/40 pb-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-1">
-            {quiz.testMode === 'exam' ? (
-              <Clock className="h-4 w-4 text-amber-500" />
-            ) : (
-              <BookOpen className="h-4 w-4 text-emerald-500" />
-            )}
-            <span className="text-muted-foreground text-xs">
-              {quiz.testMode === 'exam' ? 'Simulado' : 'Estudo'}
-            </span>
-          </div>
-          <div className="text-muted-foreground flex items-center gap-1">
-            <Calendar className="h-4 w-4" />
-            <span className="text-xs">{formatDate(quiz._creationTime)}</span>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="pt-4">
-        {isEditing ? (
-          <div className="flex items-center gap-2">
-            <Input
-              ref={inputRef}
-              value={newName}
-              onChange={e => setNewName(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className="h-8 text-lg font-bold"
-            />
-            <div className="flex items-center">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleSave}
-                className="h-8 w-8 p-0"
-              >
-                <Check className="h-4 w-4 text-green-600" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleCancel}
-                className="h-8 w-8 p-0"
-              >
-                <X className="h-4 w-4 text-red-600" />
-              </Button>
+    <>
+      <Card className="group overflow-hidden">
+        <CardHeader className="bg-muted/40 pb-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-1">
+              {quiz.testMode === 'exam' ? (
+                <Clock className="h-4 w-4 text-amber-500" />
+              ) : (
+                <BookOpen className="h-4 w-4 text-emerald-500" />
+              )}
+              <span className="text-muted-foreground text-xs">
+                {quiz.testMode === 'exam' ? 'Simulado' : 'Estudo'}
+              </span>
+            </div>
+            <div className="text-muted-foreground flex items-center gap-1">
+              <Calendar className="h-4 w-4" />
+              <span className="text-xs">{formatDate(quiz._creationTime)}</span>
             </div>
           </div>
-        ) : (
-          <div className="flex items-center gap-2">
-            <h3 className="line-clamp-1 text-lg font-bold">{quiz.name}</h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsEditing(true)}
-              className="ml-1 h-6 w-6 p-0 opacity-0 transition-opacity group-hover:opacity-100 hover:opacity-100"
-              title="Editar nome"
-            >
-              <Edit className="h-3.5 w-3.5" />
-            </Button>
+        </CardHeader>
+        <CardContent className="pt-4">
+          {isEditing ? (
+            <div className="flex items-center gap-2">
+              <Input
+                ref={inputRef}
+                value={newName}
+                onChange={e => setNewName(e.target.value)}
+                onKeyDown={handleKeyDown}
+                className="h-8 text-lg font-bold"
+              />
+              <div className="flex items-center">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleSave}
+                  className="h-8 w-8 p-0"
+                >
+                  <Check className="h-4 w-4 text-green-600" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCancel}
+                  className="h-8 w-8 p-0"
+                >
+                  <X className="h-4 w-4 text-red-600" />
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <h3 className="line-clamp-1 text-lg font-bold">{quiz.name}</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsEditing(true)}
+                className="ml-1 h-6 w-6 p-0 opacity-0 transition-opacity group-hover:opacity-100 hover:opacity-100"
+                title="Editar nome"
+              >
+                <Edit className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          )}
+          <p className="text-muted-foreground line-clamp-2 text-sm">
+            {quiz.description}
+          </p>
+
+          {/* Quiz Configuration Options */}
+          <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
+            {quiz.questionMode && (
+              <span className="rounded-full bg-indigo-100 px-2 py-0.5 font-medium text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400">
+                {quiz.questionMode === 'all' && 'Todas'}
+                {quiz.questionMode === 'incorrect' && 'Incorretas'}
+                {quiz.questionMode === 'bookmarked' && 'Favoritadas'}
+                {quiz.questionMode === 'unanswered' && 'Não Respondidas'}
+              </span>
+            )}
+
+            {themeNames.length > 0 && (
+              <span className="rounded-full bg-green-100 px-2 py-0.5 font-medium text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                {themeNames.length > 1
+                  ? `${themeNames.length} temas`
+                  : themeNames[0]}
+              </span>
+            )}
+
+            {subthemeNames.length > 0 && (
+              <span className="rounded-full bg-purple-100 px-2 py-0.5 font-medium text-purple-800 dark:bg-purple-900/30 dark:text-purple-400">
+                {subthemeNames.length > 1
+                  ? `${subthemeNames.length} subtemas`
+                  : subthemeNames[0]}
+              </span>
+            )}
+
+            {groupNames.length > 0 && (
+              <span className="rounded-full bg-amber-100 px-2 py-0.5 font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+                {groupNames.length > 1
+                  ? `${groupNames.length} grupos`
+                  : groupNames[0]}
+              </span>
+            )}
+
+            <span className="bg-secondary rounded-full px-2 py-0.5 font-medium">
+              {quiz.questions.length} questões
+            </span>
           </div>
-        )}
-        <p className="text-muted-foreground line-clamp-2 text-sm">
-          {quiz.description}
-        </p>
-
-        {/* Quiz Configuration Options */}
-        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
-          {quiz.questionMode && (
-            <span className="rounded-full bg-indigo-100 px-2 py-0.5 font-medium text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400">
-              {quiz.questionMode === 'all' && 'Todas'}
-              {quiz.questionMode === 'incorrect' && 'Incorretas'}
-              {quiz.questionMode === 'bookmarked' && 'Favoritadas'}
-              {quiz.questionMode === 'unanswered' && 'Não Respondidas'}
-            </span>
-          )}
-
-          {themeNames.length > 0 && (
-            <span className="rounded-full bg-green-100 px-2 py-0.5 font-medium text-green-800 dark:bg-green-900/30 dark:text-green-400">
-              {themeNames.length > 1
-                ? `${themeNames.length} temas`
-                : themeNames[0]}
-            </span>
-          )}
-
-          {subthemeNames.length > 0 && (
-            <span className="rounded-full bg-purple-100 px-2 py-0.5 font-medium text-purple-800 dark:bg-purple-900/30 dark:text-purple-400">
-              {subthemeNames.length > 1
-                ? `${subthemeNames.length} subtemas`
-                : subthemeNames[0]}
-            </span>
-          )}
-
-          {groupNames.length > 0 && (
-            <span className="rounded-full bg-amber-100 px-2 py-0.5 font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
-              {groupNames.length > 1
-                ? `${groupNames.length} grupos`
-                : groupNames[0]}
-            </span>
-          )}
-
-          <span className="bg-secondary rounded-full px-2 py-0.5 font-medium">
-            {quiz.questions.length} questões
-          </span>
-        </div>
-      </CardContent>
-      <CardFooter className="bg-muted/20 flex justify-between gap-2 pt-4">
-        <Link href={`/criar-teste/${quiz._id}`} className="flex-1">
-          <Button variant="outline" className="w-full">
+        </CardContent>
+        <CardFooter className="bg-muted/20 flex justify-between gap-2 pt-4">
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={handleStartQuiz}
+          >
             Iniciar
           </Button>
-        </Link>
-        {hasResults && (
-          <Link href={`/quiz-results/${quiz._id}`} className="flex-1">
-            <Button className="w-full">Ver Resultados</Button>
-          </Link>
-        )}
-      </CardFooter>
-    </Card>
+          {hasResults && (
+            <Link href={`/quiz-results/${quiz._id}`} className="flex-1">
+              <Button className="w-full">Ver Resultados</Button>
+            </Link>
+          )}
+        </CardFooter>
+      </Card>
+
+      {/* Dialog for handling completed quiz restart */}
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Teste já realizado</DialogTitle>
+            <DialogDescription>
+              Você já completou este teste anteriormente. O que gostaria de
+              fazer?
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-4 space-y-4">
+            <div className="flex items-start space-x-3">
+              <RotateCcw className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600" />
+              <div>
+                <h4 className="text-sm font-medium">Iniciar novo teste</h4>
+                <p className="text-muted-foreground text-sm">
+                  Comece uma nova sessão com as mesmas questões.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start space-x-3">
+              <Clock className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-500" />
+              <div>
+                <h4 className="text-sm font-medium">
+                  Ver resultados anteriores
+                </h4>
+                <p className="text-muted-foreground text-sm">
+                  Veja os resultados da sua sessão anterior.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="mt-6 flex gap-2 sm:justify-start">
+            <Button onClick={handleStartNewSession}>Iniciar novo teste</Button>
+            <Button variant="outline" onClick={handleViewResults}>
+              Ver resultados
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
