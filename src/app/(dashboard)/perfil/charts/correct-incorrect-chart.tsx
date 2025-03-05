@@ -9,31 +9,25 @@ import {
   Tooltip,
 } from 'recharts';
 
-interface PieChartDemoProps {
+interface CorrectIncorrectChartProps {
   correctCount: number;
   incorrectCount: number;
-  unansweredCount: number;
 }
 
-export function PieChartDemo({
+export function CorrectIncorrectChart({
   correctCount,
   incorrectCount,
-  unansweredCount,
-}: PieChartDemoProps) {
-  const answeredCount = correctCount + incorrectCount;
-
+}: CorrectIncorrectChartProps) {
   const data = [
-    { name: 'Respondidas', value: answeredCount, color: '#3b82f6' }, // Blue shade
-    { name: 'Não Respondidas', value: unansweredCount, color: '#93c5fd' }, // Lighter blue
+    { name: 'Corretas', value: correctCount, color: '#2563eb' }, // Darker blue
+    { name: 'Incorretas', value: incorrectCount, color: '#60a5fa' }, // Medium blue
   ];
 
   return (
     <div className="bg-card text-card-foreground rounded-lg border p-3 shadow-sm">
       <div className="mb-2">
-        <h3 className="text-md font-semibold">Progresso de Questões</h3>
-        <p className="text-muted-foreground text-xs">
-          Respondidas vs Não Respondidas
-        </p>
+        <h3 className="text-md font-semibold">Desempenho em Respostas</h3>
+        <p className="text-muted-foreground text-xs">Corretas vs Incorretas</p>
       </div>
       <div className="h-[220px]">
         <ResponsiveContainer width="100%" height="100%">

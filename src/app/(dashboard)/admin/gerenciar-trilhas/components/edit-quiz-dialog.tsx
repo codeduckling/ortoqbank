@@ -16,6 +16,13 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 import { Id } from '../../../../../../convex/_generated/dataModel';
 
@@ -26,6 +33,7 @@ interface EditQuizDialogProps {
     id: string;
     name: string;
     description: string;
+    category?: 'trilha' | 'simulado';
   };
   questions: Array<{ _id: Id<'questions'>; title: string; themeId: string }>;
   presetQuizzes: Array<{
@@ -33,10 +41,12 @@ interface EditQuizDialogProps {
     name: string;
     description: string;
     questions: string[];
+    category?: 'trilha' | 'simulado';
   }>;
   onUpdateQuiz: (data: {
     name: string;
     description: string;
+    category: 'trilha' | 'simulado';
     questions: string[];
   }) => Promise<void>;
   onDeleteQuiz: () => Promise<void>;
@@ -55,6 +65,11 @@ export function EditExamDialog({
   const [searchValue, setSearchValue] = useState('');
   const [name, setName] = useState(quiz.name);
   const [description, setDescription] = useState(quiz.description);
+  const [category, setCategory] = useState<'trilha' | 'simulado'>(
+    quiz.category ||
+      presetQuizzes.find(q => q._id === quiz.id)?.category ||
+      'simulado',
+  );
   const [selectedQuestions, setSelectedQuestions] = useState<Set<string>>(
     new Set(presetQuizzes.find(q => q._id === quiz.id)?.questions ?? []),
   );
@@ -74,6 +89,7 @@ export function EditExamDialog({
       await onUpdateQuiz({
         name,
         description,
+        category,
         questions: [...selectedQuestions],
       });
       toast({
@@ -135,6 +151,23 @@ export function EditExamDialog({
               value={description}
               onChange={event => setDescription(event.target.value)}
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="category">Categoria</Label>
+            <Select
+              value={category}
+              onValueChange={(value: 'trilha' | 'simulado') =>
+                setCategory(value)
+              }
+            >
+              <SelectTrigger id="category">
+                <SelectValue placeholder="Selecione uma categoria" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="trilha">Trilha</SelectItem>
+                <SelectItem value="simulado">Simulado</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <Input
             type="text"

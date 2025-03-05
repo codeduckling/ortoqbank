@@ -11,7 +11,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { Button } from '@/components/ui/button';
@@ -76,6 +76,10 @@ export default function TestForm() {
     description: '',
   });
   const [expandedSubthemes, setExpandedSubthemes] = useState<string[]>([]);
+  const [availableQuestionCount, setAvailableQuestionCount] = useState<
+    number | null
+  >(null);
+  const [isCountLoading, setIsCountLoading] = useState(false);
 
   const createCustomQuiz = useMutation(api.customQuizzes.create);
 
@@ -104,6 +108,20 @@ export default function TestForm() {
   const selectedGroups = watch('selectedGroups');
   const questionMode = watch('questionMode');
   const numQuestions = watch('numQuestions');
+
+  // Query the count of available questions based on current selection
+  const countQuestions = useQuery(api.questions.countAvailableQuestions, {
+    questionMode: mapQuestionMode(questionMode || 'all'),
+    selectedThemes: selectedThemes as Id<'themes'>[],
+    selectedSubthemes: selectedSubthemes as Id<'subthemes'>[],
+    selectedGroups: selectedGroups as Id<'groups'>[],
+  });
+
+  // Update available question count when Convex query result changes
+  useEffect(() => {
+    setAvailableQuestionCount(countQuestions?.count || null);
+    setIsCountLoading(countQuestions === undefined);
+  }, [countQuestions]);
 
   // Fetch hierarchical data
   const hierarchicalData = useQuery(api.themes.getHierarchicalData);
@@ -484,6 +502,52 @@ export default function TestForm() {
               {errors.selectedThemes.message}
             </p>
           )}
+
+          {/* Available Questions Count Display */}
+          <div className="rounded-md bg-blue-50 p-4 dark:bg-blue-900/20">
+            <div className="flex items-center">
+              <InfoCircle className="h-5 w-5 text-blue-400 dark:text-blue-300" />
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                  Questões Disponíveis
+                </h3>
+                <div className="mt-2 text-sm text-blue-700 dark:text-blue-300">
+                  {isCountLoading ? (
+                    <div className="flex items-center">
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Calculando...
+                    </div>
+                  ) : availableQuestionCount !== null ? (
+                    <p>
+                      Há{' '}
+                      <span className="font-bold">
+                        {availableQuestionCount}
+                      </span>{' '}
+                      {availableQuestionCount === 1
+                        ? 'questão disponível'
+                        : 'questões disponíveis'}{' '}
+                      com os critérios selecionados.
+                      {numQuestions > availableQuestionCount && (
+                        <span className="mt-1 block text-amber-600 dark:text-amber-400">
+                          Nota: Você solicitou {numQuestions} questões, mas
+                          apenas {availableQuestionCount}{' '}
+                          {availableQuestionCount === 1
+                            ? 'está disponível'
+                            : 'estão disponíveis'}
+                          .
+                        </span>
+                      )}
+                    </p>
+                  ) : (
+                    <p>
+                      Selecione pelo menos um tema para ver quantas questões
+                      estão disponíveis.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
 
           <Button
             type="submit"

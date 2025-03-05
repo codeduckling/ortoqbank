@@ -33,25 +33,32 @@ export function ThemeBarChart({ themeStats = [] }: ThemeBarChartProps) {
   }));
 
   return (
-    <div className="bg-card text-card-foreground rounded-lg border p-4 shadow-sm">
-      <div className="mb-4">
-        <h3 className="text-lg font-semibold">Desempenho por Tema</h3>
-        <p className="text-muted-foreground text-sm">
+    <div className="bg-card text-card-foreground rounded-lg border p-3 shadow-sm">
+      <div className="mb-2">
+        <h3 className="text-md font-semibold">Desempenho por Tema</h3>
+        <p className="text-muted-foreground text-xs">
           Porcentagem de acerto por tema
         </p>
       </div>
-      <div className="h-[300px]">
+      <div className="h-[220px]">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data}>
+          <BarChart
+            data={data}
+            margin={{ top: 10, right: 10, left: 10, bottom: 20 }}
+          >
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis
               dataKey="name"
-              tick={{ fontSize: 12 }}
+              tick={{ fontSize: 11 }}
               tickFormatter={value =>
-                value.length > 15 ? `${value.slice(0, 15)}...` : value
+                value.length > 12 ? `${value.slice(0, 12)}...` : value
               }
             />
-            <YAxis tickFormatter={value => `${value}%`} domain={[0, 100]} />
+            <YAxis
+              tickFormatter={value => `${value}%`}
+              domain={[0, 100]}
+              tick={{ fontSize: 11 }}
+            />
             <Tooltip
               formatter={(value, name) => {
                 if (name === 'percentage')
@@ -71,10 +78,10 @@ export function ThemeBarChart({ themeStats = [] }: ThemeBarChartProps) {
                   key={`cell-${index}`}
                   fill={
                     entry.percentage > 70
-                      ? '#4ade80'
-                      : (entry.percentage > 40
-                        ? '#facc15'
-                        : '#f87171')
+                      ? '#1d4ed8' // Dark blue
+                      : entry.percentage > 40
+                        ? '#3b82f6' // Medium blue
+                        : '#93c5fd' // Light blue
                   }
                 />
               ))}
@@ -82,7 +89,7 @@ export function ThemeBarChart({ themeStats = [] }: ThemeBarChartProps) {
             <Bar
               name="Total de Questões"
               dataKey="total"
-              fill="#93c5fd"
+              fill="#bfdbfe"
               radius={[4, 4, 0, 0]}
               opacity={0.7}
             />

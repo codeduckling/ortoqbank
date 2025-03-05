@@ -14,12 +14,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import {
   Form,
@@ -30,6 +32,8 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
   SelectContent,
@@ -52,14 +56,30 @@ import { api } from '../../../../../convex/_generated/api';
 import { Id } from '../../../../../convex/_generated/dataModel';
 import { EditExamDialog } from './components/edit-quiz-dialog';
 
-const formSchema = z.object({
-  name: z.string().min(1, 'Nome é obrigatório'),
-  description: z.string().min(1, 'Descrição é obrigatória'),
-  themeId: z.string().min(1, 'Tema é obrigatório'),
-  subthemeId: z.string().optional(),
-  groupId: z.string().optional(),
-  isPublic: z.boolean().default(true),
-});
+const formSchema = z
+  .object({
+    name: z.string().min(1, 'Nome é obrigatório'),
+    description: z.string().min(1, 'Descrição é obrigatória'),
+    category: z.enum(['trilha', 'simulado']),
+    themeId: z.string().optional(),
+    subthemeId: z.string().optional(),
+    groupId: z.string().optional(),
+    isPublic: z.boolean().default(true),
+    questions: z.array(z.string()).min(1, 'Selecione pelo menos uma questão'),
+  })
+  .refine(
+    data => {
+      // If category is 'trilha', themeId is required
+      if (data.category === 'trilha' && !data.themeId) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: 'Tema é obrigatório para trilhas',
+      path: ['themeId'],
+    },
+  );
 
 export default function ManagePresetExams() {
   const { toast } = useToast();
@@ -71,42 +91,99 @@ export default function ManagePresetExams() {
       }
     | undefined
   >();
+
+  // For question filtering in create form
+  const [searchValue, setSearchValue] = useState('');
+  const [selectedThemeFilter, setSelectedThemeFilter] = useState<string>('all');
+
+  // For storing selected questions during creation
+  const [selectedQuestions, setSelectedQuestions] = useState<Set<string>>(
+    new Set(),
+  );
+
+  // Fetch data
   const themes = useQuery(api.themes.list) || [];
   const presetQuizzes = useQuery(api.presetQuizzes.list) || [];
   const questions = useQuery(api.questions.listAll) || [];
+
+  // Mutations
   const createPresetQuiz = useMutation(api.presetQuizzes.create);
-  const addQuestion = useMutation(api.presetQuizzes.addQuestion);
-  const [selectedTheme, setSelectedTheme] = useState<string>('all');
-  const [questionSearch, setQuestionSearch] = useState('');
-  const updateQuizQuestions = useMutation(api.presetQuizzes.updateQuestions);
   const updateQuiz = useMutation(api.presetQuizzes.updateQuiz);
   const deleteQuiz = useMutation(api.presetQuizzes.deleteQuiz);
 
+  // Setup form with react-hook-form
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
       description: '',
+      category: 'simulado',
       isPublic: true,
+      questions: [],
     },
   });
 
+  // Watch the theme ID to filter questions
+  const watchedThemeId = form.watch('themeId');
+
+  // Filter questions based on theme and search
+  const filteredQuestions = questions.filter(
+    question =>
+      (selectedThemeFilter === 'all' ||
+        question.themeId === selectedThemeFilter) &&
+      question.title.toLowerCase().includes(searchValue.toLowerCase()),
+  );
+
+  // Handle question selection toggle
+  const handleToggleQuestion = (questionId: string) => {
+    const newSelected = new Set(selectedQuestions);
+    if (newSelected.has(questionId)) {
+      newSelected.delete(questionId);
+    } else {
+      newSelected.add(questionId);
+    }
+    setSelectedQuestions(newSelected);
+
+    // Update form value
+    form.setValue('questions', Array.from(newSelected), {
+      shouldValidate: true,
+    });
+  };
+
+  // Form submission handler
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      await createPresetQuiz({
+      // Prepare data for API call
+      const quizData = {
         ...values,
-        questions: [],
-        themeId: values.themeId as Id<'themes'>,
-        subthemeId: values.subthemeId as Id<'subthemes'>,
-        groupId: values.groupId as Id<'groups'>,
-      });
+        questions: values.questions as Id<'questions'>[],
+      };
+
+      // Only include theme-related fields if they have values
+      if (values.themeId) {
+        quizData.themeId = values.themeId as Id<'themes'>;
+      }
+
+      if (values.subthemeId) {
+        quizData.subthemeId = values.subthemeId as Id<'subthemes'>;
+      }
+
+      if (values.groupId) {
+        quizData.groupId = values.groupId as Id<'groups'>;
+      }
+
+      await createPresetQuiz(quizData);
+
       toast({
         title: 'Sucesso',
         description: 'Teste criado com sucesso!',
       });
+
+      // Reset state and close dialog
       setOpen(false);
       form.reset();
-    } catch {
+      setSelectedQuestions(new Set());
+    } catch (error) {
       toast({
         title: 'Erro',
         description: 'Não foi possível criar o teste. Tente novamente.',
@@ -115,51 +192,11 @@ export default function ManagePresetExams() {
     }
   };
 
-  const handleAddQuestion = async (questionId: string) => {
-    if (!editingExam) return;
-
-    try {
-      await addQuestion({
-        quizId: editingExam.id as Id<'presetQuizzes'>,
-        questionId: questionId as Id<'questions'>,
-      });
-      toast({
-        title: 'Sucesso',
-        description: 'Questão adicionada com sucesso!',
-      });
-    } catch {
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível adicionar a questão.',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleUpdateQuestions = async (questionIds: string[]) => {
-    if (!editingExam) return;
-
-    try {
-      await updateQuizQuestions({
-        quizId: editingExam.id as Id<'presetQuizzes'>,
-        questions: questionIds as Id<'questions'>[],
-      });
-      toast({
-        title: 'Sucesso',
-        description: 'Questões atualizadas com sucesso!',
-      });
-    } catch {
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível atualizar as questões.',
-        variant: 'destructive',
-      });
-    }
-  };
-
+  // Update quiz handler
   const handleUpdateExam = async (data: {
     name: string;
     description: string;
+    category: 'trilha' | 'simulado';
     questions: string[];
   }) => {
     if (!editingExam) return;
@@ -169,7 +206,13 @@ export default function ManagePresetExams() {
         quizId: editingExam.id as Id<'presetQuizzes'>,
         name: data.name,
         description: data.description,
+        category: data.category,
         questions: data.questions as Id<'questions'>[],
+      });
+
+      toast({
+        title: 'Sucesso',
+        description: 'Teste atualizado com sucesso!',
       });
     } catch {
       toast({
@@ -180,12 +223,18 @@ export default function ManagePresetExams() {
     }
   };
 
+  // Delete quiz handler
   const handleDeleteExam = async () => {
     if (!editingExam) return;
 
     try {
       await deleteQuiz({
         quizId: editingExam.id as Id<'presetQuizzes'>,
+      });
+
+      toast({
+        title: 'Sucesso',
+        description: 'Teste excluído com sucesso!',
       });
     } catch {
       toast({
@@ -195,14 +244,6 @@ export default function ManagePresetExams() {
       });
     }
   };
-
-  const filteredQuestions = questions.filter(
-    question =>
-      (selectedTheme === 'all' || question.themeId === selectedTheme) &&
-      !presetQuizzes
-        .find(quiz => quiz._id === editingExam?.id)
-        ?.questions.includes(question._id),
-  );
 
   return (
     <div className="p-6">
@@ -219,7 +260,7 @@ export default function ManagePresetExams() {
               <DialogTrigger asChild>
                 <Button>Criar Novo Teste</Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-w-4xl">
                 <DialogHeader>
                   <DialogTitle>Criar Novo Teste</DialogTitle>
                 </DialogHeader>
@@ -228,60 +269,176 @@ export default function ManagePresetExams() {
                     onSubmit={form.handleSubmit(onSubmit)}
                     className="space-y-4"
                   >
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nome</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="description"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Descrição</FormLabel>
-                          <FormControl>
-                            <Textarea {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="themeId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Tema</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecione um tema" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {themes.map(theme => (
-                                <SelectItem key={theme._id} value={theme._id}>
-                                  {theme.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <Button type="submit">Criar Teste</Button>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-4">
+                        <FormField
+                          control={form.control}
+                          name="name"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Nome</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="description"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Descrição</FormLabel>
+                              <FormControl>
+                                <Textarea {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="category"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Categoria</FormLabel>
+                              <Select
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Selecione uma categoria" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="trilha">Trilha</SelectItem>
+                                  <SelectItem value="simulado">
+                                    Simulado
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="themeId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>
+                                Tema{' '}
+                                {form.watch('category') === 'trilha' && (
+                                  <span className="text-red-500">*</span>
+                                )}
+                              </FormLabel>
+                              <Select
+                                onValueChange={value => {
+                                  field.onChange(value);
+                                  setSelectedThemeFilter(value);
+                                }}
+                                defaultValue={field.value}
+                                disabled={form.watch('category') !== 'trilha'}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Selecione um tema" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {themes.map(theme => (
+                                    <SelectItem
+                                      key={theme._id}
+                                      value={theme._id}
+                                    >
+                                      {theme.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="questions"
+                          render={() => (
+                            <FormItem>
+                              <FormLabel>Questões Selecionadas</FormLabel>
+                              <FormControl>
+                                <div className="rounded-md border p-2">
+                                  <span className="text-muted-foreground text-sm">
+                                    {selectedQuestions.size} questões
+                                    selecionadas
+                                  </span>
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="searchQuestions">
+                            Buscar Questões
+                          </Label>
+                          <Input
+                            id="searchQuestions"
+                            type="text"
+                            placeholder="Buscar por título..."
+                            value={searchValue}
+                            onChange={e => setSearchValue(e.target.value)}
+                          />
+                        </div>
+
+                        <ScrollArea className="h-[400px] rounded-md border p-4">
+                          {filteredQuestions.length === 0 ? (
+                            <div className="flex h-full items-center justify-center">
+                              <p className="text-muted-foreground text-sm">
+                                {watchedThemeId
+                                  ? 'Nenhuma questão encontrada para este tema'
+                                  : 'Selecione um tema para ver as questões'}
+                              </p>
+                            </div>
+                          ) : (
+                            filteredQuestions.map(question => (
+                              <div
+                                key={question._id}
+                                className="mb-2 flex items-center space-x-2"
+                              >
+                                <Checkbox
+                                  id={question._id}
+                                  checked={selectedQuestions.has(question._id)}
+                                  onCheckedChange={() =>
+                                    handleToggleQuestion(question._id)
+                                  }
+                                />
+                                <Label htmlFor={question._id}>
+                                  {question.title}
+                                </Label>
+                              </div>
+                            ))
+                          )}
+                        </ScrollArea>
+                      </div>
+                    </div>
+
+                    <DialogFooter>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setOpen(false)}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button type="submit">Criar Teste</Button>
+                    </DialogFooter>
                   </form>
                 </Form>
               </DialogContent>
@@ -293,6 +450,7 @@ export default function ManagePresetExams() {
               <TableRow>
                 <TableHead>Nome</TableHead>
                 <TableHead>Descrição</TableHead>
+                <TableHead>Categoria</TableHead>
                 <TableHead>Questões</TableHead>
                 <TableHead>Ações</TableHead>
               </TableRow>
@@ -302,6 +460,9 @@ export default function ManagePresetExams() {
                 <TableRow key={quiz._id}>
                   <TableCell>{quiz.name}</TableCell>
                   <TableCell>{quiz.description}</TableCell>
+                  <TableCell>
+                    {quiz.category === 'trilha' ? 'Trilha' : 'Simulado'}
+                  </TableCell>
                   <TableCell>{quiz.questions.length} questões</TableCell>
                   <TableCell>
                     <Button
@@ -332,6 +493,8 @@ export default function ManagePresetExams() {
             description:
               presetQuizzes.find(quiz => quiz._id === editingExam.id)
                 ?.description ?? '',
+            category: presetQuizzes.find(quiz => quiz._id === editingExam.id)
+              ?.category,
           }}
           questions={questions}
           presetQuizzes={presetQuizzes}

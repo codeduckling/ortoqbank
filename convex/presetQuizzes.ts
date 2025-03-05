@@ -6,16 +6,23 @@ export const create = mutation({
   args: {
     name: v.string(),
     description: v.string(),
-    themeId: v.id('themes'),
+    category: v.union(v.literal('trilha'), v.literal('simulado')),
+    themeId: v.optional(v.id('themes')),
     subthemeId: v.optional(v.id('subthemes')),
     groupId: v.optional(v.id('groups')),
     questions: v.array(v.id('questions')),
     isPublic: v.boolean(),
   },
   handler: async (ctx, args) => {
+    // For trilhas, themeId is required
+    if (args.category === 'trilha' && !args.themeId) {
+      throw new Error('themeId is required for trilhas');
+    }
+
     return await ctx.db.insert('presetQuizzes', {
       name: args.name,
       description: args.description,
+      category: args.category,
       themeId: args.themeId,
       subthemeId: args.subthemeId,
       groupId: args.groupId,
@@ -78,12 +85,14 @@ export const updateQuiz = mutation({
     quizId: v.id('presetQuizzes'),
     name: v.string(),
     description: v.string(),
+    category: v.union(v.literal('trilha'), v.literal('simulado')),
     questions: v.array(v.id('questions')),
   },
   handler: async (ctx, args) => {
     await ctx.db.patch(args.quizId, {
       name: args.name,
       description: args.description,
+      category: args.category,
       questions: args.questions,
     });
   },

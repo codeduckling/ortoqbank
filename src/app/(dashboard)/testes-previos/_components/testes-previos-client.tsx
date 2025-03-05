@@ -99,7 +99,7 @@ export function TestesPreviosClient() {
   if (customQuizzes.length === 0) {
     return (
       <div className="container mx-auto p-6">
-        <h1 className="mb-6 text-2xl font-bold">Meus Testes</h1>
+        <h1 className="mb-6 text-2xl font-bold">Meus Testes Personalizados</h1>
         <div className="flex h-[60vh] items-center justify-center">
           <div className="text-center">
             <h2 className="text-xl font-semibold">
@@ -144,7 +144,7 @@ export function TestesPreviosClient() {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold">Meus Testes</h1>
+        <h1 className="text-2xl font-bold">Meus Testes Personalizados</h1>
         <Link href="/criar-teste">
           <Button>
             <Plus className="mr-2 h-4 w-4" />
