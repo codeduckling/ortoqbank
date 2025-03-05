@@ -17,7 +17,8 @@ export function useQuiz(
   mode: 'study' | 'exam',
 ) {
   const quizData = useQuery(api.quiz.getQuizData, { quizId });
-  const progress = useQuery(api.quizSessions.getCurrentSession, { quizId });
+  //using new function
+  const progress = useQuery(api.quizSessions.getActiveSession, { quizId });
 
   // Get bookmark statuses for all questions in this quiz
   const questionIds = quizData?.questions.map(q => q._id);

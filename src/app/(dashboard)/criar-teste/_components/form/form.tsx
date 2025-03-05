@@ -109,13 +109,26 @@ export default function TestForm() {
   const questionMode = watch('questionMode');
   const numQuestions = watch('numQuestions');
 
-  // Query the count of available questions based on current selection
-  const countQuestions = useQuery(api.questions.countAvailableQuestions, {
+  // Query question counts by mode (efficient new approach)
+  const questionModeCounts = useQuery(api.questions.countQuestionsByMode, {
     questionMode: mapQuestionMode(questionMode || 'all'),
-    selectedThemes: selectedThemes as Id<'themes'>[],
-    selectedSubthemes: selectedSubthemes as Id<'subthemes'>[],
-    selectedGroups: selectedGroups as Id<'groups'>[],
   });
+
+  // Query question counts by theme for the selected mode
+  const themeQuestionCounts = useQuery(api.questions.countQuestionsByTheme, {
+    questionMode: mapQuestionMode(questionMode || 'all'),
+  });
+
+  // Query the count of available questions based on current selection
+  const countQuestions = useQuery(
+    api.questions.countAvailableQuestionsEfficient,
+    {
+      questionMode: mapQuestionMode(questionMode || 'all'),
+      selectedThemes: selectedThemes as Id<'themes'>[],
+      selectedSubthemes: selectedSubthemes as Id<'subthemes'>[],
+      selectedGroups: selectedGroups as Id<'groups'>[],
+    },
+  );
 
   // Update available question count when Convex query result changes
   useEffect(() => {
@@ -396,23 +409,35 @@ export default function TestForm() {
               className="flex flex-wrap gap-4"
             >
               {[
-                { id: 'all', label: 'Todas', count: 3896 },
-                { id: 'unused', label: 'Não respondidas', count: 30 },
-                { id: 'incorrect', label: 'Incorretas', count: 3 },
-                { id: 'marked', label: 'Marcadas', count: 3 },
-              ].map(({ id, label, count }) => (
-                <div key={id} className="flex items-center gap-2">
-                  <RadioGroupItem id={id} value={id} />
-                  <Label htmlFor={id} className="flex items-center gap-2">
-                    <span>{label}</span>
-                    {/*    {count && (
-                      <span className="bg-secondary rounded px-1.5 py-0.5 text-xs">
-                        {count}
-                      </span>
-                    )} */}
-                  </Label>
-                </div>
-              ))}
+                { id: 'all', label: 'Todas', apiKey: 'all' },
+                {
+                  id: 'unused',
+                  label: 'Não respondidas',
+                  apiKey: 'unanswered',
+                },
+                { id: 'incorrect', label: 'Incorretas', apiKey: 'incorrect' },
+                { id: 'marked', label: 'Marcadas', apiKey: 'bookmarked' },
+              ].map(({ id, label, apiKey }) => {
+                // Get count from our new API response
+                const count =
+                  questionModeCounts?.[
+                    apiKey as keyof typeof questionModeCounts
+                  ];
+
+                return (
+                  <div key={id} className="flex items-center gap-2">
+                    <RadioGroupItem id={id} value={id} />
+                    <Label htmlFor={id} className="flex items-center gap-2">
+                      <span>{label}</span>
+                      {count !== undefined && (
+                        <span className="bg-secondary rounded px-1.5 py-0.5 text-xs">
+                          {count}
+                        </span>
+                      )}
+                    </Label>
+                  </div>
+                );
+              })}
             </RadioGroup>
             {errors.questionMode && (
               <p className="text-destructive text-sm">
@@ -421,55 +446,37 @@ export default function TestForm() {
             )}
           </div>
 
-          {/* Number of Questions */}
-          <div className="space-y-4">
-            <div className="flex flex-col gap-2">
-              <h3 className="text-sm font-medium">
-                Quantidade Máxima de Questões
-              </h3>
-              <div className="w-24">
-                <Input
-                  type="number"
-                  min={1}
-                  max={120}
-                  value={numQuestions}
-                  onChange={e => {
-                    const value = Number.parseInt(e.target.value);
-                    if (!Number.isNaN(value)) {
-                      setValue(
-                        'numQuestions',
-                        Math.min(Math.max(value, 1), 120),
-                        { shouldValidate: true },
-                      );
-                    }
-                  }}
-                />
-              </div>
-            </div>
-            {errors.numQuestions && (
-              <p className="text-destructive text-sm">
-                {errors.numQuestions.message}
-              </p>
-            )}
-          </div>
-
           {/* Themes */}
           <div className="space-y-2">
             <h3 className="text-sm font-medium">Temas</h3>
             <div className="xs:grid-cols-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
-              {themes?.map(theme => (
-                <Button
-                  key={theme._id}
-                  type="button"
-                  onClick={() => toggleTheme(theme._id)}
-                  variant={
-                    selectedThemes.includes(theme._id) ? 'default' : 'outline'
-                  }
-                  className="h-auto w-full justify-start py-2 text-left"
-                >
-                  <span className="truncate text-sm">{theme.name}</span>
-                </Button>
-              ))}
+              {themes?.map(theme => {
+                // Get question count for this theme from our new API
+                const themeCount =
+                  themeQuestionCounts?.find(t => t.theme._id === theme._id)
+                    ?.count || 0;
+
+                return (
+                  <Button
+                    key={theme._id}
+                    type="button"
+                    onClick={() => toggleTheme(theme._id)}
+                    variant={
+                      selectedThemes.includes(theme._id) ? 'default' : 'outline'
+                    }
+                    className="h-auto w-full justify-start py-2 text-left"
+                  >
+                    <span className="flex-1 truncate text-sm">
+                      {theme.name}
+                    </span>
+                    {themeCount > 0 && (
+                      <span className="bg-secondary ml-1 rounded px-1.5 py-0.5 text-xs text-black">
+                        {themeCount}
+                      </span>
+                    )}
+                  </Button>
+                );
+              })}
             </div>
           </div>
 
@@ -502,6 +509,38 @@ export default function TestForm() {
               {errors.selectedThemes.message}
             </p>
           )}
+
+          {/* Number of Questions */}
+          <div className="space-y-4">
+            <div className="flex flex-col gap-2">
+              <h3 className="text-sm font-medium">
+                Quantidade Máxima de Questões
+              </h3>
+              <div className="w-24">
+                <Input
+                  type="number"
+                  min={1}
+                  max={120}
+                  value={numQuestions}
+                  onChange={e => {
+                    const value = Number.parseInt(e.target.value);
+                    if (!Number.isNaN(value)) {
+                      setValue(
+                        'numQuestions',
+                        Math.min(Math.max(value, 1), 120),
+                        { shouldValidate: true },
+                      );
+                    }
+                  }}
+                />
+              </div>
+            </div>
+            {errors.numQuestions && (
+              <p className="text-destructive text-sm">
+                {errors.numQuestions.message}
+              </p>
+            )}
+          </div>
 
           {/* Available Questions Count Display */}
           <div className="rounded-md bg-blue-50 p-4 dark:bg-blue-900/20">

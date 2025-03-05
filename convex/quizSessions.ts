@@ -3,7 +3,9 @@ import { v } from 'convex/values';
 import { Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
 import { getCurrentUserOrThrow } from './users';
+import { internal } from './_generated/api';
 
+//@deprecated('Use getActiveSession instead')
 export const getCurrentSession = query({
   args: { quizId: v.union(v.id('presetQuizzes'), v.id('customQuizzes')) },
   handler: async (ctx, { quizId }) => {
@@ -14,6 +16,35 @@ export const getCurrentSession = query({
       .withIndex('by_user_quiz', q =>
         q.eq('userId', userId._id).eq('quizId', quizId).eq('isComplete', false),
       )
+      .first();
+  },
+});
+
+// New function to get the active session regardless of completion status
+export const getActiveSession = query({
+  args: { quizId: v.union(v.id('presetQuizzes'), v.id('customQuizzes')) },
+  handler: async (ctx, { quizId }) => {
+    const userId = await getCurrentUserOrThrow(ctx);
+
+    // First try to get an incomplete session
+    const incompleteSession = await ctx.db
+      .query('quizSessions')
+      .withIndex('by_user_quiz', q =>
+        q.eq('userId', userId._id).eq('quizId', quizId).eq('isComplete', false),
+      )
+      .first();
+
+    if (incompleteSession) {
+      return incompleteSession;
+    }
+
+    // If no incomplete session, get the most recent completed one
+    return ctx.db
+      .query('quizSessions')
+      .withIndex('by_user_quiz', q =>
+        q.eq('userId', userId._id).eq('quizId', quizId).eq('isComplete', true),
+      )
+      .order('desc') // Most recent first
       .first();
   },
 });
@@ -107,7 +138,13 @@ export const submitAnswerAndProgress = mutation({
         },
       ],
       currentQuestionIndex: session.currentQuestionIndex + 1,
-      isComplete: false,
+      isComplete: session.currentQuestionIndex + 1 >= quiz.questions.length,
+    });
+
+    // 5. Update user stats for this question
+    await ctx.runMutation(internal.userStats._updateQuestionStats, {
+      questionId: currentQuestion._id,
+      isCorrect: isAnswerCorrect,
     });
 
     return {

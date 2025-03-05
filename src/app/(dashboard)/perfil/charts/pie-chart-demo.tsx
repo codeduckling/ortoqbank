@@ -12,27 +12,26 @@ import {
 interface PieChartDemoProps {
   correctCount: number;
   incorrectCount: number;
-  unansweredCount: number;
+  unansweredCount?: number; // Make unanswered optional
 }
 
 export function PieChartDemo({
   correctCount,
   incorrectCount,
-  unansweredCount,
+  unansweredCount = 0, // Default to 0
 }: PieChartDemoProps) {
-  const answeredCount = correctCount + incorrectCount;
-
+  // Now focus on correct vs incorrect answers
   const data = [
-    { name: 'Respondidas', value: answeredCount, color: '#3b82f6' }, // Blue shade
-    { name: 'Não Respondidas', value: unansweredCount, color: '#93c5fd' }, // Lighter blue
+    { name: 'Corretas', value: correctCount, color: '#22c55e' }, // Green
+    { name: 'Incorretas', value: incorrectCount, color: '#ef4444' }, // Red
   ];
 
   return (
     <div className="bg-card text-card-foreground rounded-lg border p-3 shadow-sm">
       <div className="mb-2">
-        <h3 className="text-md font-semibold">Progresso de Questões</h3>
+        <h3 className="text-md font-semibold">Desempenho</h3>
         <p className="text-muted-foreground text-xs">
-          Respondidas vs Não Respondidas
+          Respostas Corretas vs Incorretas
         </p>
       </div>
       <div className="h-[220px]">

@@ -93,4 +93,17 @@ export default defineSchema({
     .index('by_user_question', ['userId', 'questionId'])
     .index('by_user', ['userId'])
     .index('by_question', ['questionId']),
+
+  // Table to track user statistics for questions
+  userQuestionStats: defineTable({
+    userId: v.id('users'),
+    questionId: v.id('questions'),
+    hasAnswered: v.boolean(), // Track if user has answered at least once
+    isIncorrect: v.boolean(), // Track if the most recent answer was incorrect
+    answeredAt: v.number(), // Timestamp for when the question was last answered
+  })
+    .index('by_user_question', ['userId', 'questionId'])
+    .index('by_user', ['userId'])
+    .index('by_user_incorrect', ['userId', 'isIncorrect'])
+    .index('by_user_answered', ['userId', 'hasAnswered']),
 });

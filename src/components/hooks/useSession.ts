@@ -6,6 +6,7 @@ import { Id } from '../../../convex/_generated/dataModel';
 export default function useSession(
   quizId: Id<'presetQuizzes'> | Id<'customQuizzes'>,
 ) {
-  const progress = useQuery(api.quizSessions.getCurrentSession, { quizId });
+  //using new function
+  const progress = useQuery(api.quizSessions.getActiveSession, { quizId });
   return progress;
 }
