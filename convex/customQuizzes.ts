@@ -347,3 +347,31 @@ export const getById = query({
     };
   },
 });
+
+export const updateName = mutation({
+  args: {
+    id: v.id('customQuizzes'),
+    name: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getCurrentUserOrThrow(ctx);
+
+    const quiz = await ctx.db.get(args.id);
+
+    if (!quiz) {
+      throw new Error('Quiz not found');
+    }
+
+    // Verify that the user has access to this quiz
+    if (quiz.authorId !== userId._id) {
+      throw new Error('Not authorized to update this quiz');
+    }
+
+    // Update the name
+    await ctx.db.patch(args.id, {
+      name: args.name,
+    });
+
+    return { success: true };
+  },
+});
