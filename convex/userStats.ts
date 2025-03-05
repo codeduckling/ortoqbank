@@ -2,6 +2,7 @@ import { v } from 'convex/values';
 import { query, internalMutation } from './_generated/server';
 
 import { getCurrentUserOrThrow } from './users';
+import { getTotalQuestionCount } from './questionStats';
 
 /**
  * Get user statistics from the persistent userQuestionStats table
@@ -30,6 +31,10 @@ export const getUserStatsFromTable = query({
     ).length;
     const totalCorrect = totalAnswered - totalIncorrect;
     const totalBookmarked = bookmarks.length;
+
+    // Get total questions count
+    // This efficiently retrieves the count of all questions in the database
+    const totalQuestions = await getTotalQuestionCount(ctx, {});
 
     // Get theme data
     const questionsWithThemes = await Promise.all(
@@ -108,6 +113,7 @@ export const getUserStatsFromTable = query({
             : 0,
       },
       byTheme: themeStats,
+      totalQuestions,
     };
   },
 });
