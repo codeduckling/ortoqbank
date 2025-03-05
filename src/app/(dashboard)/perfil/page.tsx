@@ -11,7 +11,7 @@ import { ThemeBarChart } from './charts/theme-bar-chart';
 import { StatCard } from './components/stat-card';
 
 export default function ProfilePage() {
-  const stats = useQuery(api.userStats.getUserStats);
+  const stats = useQuery(api.userStats.getUserStatsFromTable);
 
   const isLoading = stats === undefined;
 
@@ -34,7 +34,7 @@ export default function ProfilePage() {
           <StatCard
             title="Questões Respondidas"
             value={stats.overall.totalAnswered}
-            description={`${stats.overall.totalUnanswered} ainda não respondidas`}
+            description="Total de questões que você respondeu"
             color="blue"
           />
           <StatCard
@@ -50,9 +50,9 @@ export default function ProfilePage() {
             color="blue"
           />
           <StatCard
-            title="Total de Temas"
-            value={stats.byTheme.length}
-            description="Temas estudados"
+            title="Questões Salvas"
+            value={stats.overall.totalBookmarked}
+            description="Questões marcadas para revisão"
             color="blue"
           />
         </div>
@@ -72,7 +72,7 @@ export default function ProfilePage() {
             <PieChartDemo
               correctCount={stats.overall.totalCorrect}
               incorrectCount={stats.overall.totalIncorrect}
-              unansweredCount={stats.overall.totalUnanswered}
+              unansweredCount={0} // Set to 0 as we no longer track this
             />
             <CorrectIncorrectChart
               correctCount={stats.overall.totalCorrect}
