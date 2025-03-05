@@ -5,6 +5,7 @@ import { mutation, query } from './_generated/server';
 import { getCurrentUserOrThrow } from './users';
 import { internal } from './_generated/api';
 
+//@deprecated('Use getActiveSession instead')
 export const getCurrentSession = query({
   args: { quizId: v.union(v.id('presetQuizzes'), v.id('customQuizzes')) },
   handler: async (ctx, { quizId }) => {
