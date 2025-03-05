@@ -1,14 +1,16 @@
 'use client';
 
-import { ChevronDown } from 'lucide-react';
+import { Book, BookOpen, CheckCircle, Clock } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 
 interface SimuladoItem {
   id: string;
@@ -77,6 +79,35 @@ const ortoqbankSimulados: SimuladoItem[] = [
   },
 ];
 
+function getStatusBadge(status: SimuladoItem['status']) {
+  switch (status) {
+    case 'completed': {
+      return (
+        <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+          <CheckCircle className="mr-1 h-3 w-3" />
+          Concluído
+        </Badge>
+      );
+    }
+    case 'in_progress': {
+      return (
+        <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+          <Clock className="mr-1 h-3 w-3" />
+          Em andamento
+        </Badge>
+      );
+    }
+    case 'not_started': {
+      return (
+        <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+          <BookOpen className="mr-1 h-3 w-3" />
+          Não iniciado
+        </Badge>
+      );
+    }
+  }
+}
+
 function SimuladoList({
   title,
   items,
@@ -85,71 +116,87 @@ function SimuladoList({
   items: SimuladoItem[];
 }) {
   return (
-    <Collapsible className="mb-4 w-full">
-      <Card>
-        <CollapsibleTrigger className="w-full">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-xl">{title}</CardTitle>
-            <ChevronDown className="h-5 w-5 text-gray-500" />
-          </CardHeader>
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <CardContent className="pt-0">
-            <div className="divide-y">
-              {items.map(item => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between py-4 first:pt-0 last:pb-0"
-                >
-                  <div className="flex items-center gap-4">
-                    <span className="font-medium">
-                      {item.name} {item.year}
-                    </span>
-                    {item.completion !== undefined && (
-                      <span className="text-sm text-gray-500">
-                        {item.completion}% acerto
-                      </span>
-                    )}
-                    {item.completion === undefined && (
-                      <span className="text-sm text-gray-500">-</span>
-                    )}
+    <AccordionItem value={title} className="overflow-hidde">
+      <AccordionTrigger className="hover:bg-muted/20 px-4 py-3 hover:no-underline">
+        <div className="flex items-center gap-3">
+          <Book className="h-5 w-5" />
+          <span className="font-medium">{title}</span>
+          <span className="text-muted-foreground text-sm">
+            ({items.length} simulados)
+          </span>
+        </div>
+      </AccordionTrigger>
+      <AccordionContent>
+        <div className="divide-y">
+          {items.map(simulado => (
+            <div
+              key={simulado.id}
+              className="flex flex-col space-y-3 px-4 py-4"
+            >
+              <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+                <div className="flex flex-col">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="font-medium">
+                      {simulado.name} {simulado.year}
+                    </h3>
+                    {getStatusBadge(simulado.status)}
                   </div>
-                  <div className="flex gap-2">
-                    {item.status === 'completed' && (
-                      <>
-                        <Button variant="outline" size="sm">
-                          Respostas
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          Refazer
-                        </Button>
-                      </>
-                    )}
-                    {item.status === 'not_started' && (
-                      <Button variant="outline" size="sm">
-                        Fazer
-                      </Button>
-                    )}
-                  </div>
+
+                  {simulado.completion !== undefined && (
+                    <div className="mt-2 w-full max-w-md">
+                      <div className="mb-1 flex justify-between">
+                        <span className="text-xs">Aproveitamento</span>
+                        <span className="text-xs font-medium">
+                          {simulado.completion}%
+                        </span>
+                      </div>
+                      <Progress value={simulado.completion} className="h-1.5" />
+                    </div>
+                  )}
                 </div>
-              ))}
+
+                <div className="mt-3 flex w-full flex-wrap gap-2 md:mt-0 md:w-auto">
+                  {simulado.status === 'not_started' && (
+                    <Button className="flex-1 md:flex-none">
+                      Iniciar Simulado
+                    </Button>
+                  )}
+
+                  {simulado.status === 'in_progress' && (
+                    <Button className="flex-1 md:flex-none">
+                      Continuar Simulado
+                    </Button>
+                  )}
+
+                  {simulado.status === 'completed' && (
+                    <>
+                      <Button variant="outline" className="flex-1 md:flex-none">
+                        Refazer
+                      </Button>
+                      <Button className="flex-1 md:flex-none">
+                        Ver Resultados
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
-          </CardContent>
-        </CollapsibleContent>
-      </Card>
-    </Collapsible>
+          ))}
+        </div>
+      </AccordionContent>
+    </AccordionItem>
   );
 }
 
 export default function SimuladoPage() {
   return (
-    <div className="container mx-auto max-w-4xl p-6">
+    <div className="container mx-auto p-6">
       <h1 className="mb-6 text-2xl font-bold">Simulados</h1>
-      <div className="space-y-4">
+      <Accordion type="single" collapsible className="space-y-4">
         <SimuladoList title="TEOT" items={teotSimulados} />
         <SimuladoList title="TARO" items={taroSimulados} />
-        <SimuladoList title="Simulados OrtoQBank" items={ortoqbankSimulados} />
-      </div>
+        <SimuladoList title="OrtoQBank" items={ortoqbankSimulados} />
+      </Accordion>
     </div>
   );
 }

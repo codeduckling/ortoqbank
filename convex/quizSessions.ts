@@ -18,6 +18,22 @@ export const getCurrentSession = query({
   },
 });
 
+export const getLatestCompletedSession = query({
+  args: { quizId: v.union(v.id('presetQuizzes'), v.id('customQuizzes')) },
+  handler: async (ctx, { quizId }) => {
+    const userId = await getCurrentUserOrThrow(ctx);
+
+    // Get the most recent completed session for this quiz
+    return ctx.db
+      .query('quizSessions')
+      .withIndex('by_user_quiz', q =>
+        q.eq('userId', userId._id).eq('quizId', quizId).eq('isComplete', true),
+      )
+      .order('desc') // Most recent first
+      .first();
+  },
+});
+
 export const startQuizSession = mutation({
   args: {
     quizId: v.union(v.id('presetQuizzes'), v.id('customQuizzes')),
