@@ -53,6 +53,11 @@ export default function ThemesPage() {
   const { user } = useUser();
   const router = useRouter();
 
+  // Filter quizzes to only show those with category = "trilha"
+  const trilhasQuizzes = presetQuizzes.filter(
+    quiz => quiz.category === 'trilha',
+  );
+
   // Query to get incomplete sessions for the current user
   const incompleteSessions =
     useQuery(api.quizSessions.listIncompleteSessions) || [];
@@ -66,29 +71,34 @@ export default function ThemesPage() {
     {} as Record<string, Id<'quizSessions'>>,
   );
 
-  // Group exams by theme
-  const examsByTheme = themes.reduce(
+  // Group trilhas by theme
+  const trilhasByTheme = themes.reduce(
     (accumulator, theme) => {
-      accumulator[theme._id] = presetQuizzes.filter(
+      const themeTrilhas = trilhasQuizzes.filter(
         quiz => quiz.themeId === theme._id,
       );
+
+      if (themeTrilhas.length > 0) {
+        accumulator[theme._id] = themeTrilhas;
+      }
+
       return accumulator;
     },
-    {} as Record<string, typeof presetQuizzes>,
+    {} as Record<string, typeof trilhasQuizzes>,
   );
 
   const handleExamClick = async (quizId: Id<'presetQuizzes'>) => {
     // Check if there's an incomplete session for this quiz
     if (incompleteSessionMap[quizId]) {
       // Navigate to the existing quiz
-      router.push(`/temas/${quizId}`);
+      router.push(`/preset-quiz/${quizId}`);
     } else {
       // Start a new session
       const { sessionId } = await startSession({
         quizId,
         mode: 'study',
       });
-      router.push(`/temas/${quizId}`);
+      router.push(`/preset-quiz/${quizId}`);
     }
   };
 
@@ -96,32 +106,46 @@ export default function ThemesPage() {
     return <div>Carregando temas...</div>;
   }
 
+  // If there are no trilhas for any theme
+  if (Object.keys(trilhasByTheme).length === 0) {
+    return (
+      <div className="container mx-auto p-6">
+        <h1 className="mb-6 text-2xl font-bold">Temas</h1>
+        <div className="rounded-lg border p-8 text-center">
+          <p className="text-muted-foreground">
+            Nenhuma trilha disponível no momento.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto p-6">
       <h1 className="mb-6 text-2xl font-bold">Temas</h1>
       <Accordion type="single" collapsible className="space-y-4">
-        {themes?.map(theme => {
-          const Icon = THEME_ICONS[theme.name] || Dna;
-          const themeExams = examsByTheme[theme._id] || [];
+        {Object.entries(trilhasByTheme).map(([themeId, trilhas]) => {
+          const theme = themes.find(t => t._id === themeId);
+          const Icon = theme ? THEME_ICONS[theme.name] || Dna : Dna;
 
           return (
             <AccordionItem
-              key={theme._id}
-              value={theme._id}
+              key={themeId}
+              value={themeId}
               className="overflow-hidden"
             >
               <AccordionTrigger className="hover:bg-muted/20 px-4 py-3 hover:no-underline">
                 <div className="flex items-center gap-3">
                   <Icon className="h-5 w-5" />
-                  <span className="font-medium">{theme.name}</span>
+                  <span className="font-medium">{theme?.name || 'Trilha'}</span>
                   <span className="text-muted-foreground text-sm">
-                    ({themeExams.length} testes)
+                    ({trilhas.length} testes)
                   </span>
                 </div>
               </AccordionTrigger>
               <AccordionContent>
                 <div className="divide-y">
-                  {themeExams.map(exam => {
+                  {trilhas.map(exam => {
                     // Check if there's an incomplete session for this quiz
                     const hasIncompleteSession =
                       !!incompleteSessionMap[exam._id];
@@ -169,7 +193,7 @@ export default function ThemesPage() {
                                 : 'Iniciar Teste'}
                             </Button>
                             <Link
-                              href={`/temas/${exam._id}/results`}
+                              href={`/quiz-results/${exam._id}`}
                               className="flex-1 md:flex-none"
                             >
                               <Button variant="outline" className="w-full">
@@ -181,11 +205,6 @@ export default function ThemesPage() {
                       </div>
                     );
                   })}
-                  {themeExams.length === 0 && (
-                    <div className="text-muted-foreground px-4 py-4 text-sm">
-                      Nenhum teste disponível para este tema
-                    </div>
-                  )}
                 </div>
               </AccordionContent>
             </AccordionItem>

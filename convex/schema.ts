@@ -45,8 +45,9 @@ export default defineSchema({
   presetQuizzes: defineTable({
     name: v.string(),
     description: v.string(),
+    category: v.union(v.literal('trilha'), v.literal('simulado')),
     questions: v.array(v.id('questions')),
-    themeId: v.id('themes'),
+    themeId: v.optional(v.id('themes')),
     subthemeId: v.optional(v.id('subthemes')),
     groupId: v.optional(v.id('groups')),
     isPublic: v.boolean(),

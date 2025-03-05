@@ -8,6 +8,7 @@ export const create = mutation({
   args: {
     name: v.string(),
     description: v.string(),
+    category: v.union(v.literal('trilha'), v.literal('simulado')),
     questions: v.array(v.id('questions')),
     themeId: v.id('themes'),
     subthemeId: v.optional(v.id('subthemes')),
