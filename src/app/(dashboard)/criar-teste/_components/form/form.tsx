@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable unicorn/no-nested-ternary */
+
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery } from 'convex/react';
 import { ConvexError } from 'convex/values';
@@ -11,7 +13,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { Button } from '@/components/ui/button';
@@ -26,9 +28,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Slider } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 
 import { api } from '../../../../../../convex/_generated/api';
@@ -517,7 +517,7 @@ export default function TestForm() {
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Calculando...
                     </div>
-                  ) : (availableQuestionCount === undefined ? (
+                  ) : availableQuestionCount === undefined ? (
                     <p>
                       Selecione pelo menos um tema para ver quantas questões
                       estão disponíveis.
@@ -543,7 +543,7 @@ export default function TestForm() {
                         </span>
                       )}
                     </p>
-                  ))}
+                  )}
                 </div>
               </div>
             </div>

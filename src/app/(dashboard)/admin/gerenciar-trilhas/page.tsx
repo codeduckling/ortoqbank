@@ -153,10 +153,22 @@ export default function ManagePresetExams() {
   // Form submission handler
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      // Prepare data for API call
-      const quizData = {
-        ...values,
+      // Create properly typed object
+      const quizData: {
+        name: string;
+        description: string;
+        category: 'trilha' | 'simulado';
+        questions: Id<'questions'>[];
+        isPublic: boolean;
+        themeId?: Id<'themes'>;
+        subthemeId?: Id<'subthemes'>;
+        groupId?: Id<'groups'>;
+      } = {
+        name: values.name,
+        description: values.description,
+        category: values.category,
         questions: values.questions as Id<'questions'>[],
+        isPublic: values.isPublic,
       };
 
       // Only include theme-related fields if they have values
