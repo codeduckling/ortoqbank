@@ -446,38 +446,6 @@ export default function TestForm() {
             )}
           </div>
 
-          {/* Number of Questions */}
-          <div className="space-y-4">
-            <div className="flex flex-col gap-2">
-              <h3 className="text-sm font-medium">
-                Quantidade Máxima de Questões
-              </h3>
-              <div className="w-24">
-                <Input
-                  type="number"
-                  min={1}
-                  max={120}
-                  value={numQuestions}
-                  onChange={e => {
-                    const value = Number.parseInt(e.target.value);
-                    if (!Number.isNaN(value)) {
-                      setValue(
-                        'numQuestions',
-                        Math.min(Math.max(value, 1), 120),
-                        { shouldValidate: true },
-                      );
-                    }
-                  }}
-                />
-              </div>
-            </div>
-            {errors.numQuestions && (
-              <p className="text-destructive text-sm">
-                {errors.numQuestions.message}
-              </p>
-            )}
-          </div>
-
           {/* Themes */}
           <div className="space-y-2">
             <h3 className="text-sm font-medium">Temas</h3>
@@ -502,7 +470,7 @@ export default function TestForm() {
                       {theme.name}
                     </span>
                     {themeCount > 0 && (
-                      <span className="bg-secondary ml-1 rounded px-1.5 py-0.5 text-xs">
+                      <span className="bg-secondary ml-1 rounded px-1.5 py-0.5 text-xs text-black">
                         {themeCount}
                       </span>
                     )}
@@ -541,6 +509,38 @@ export default function TestForm() {
               {errors.selectedThemes.message}
             </p>
           )}
+
+          {/* Number of Questions */}
+          <div className="space-y-4">
+            <div className="flex flex-col gap-2">
+              <h3 className="text-sm font-medium">
+                Quantidade Máxima de Questões
+              </h3>
+              <div className="w-24">
+                <Input
+                  type="number"
+                  min={1}
+                  max={120}
+                  value={numQuestions}
+                  onChange={e => {
+                    const value = Number.parseInt(e.target.value);
+                    if (!Number.isNaN(value)) {
+                      setValue(
+                        'numQuestions',
+                        Math.min(Math.max(value, 1), 120),
+                        { shouldValidate: true },
+                      );
+                    }
+                  }}
+                />
+              </div>
+            </div>
+            {errors.numQuestions && (
+              <p className="text-destructive text-sm">
+                {errors.numQuestions.message}
+              </p>
+            )}
+          </div>
 
           {/* Available Questions Count Display */}
           <div className="rounded-md bg-blue-50 p-4 dark:bg-blue-900/20">
