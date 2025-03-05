@@ -24,9 +24,10 @@ export default function ProfilePage() {
   const hasThemeData = stats && stats.byTheme && stats.byTheme.length > 0;
 
   // Calculate completion percentage
-  const completionPercentage = isLoading
-    ? 0
-    : Math.round((stats.overall.totalAnswered / stats.totalQuestions) * 100);
+  const completionPercentage =
+    isLoading || stats.totalQuestions === 0
+      ? 0
+      : Math.round((stats.overall.totalAnswered / stats.totalQuestions) * 100);
 
   // Prepare data for the progress pie chart
   const progressData = isLoading
