@@ -79,9 +79,9 @@ export function ThemeBarChart({ themeStats = [] }: ThemeBarChartProps) {
                   fill={
                     entry.percentage > 70
                       ? '#1d4ed8' // Dark blue
-                      : entry.percentage > 40
+                      : (entry.percentage > 40
                         ? '#3b82f6' // Medium blue
-                        : '#93c5fd' // Light blue
+                        : '#93c5fd') // Light blue
                   }
                 />
               ))}

@@ -18,10 +18,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter,
 } from '@/components/ui/dialog';
 import {
   Form,
@@ -145,7 +145,7 @@ export default function ManagePresetExams() {
     setSelectedQuestions(newSelected);
 
     // Update form value
-    form.setValue('questions', Array.from(newSelected), {
+    form.setValue('questions', [...newSelected], {
       shouldValidate: true,
     });
   };
@@ -183,7 +183,7 @@ export default function ManagePresetExams() {
       setOpen(false);
       form.reset();
       setSelectedQuestions(new Set());
-    } catch (error) {
+    } catch {
       toast({
         title: 'Erro',
         description: 'Não foi possível criar o teste. Tente novamente.',

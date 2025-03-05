@@ -11,7 +11,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { Button } from '@/components/ui/button';
@@ -77,8 +77,8 @@ export default function TestForm() {
   });
   const [expandedSubthemes, setExpandedSubthemes] = useState<string[]>([]);
   const [availableQuestionCount, setAvailableQuestionCount] = useState<
-    number | null
-  >(null);
+    number | undefined
+  >();
   const [isCountLoading, setIsCountLoading] = useState(false);
 
   const createCustomQuiz = useMutation(api.customQuizzes.create);
@@ -119,7 +119,7 @@ export default function TestForm() {
 
   // Update available question count when Convex query result changes
   useEffect(() => {
-    setAvailableQuestionCount(countQuestions?.count || null);
+    setAvailableQuestionCount(countQuestions?.count);
     setIsCountLoading(countQuestions === undefined);
   }, [countQuestions]);
 
@@ -517,7 +517,12 @@ export default function TestForm() {
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Calculando...
                     </div>
-                  ) : availableQuestionCount !== null ? (
+                  ) : (availableQuestionCount === undefined ? (
+                    <p>
+                      Selecione pelo menos um tema para ver quantas questões
+                      estão disponíveis.
+                    </p>
+                  ) : (
                     <p>
                       Há{' '}
                       <span className="font-bold">
@@ -527,7 +532,7 @@ export default function TestForm() {
                         ? 'questão disponível'
                         : 'questões disponíveis'}{' '}
                       com os critérios selecionados.
-                      {numQuestions > availableQuestionCount && (
+                      {numQuestions > (availableQuestionCount || 0) && (
                         <span className="mt-1 block text-amber-600 dark:text-amber-400">
                           Nota: Você solicitou {numQuestions} questões, mas
                           apenas {availableQuestionCount}{' '}
@@ -538,12 +543,7 @@ export default function TestForm() {
                         </span>
                       )}
                     </p>
-                  ) : (
-                    <p>
-                      Selecione pelo menos um tema para ver quantas questões
-                      estão disponíveis.
-                    </p>
-                  )}
+                  ))}
                 </div>
               </div>
             </div>

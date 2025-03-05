@@ -3,8 +3,8 @@
 import { useUser } from '@clerk/nextjs';
 import { useMutation, useQuery } from 'convex/react';
 import { Book, BookOpen, CheckCircle, Clock, FileText } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 import {
   Accordion,
