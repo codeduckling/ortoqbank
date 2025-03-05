@@ -24,13 +24,14 @@ export default function ProfilePage() {
   const hasThemeData = stats && stats.byTheme && stats.byTheme.length > 0;
 
   // Calculate completion percentage
-  const completionPercentage = !isLoading
-    ? Math.round((stats.overall.totalAnswered / stats.totalQuestions) * 100)
-    : 0;
+  const completionPercentage = isLoading
+    ? 0
+    : Math.round((stats.overall.totalAnswered / stats.totalQuestions) * 100);
 
   // Prepare data for the progress pie chart
-  const progressData = !isLoading
-    ? [
+  const progressData = isLoading
+    ? []
+    : [
         {
           name: 'Respondidas',
           value: stats.overall.totalAnswered,
@@ -41,12 +42,12 @@ export default function ProfilePage() {
           value: stats.totalQuestions - stats.overall.totalAnswered,
           color: '#e5e7eb', // light gray
         },
-      ]
-    : [];
+      ];
 
   // Prepare data for the correctness pie chart
-  const correctnessData = !isLoading
-    ? [
+  const correctnessData = isLoading
+    ? []
+    : [
         {
           name: 'Corretas',
           value: stats.overall.totalCorrect,
@@ -57,8 +58,7 @@ export default function ProfilePage() {
           value: stats.overall.totalIncorrect,
           color: '#ef4444', // red
         },
-      ]
-    : [];
+      ];
 
   return (
     <div className="container mx-auto p-4">
