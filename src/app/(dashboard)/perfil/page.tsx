@@ -41,19 +41,19 @@ export default function ProfilePage() {
             title="Taxa de Acerto"
             value={`${stats.overall.correctPercentage}%`}
             description={`${stats.overall.totalCorrect} respostas corretas`}
-            color="green"
+            color="blue"
           />
           <StatCard
             title="Taxa de Erro"
             value={`${100 - stats.overall.correctPercentage}%`}
             description={`${stats.overall.totalIncorrect} respostas incorretas`}
-            color="red"
+            color="blue"
           />
           <StatCard
             title="Total de Temas"
             value={stats.byTheme.length}
             description="Temas estudados"
-            color="purple"
+            color="blue"
           />
         </div>
       )}
