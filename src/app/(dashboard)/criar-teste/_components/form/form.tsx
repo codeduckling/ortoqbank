@@ -145,6 +145,7 @@ export default function TestForm() {
   };
 
   const onSubmit = async (data: TestFormData) => {
+    console.log('data', data);
     try {
       setIsSubmitting(true);
       setSubmissionState('loading');

@@ -4,15 +4,31 @@ import { Doc, Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
 import { getCurrentUserOrThrow } from './users';
 
+// Type definitions
 type QuestionMode = 'all' | 'unanswered' | 'incorrect' | 'bookmarked';
 
-// Maximum number of questions allowed in a custom quiz
+// Constants
 const MAX_QUESTIONS = 120;
+const DEFAULT_LIMIT = 50;
+const MAX_BATCH_SIZE = 100;
+
+// Error messages - could be moved to a separate i18n module
+const ERROR_MESSAGES = {
+  NO_QUESTIONS_FOUND:
+    'Nenhuma questão encontrada com os critérios selecionados',
+  NOT_FOUND: 'Quiz não encontrado',
+  UNAUTHORIZED: 'Você não tem autorização para acessar este quiz',
+  UNAUTHORIZED_DELETE: 'Você não tem autorização para excluir este quiz',
+  UNAUTHORIZED_UPDATE: 'Você não tem autorização para atualizar este quiz',
+};
 
 /**
  * Randomly shuffle an array using Fisher-Yates algorithm
  */
 function shuffleArray<T>(array: T[]): T[] {
+  // Defensive programming - handle empty arrays
+  if (array.length === 0) return [];
+
   const shuffled = [...array];
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -21,10 +37,13 @@ function shuffleArray<T>(array: T[]): T[] {
   return shuffled;
 }
 
+/**
+ * Create a custom quiz based on user criteria
+ */
 export const create = mutation({
   args: {
-    name: v.string(),
-    description: v.string(),
+    name: v.optional(v.string()), // Changed to optional to match implementation
+    description: v.optional(v.string()), // Changed to optional to match implementation
     testMode: v.union(v.literal('study'), v.literal('exam')),
     questionMode: v.union(
       v.literal('all'),
@@ -45,184 +64,128 @@ export const create = mutation({
       ? Math.min(args.numQuestions, MAX_QUESTIONS)
       : MAX_QUESTIONS;
 
-    // Process themes one at a time to avoid large scans
-    const allQuestions: Doc<'questions'>[] = [];
+    // Step 1: Efficiently build a base query with filters for themes, subthemes, and groups
+    let query = ctx.db.query('questions');
 
-    // Define a helper function to check if a question matches subtheme and group filters
-    const matchesFilters = (question: Doc<'questions'>) => {
-      // Check subtheme filter
-      if (
-        args.selectedSubthemes &&
-        args.selectedSubthemes.length > 0 &&
-        (!question.subthemeId ||
-          !args.selectedSubthemes.includes(question.subthemeId))
-      ) {
-        return false;
-      }
-
-      // Check group filter
-      if (
-        args.selectedGroups &&
-        args.selectedGroups.length > 0 &&
-        (!question.groupId || !args.selectedGroups.includes(question.groupId))
-      ) {
-        return false;
-      }
-
-      return true;
-    };
-
-    // If no themes are selected, get all available themes
-    let themesToProcess: Id<'themes'>[] = [];
-
-    if (!args.selectedThemes || args.selectedThemes.length === 0) {
-      // Fetch all themes from the database
-      const allThemes = await ctx.db.query('themes').collect();
-      themesToProcess = allThemes.map(theme => theme._id);
-    } else {
-      themesToProcess = args.selectedThemes;
-    }
-
-    // Process each theme
-    for (const themeId of themesToProcess) {
-      // Use take() to avoid full table scans if there are too many questions
-      // We'll collect more than MAX_QUESTIONS initially to ensure we have enough after filtering
-      const maxInitialQuestions = MAX_QUESTIONS * 3;
-
-      // Filter by theme ID - using regular query since withIndex for 'by_theme' isn't available
-      const themeQuestions = await ctx.db
-        .query('questions')
-        .filter(q => q.eq(q.field('themeId'), themeId))
-        .take(maxInitialQuestions);
-
-      // Apply additional filters to the fetched questions
-      const filteredThemeQuestions = themeQuestions.filter(matchesFilters);
-
-      allQuestions.push(...filteredThemeQuestions);
-
-      // If we already have enough questions across all themes, stop querying
-      if (allQuestions.length >= MAX_QUESTIONS * 2) {
-        break;
-      }
-    }
-
-    // If there are no questions matching the criteria, throw an error
-    if (allQuestions.length === 0) {
-      throw new ConvexError(
-        'Nenhuma questão encontrada com os critérios selecionados',
+    // Apply theme filter if provided
+    if (args.selectedThemes && args.selectedThemes.length > 0) {
+      query = query.filter(q =>
+        q.or(
+          ...args.selectedThemes!.map(themeId =>
+            q.eq(q.field('themeId'), themeId),
+          ),
+        ),
       );
     }
 
-    // Apply different filters based on question mode
-    const filteredQuestionIds: Id<'questions'>[] = [];
+    // Apply subtheme filter if provided
+    if (args.selectedSubthemes && args.selectedSubthemes.length > 0) {
+      query = query.filter(q =>
+        q.or(
+          ...args.selectedSubthemes!.map(subthemeId =>
+            q.eq(q.field('subthemeId'), subthemeId),
+          ),
+        ),
+      );
+    }
 
-    // Process the single mode
-    let modeQuestions: Id<'questions'>[] = [];
+    // Apply group filter if provided
+    if (args.selectedGroups && args.selectedGroups.length > 0) {
+      query = query.filter(q =>
+        q.or(
+          ...args.selectedGroups!.map(groupId =>
+            q.eq(q.field('groupId'), groupId),
+          ),
+        ),
+      );
+    }
+
+    // Collect the filtered questions
+    const filteredQuestions = await query.collect();
+
+    if (filteredQuestions.length === 0) {
+      throw new ConvexError(ERROR_MESSAGES.NO_QUESTIONS_FOUND);
+    }
+
+    // Step 2: Apply question mode filter
+    let modeFilteredQuestionIds: Id<'questions'>[] = [];
 
     switch (args.questionMode) {
       case 'all': {
-        // Include all questions matching theme/subtheme/group criteria
-        modeQuestions = allQuestions.map(q => q._id);
+        // Keep all questions that matched the theme/subtheme/group filters
+        modeFilteredQuestionIds = filteredQuestions.map(q => q._id);
         break;
       }
 
       case 'bookmarked': {
-        // Get bookmarked questions - use the by_user index to limit scanning
+        // Get bookmarked questions using index
         const bookmarks = await ctx.db
           .query('userBookmarks')
           .withIndex('by_user', q => q.eq('userId', userId._id))
           .collect();
 
-        // Create a Set for faster lookups
+        // Create a Set of bookmarked question IDs for fast lookups
         const bookmarkedIds = new Set(bookmarks.map(b => b.questionId));
 
-        // Filter questions to only include those that are bookmarked
-        modeQuestions = allQuestions
+        // Filter to only include questions that are both in filtered list and bookmarked
+        modeFilteredQuestionIds = filteredQuestions
           .filter(q => bookmarkedIds.has(q._id))
           .map(q => q._id);
         break;
       }
 
-      case 'incorrect':
-      case 'unanswered': {
-        // Create a map to track question status
-        const answeredQuestions = new Map<Id<'questions'>, boolean>();
-
-        // First get the IDs of all questions we're interested in
-        const questionIdsSet = new Set(allQuestions.map(q => q._id));
-        const questionIds = [...questionIdsSet];
-
-        // Only query completed sessions - use take instead of pagination to avoid cursor issues
-        const completedSessions = await ctx.db
-          .query('quizSessions')
-          .withIndex('by_user_quiz', q => q.eq('userId', userId._id))
-          .filter(q => q.eq(q.field('isComplete'), true))
-          .take(100); // Limit to most recent 100 sessions for performance
-
-        // Process each session
-        for (const session of completedSessions) {
-          // Get the quiz to access questions
-          const quiz = await ctx.db.get(session.quizId);
-          if (!quiz || !quiz.questions) continue;
-
-          // Only process questions that are in our filtered set
-          const relevantQuestions = quiz.questions.filter(qId =>
-            questionIdsSet.has(qId),
-          );
-
-          // Process each relevant question in this quiz
-          for (const questionId of relevantQuestions) {
-            const questionIndex = quiz.questions.indexOf(questionId);
-
-            // Skip if the question wasn't found in the quiz
-            if (questionIndex === -1) continue;
-
-            const wasAnswered = questionIndex < session.answers.length;
-
-            // For incorrectly answered questions
-            if (wasAnswered && session.answerFeedback[questionIndex]) {
-              const wasCorrect =
-                session.answerFeedback[questionIndex].isCorrect;
-              // If this is the first time seeing this question or we're updating from correct to incorrect
-              if (
-                !answeredQuestions.has(questionId) ||
-                (answeredQuestions.get(questionId) && !wasCorrect)
-              ) {
-                answeredQuestions.set(questionId, wasCorrect);
-              }
-            } else if (wasAnswered) {
-              // Question was answered but no feedback available (shouldn't happen)
-              answeredQuestions.set(questionId, true);
-            } else if (!answeredQuestions.has(questionId)) {
-              // Question wasn't answered in this session and no previous record
-              answeredQuestions.set(questionId, false);
-            }
-          }
-        }
-
-        // Use ternary instead of if/else for better code style
-        modeQuestions = allQuestions
-          .filter(q =>
-            args.questionMode === 'incorrect'
-              ? answeredQuestions.has(q._id) && !answeredQuestions.get(q._id)
-              : !answeredQuestions.has(q._id),
+      case 'incorrect': {
+        // Get incorrectly answered questions using index
+        const incorrectStats = await ctx.db
+          .query('userQuestionStats')
+          .withIndex('by_user_incorrect', q =>
+            q.eq('userId', userId._id).eq('isIncorrect', true),
           )
+          .collect();
+
+        // Create a Set of incorrectly answered question IDs for fast lookups
+        const incorrectIds = new Set(
+          incorrectStats.map(stat => stat.questionId),
+        );
+
+        // Filter to only include questions that are both in filtered list and incorrectly answered
+        modeFilteredQuestionIds = filteredQuestions
+          .filter(q => incorrectIds.has(q._id))
           .map(q => q._id);
         break;
       }
-      // No default
+
+      case 'unanswered': {
+        // Get all answered questions using index
+        const answeredStats = await ctx.db
+          .query('userQuestionStats')
+          .withIndex('by_user_answered', q =>
+            q.eq('userId', userId._id).eq('hasAnswered', true),
+          )
+          .collect();
+
+        // Create a Set of answered question IDs for fast lookups
+        const answeredIds = new Set(answeredStats.map(stat => stat.questionId));
+
+        // Filter to only include questions that are in filtered list but not answered
+        modeFilteredQuestionIds = filteredQuestions
+          .filter(q => !answeredIds.has(q._id))
+          .map(q => q._id);
+        break;
+      }
     }
 
-    // Add questions from this mode to the filtered list
-    filteredQuestionIds.push(...modeQuestions);
+    // If there are no questions after applying mode filter, throw an error
+    if (modeFilteredQuestionIds.length === 0) {
+      throw new ConvexError(
+        `Nenhuma questão ${getQuestionModeLabel(args.questionMode)} encontrada com os critérios selecionados`,
+      );
+    }
 
-    // Remove duplicates
-    let uniqueQuestionIds = [...new Set(filteredQuestionIds)];
-
-    // If we have more than the requested number of questions, randomly select the desired amount
-    if (uniqueQuestionIds.length > requestedQuestions) {
-      // Randomly shuffle the array and take the first requestedQuestions elements
-      uniqueQuestionIds = shuffleArray(uniqueQuestionIds).slice(
+    // Step 3: Randomly select questions up to the requested number
+    let selectedQuestionIds = modeFilteredQuestionIds;
+    if (selectedQuestionIds.length > requestedQuestions) {
+      selectedQuestionIds = shuffleArray(selectedQuestionIds).slice(
         0,
         requestedQuestions,
       );
@@ -233,16 +196,17 @@ export const create = mutation({
       args.name || `Custom Quiz - ${new Date().toLocaleDateString()}`;
     const quizDescription =
       args.description ||
-      `Custom quiz with ${uniqueQuestionIds.length} questions`;
+      `Custom quiz with ${selectedQuestionIds.length} questions`;
 
-    // Create the custom quiz with a single mode
+    // Create the custom quiz and session in a series of operations
+    // Using ctx.db for atomic operations
     const quizId = await ctx.db.insert('customQuizzes', {
       name: quizName,
       description: quizDescription,
-      questions: uniqueQuestionIds,
+      questions: selectedQuestionIds,
       authorId: userId._id,
       testMode: args.testMode,
-      questionMode: args.questionMode, // Store a single mode instead of array
+      questionMode: args.questionMode,
       selectedThemes: args.selectedThemes,
       selectedSubthemes: args.selectedSubthemes,
       selectedGroups: args.selectedGroups,
@@ -259,32 +223,78 @@ export const create = mutation({
       isComplete: false,
     });
 
-    return { quizId, questionCount: uniqueQuestionIds.length };
+    return { quizId, questionCount: selectedQuestionIds.length };
   },
 });
 
+/**
+ * Helper function to get a human-readable label for question modes
+ */
+function getQuestionModeLabel(mode: string): string {
+  switch (mode) {
+    case 'all': {
+      return 'disponível';
+    }
+    case 'unanswered': {
+      return 'não respondida';
+    }
+    case 'incorrect': {
+      return 'incorreta';
+    }
+    case 'bookmarked': {
+      return 'marcada';
+    }
+    default: {
+      return '';
+    }
+  }
+}
+
+/**
+ * Get all custom quizzes created by the current user
+ * With proper pagination support
+ */
 export const getCustomQuizzes = query({
   args: {
     limit: v.optional(v.number()),
+    cursor: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const userId = await getCurrentUserOrThrow(ctx);
 
-    // Use an index on authorId if available or limit the number of results
-    // to avoid a full table scan
-    const limit = args.limit || 50; // Default to 50 if not specified
+    // Use an index on authorId with proper pagination
+    const limit = args.limit || DEFAULT_LIMIT;
 
-    // Get custom quizzes created by this user with pagination
-    const quizzes = await ctx.db
+    // Create the base query
+    const baseQuery = ctx.db
       .query('customQuizzes')
       .filter(q => q.eq(q.field('authorId'), userId._id))
-      .order('desc') // Most recent first
-      .take(limit);
+      .order('desc'); // Most recent first
 
-    return quizzes;
+    // Get results with pagination using cursor if provided
+    let paginationOpts: { numItems: number; cursor?: string } = {
+      numItems: limit,
+    };
+    if (args.cursor) {
+      paginationOpts.cursor = args.cursor;
+    }
+
+    const paginationResult = await baseQuery.paginate(paginationOpts);
+
+    // Return with pagination metadata
+    return {
+      quizzes: paginationResult.page,
+      pagination: {
+        hasMore: paginationResult.isDone === false,
+        cursor: paginationResult.continueCursor,
+      },
+    };
   },
 });
 
+/**
+ * Delete a custom quiz and associated sessions
+ */
 export const deleteCustomQuiz = mutation({
   args: {
     quizId: v.id('customQuizzes'),
@@ -295,11 +305,11 @@ export const deleteCustomQuiz = mutation({
     const quiz = await ctx.db.get(args.quizId);
 
     if (!quiz) {
-      throw new Error('Quiz not found');
+      throw new ConvexError(ERROR_MESSAGES.NOT_FOUND);
     }
 
     if (quiz.authorId !== userId._id) {
-      throw new Error('You are not authorized to delete this quiz');
+      throw new ConvexError(ERROR_MESSAGES.UNAUTHORIZED_DELETE);
     }
 
     // Delete any active sessions for this quiz - using proper index
@@ -321,6 +331,10 @@ export const deleteCustomQuiz = mutation({
   },
 });
 
+/**
+ * Get a custom quiz by ID with all associated question data
+ * Efficiently fetches questions in batches
+ */
 export const getById = query({
   args: { id: v.id('customQuizzes') },
   handler: async (ctx, { id }) => {
@@ -328,18 +342,26 @@ export const getById = query({
     const quiz = await ctx.db.get(id);
 
     if (!quiz) {
-      throw new Error('Quiz not found');
+      throw new ConvexError(ERROR_MESSAGES.NOT_FOUND);
     }
 
     // Verify that the user has access to this quiz
     if (quiz.authorId !== userId._id) {
-      throw new Error('Not authorized to access this quiz');
+      throw new ConvexError(ERROR_MESSAGES.UNAUTHORIZED);
     }
 
-    // Fetch all questions data
-    const questions = await Promise.all(
-      quiz.questions.map(questionId => ctx.db.get(questionId)),
-    );
+    // Fetch questions in batches to improve performance
+    const questions: (Doc<'questions'> | null)[] = [];
+    const questionIds = quiz.questions || [];
+
+    // Process in batches of MAX_BATCH_SIZE
+    for (let i = 0; i < questionIds.length; i += MAX_BATCH_SIZE) {
+      const batch = questionIds.slice(i, i + MAX_BATCH_SIZE);
+      const batchResults = await Promise.all(
+        batch.map(questionId => ctx.db.get(questionId)),
+      );
+      questions.push(...batchResults);
+    }
 
     return {
       ...quiz,
@@ -348,6 +370,9 @@ export const getById = query({
   },
 });
 
+/**
+ * Update a custom quiz's name
+ */
 export const updateName = mutation({
   args: {
     id: v.id('customQuizzes'),
@@ -359,12 +384,12 @@ export const updateName = mutation({
     const quiz = await ctx.db.get(args.id);
 
     if (!quiz) {
-      throw new Error('Quiz not found');
+      throw new ConvexError(ERROR_MESSAGES.NOT_FOUND);
     }
 
     // Verify that the user has access to this quiz
     if (quiz.authorId !== userId._id) {
-      throw new Error('Not authorized to update this quiz');
+      throw new ConvexError(ERROR_MESSAGES.UNAUTHORIZED_UPDATE);
     }
 
     // Update the name
