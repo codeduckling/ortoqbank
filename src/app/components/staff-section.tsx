@@ -3,30 +3,39 @@ import Image from 'next/image';
 interface StaffMember {
   name: string;
   role: string;
-  description: string;
+  description: string[];
   imageUrl: string;
 }
 
 const staffMembers: StaffMember[] = [
   {
-    name: 'Dra. Ana Silva',
-    role: 'Ortopedista Sênior',
-    description:
-      'Especialista em cirurgia de joelho e quadril com mais de 15 anos de experiência.',
+    name: 'Daniel Duarte Perini',
+    role: 'Cirurgia da Coluna Vertebral',
+    description: [
+      'Médico graduado pela Faculdade de Medicina da USP (FMUSP)',
+      'Ortopedista pelo Instituto de Ortopedia e Traumatologia do HC-FMUSP (IOT)',
+      'Fellowship Cirurgia da Coluna Vertebral (IOT)',
+    ],
     imageUrl: '/doc1.webp',
   },
   {
-    name: 'Dr. Carlos Oliveira',
-    role: 'Especialista em Trauma',
-    description:
-      'Focado em tratamentos inovadores para lesões esportivas e recuperação rápida.',
+    name: 'Vitor Ricardo Moraes',
+    role: 'Cirurgia do Joelho',
+    description: [
+      'Médico graduado pela Faculdade de Medicina de Ribeirão Preto da USP (FMRP-USP)',
+      'Ortopedista pelo Instituto de Ortopedia e Traumatologia do HC-FMUSP (IOT)',
+      'Fellowship Cirurgia do Joelho (IOT)',
+    ],
     imageUrl: '/doc2.webp',
   },
   {
-    name: 'Dr. João Oliveira',
-    role: 'Pesquisador',
-    description:
-      'Lidera pesquisas em regeneração óssea e desenvolve novos protocolos de tratamento.',
+    name: 'Flavio de Fava Sanches',
+    role: 'Cirurgia do Joelho',
+    description: [
+      'Médico graduado pela PUC-SP',
+      'Ortopedista pelo Instituto de Ortopedia e Traumatologia do HC-FMUSP (IOT)',
+      'Fellowship Cirurgia do Joelho (IOT)',
+    ],
     imageUrl: '/doc3.webp',
   },
 ];
@@ -42,9 +51,9 @@ export default function StaffSection() {
           {staffMembers.map((member, index) => (
             <div
               key={index}
-              className="overflow-hidden rounded-lg border border-blue-200 bg-white shadow-lg"
+              className="mx-auto max-w-[320px] overflow-hidden rounded-lg border border-blue-200 bg-white shadow-lg md:max-w-full"
             >
-              <div className="relative h-[400px] w-full">
+              <div className="relative h-[180px] w-full md:h-[250px]">
                 <Image
                   src={member.imageUrl || '/placeholder.svg'}
                   alt={`Foto de ${member.name}`}
@@ -58,8 +67,14 @@ export default function StaffSection() {
                 <h3 className="mb-1 text-xl font-semibold text-[#2196F3]">
                   {member.name}
                 </h3>
-                <p className="mb-2 text-sm text-gray-500">{member.role}</p>
-                <p className="text-gray-700">{member.description}</p>
+                <p className="mb-2 text-sm font-medium text-gray-600">
+                  {member.role}
+                </p>
+                <ul className="list-disc space-y-1 pl-4 text-sm text-gray-600">
+                  {member.description.map((point, i) => (
+                    <li key={i}>{point}</li>
+                  ))}
+                </ul>
               </div>
             </div>
           ))}
