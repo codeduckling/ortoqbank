@@ -3,8 +3,8 @@ import { v } from 'convex/values';
 
 import { mutation, query } from './_generated/server';
 import {
-  _updateQuestionStatsOnInsert,
   _updateQuestionStatsOnDelete,
+  _updateQuestionStatsOnInsert,
 } from './questionStats';
 
 const validateNoBlobs = (content: any[]) => {
@@ -18,6 +18,7 @@ const validateNoBlobs = (content: any[]) => {
 export const create = mutation({
   args: {
     questionText: v.object({ type: v.string(), content: v.array(v.any()) }),
+    questionCode: v.optional(v.string()),
     title: v.string(),
     explanationText: v.object({ type: v.string(), content: v.array(v.any()) }),
     alternatives: v.array(v.string()),
@@ -263,51 +264,58 @@ export const countQuestionsByTheme = query({
 
         if (args.questionMode !== 'all') {
           // For 'bookmarked' mode
-          if (args.questionMode === 'bookmarked') {
-            const themeBookmarks = await ctx.db
-              .query('userBookmarks')
-              .withIndex('by_user', q => q.eq('userId', user._id))
-              .collect();
+          switch (args.questionMode) {
+            case 'bookmarked': {
+              const themeBookmarks = await ctx.db
+                .query('userBookmarks')
+                .withIndex('by_user', q => q.eq('userId', user._id))
+                .collect();
 
-            // Filter bookmarks by this theme's questions
-            const bookmarkedInTheme = themeBookmarks.filter(b =>
-              themeQuestionIds.has(b.questionId),
-            );
-            count = bookmarkedInTheme.length;
-          }
-          // For 'incorrect' mode
-          else if (args.questionMode === 'incorrect') {
-            const incorrectStats = await ctx.db
-              .query('userQuestionStats')
-              .withIndex('by_user_incorrect', q =>
-                q.eq('userId', user._id).eq('isIncorrect', true),
-              )
-              .collect();
+              // Filter bookmarks by this theme's questions
+              const bookmarkedInTheme = themeBookmarks.filter(b =>
+                themeQuestionIds.has(b.questionId),
+              );
+              count = bookmarkedInTheme.length;
 
-            // Filter by theme
-            const incorrectInTheme = incorrectStats.filter(stat =>
-              themeQuestionIds.has(stat.questionId),
-            );
-            count = incorrectInTheme.length;
-          }
-          // For 'unanswered' mode
-          else if (args.questionMode === 'unanswered') {
-            const answeredStats = await ctx.db
-              .query('userQuestionStats')
-              .withIndex('by_user_answered', q =>
-                q.eq('userId', user._id).eq('hasAnswered', true),
-              )
-              .collect();
+              break;
+            }
+            case 'incorrect': {
+              const incorrectStats = await ctx.db
+                .query('userQuestionStats')
+                .withIndex('by_user_incorrect', q =>
+                  q.eq('userId', user._id).eq('isIncorrect', true),
+                )
+                .collect();
 
-            // Get IDs of answered questions in this theme
-            const answeredQuestionIds = new Set(
-              answeredStats
-                .filter(stat => themeQuestionIds.has(stat.questionId))
-                .map(stat => stat.questionId),
-            );
+              // Filter by theme
+              const incorrectInTheme = incorrectStats.filter(stat =>
+                themeQuestionIds.has(stat.questionId),
+              );
+              count = incorrectInTheme.length;
 
-            // Count unanswered as total - answered
-            count = totalCount - answeredQuestionIds.size;
+              break;
+            }
+            case 'unanswered': {
+              const answeredStats = await ctx.db
+                .query('userQuestionStats')
+                .withIndex('by_user_answered', q =>
+                  q.eq('userId', user._id).eq('hasAnswered', true),
+                )
+                .collect();
+
+              // Get IDs of answered questions in this theme
+              const answeredQuestionIds = new Set(
+                answeredStats
+                  .filter(stat => themeQuestionIds.has(stat.questionId))
+                  .map(stat => stat.questionId),
+              );
+
+              // Count unanswered as total - answered
+              count = totalCount - answeredQuestionIds.size;
+
+              break;
+            }
+            // No default
           }
         }
 
@@ -397,9 +405,10 @@ export const countAvailableQuestionsEfficient = query({
 
     // Step 2: Apply question mode filter
     switch (args.questionMode) {
-      case 'all':
+      case 'all': {
         // Already filtered above
         break;
+      }
 
       case 'bookmarked': {
         // Get bookmarked questions

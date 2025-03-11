@@ -11,16 +11,21 @@ export default defineSchema({
     clerkUserId: v.string(),
   }).index('by_clerkUserId', ['clerkUserId']),
 
-  themes: defineTable({ name: v.string() }).index('by_name', ['name']),
+  themes: defineTable({
+    name: v.string(),
+    prefix: v.optional(v.string()),
+  }).index('by_name', ['name']),
 
-  subthemes: defineTable({ name: v.string(), themeId: v.id('themes') }).index(
-    'by_theme',
-    ['themeId'],
-  ),
+  subthemes: defineTable({
+    name: v.string(),
+    themeId: v.id('themes'),
+    prefix: v.optional(v.string()),
+  }).index('by_theme', ['themeId']),
 
   groups: defineTable({
     name: v.string(),
     subthemeId: v.id('subthemes'),
+    prefix: v.optional(v.string()),
   }).index('by_subtheme', ['subthemeId']),
 
   // Tags table
@@ -29,6 +34,7 @@ export default defineSchema({
   questions: defineTable({
     title: v.string(),
     normalizedTitle: v.string(),
+    questionCode: v.optional(v.string()),
     questionText: v.object({ type: v.string(), content: v.array(v.any()) }),
     explanationText: v.object({ type: v.string(), content: v.array(v.any()) }),
     alternatives: v.array(v.string()),

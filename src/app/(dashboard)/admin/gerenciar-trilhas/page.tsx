@@ -11,6 +11,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -88,6 +89,8 @@ export default function ManagePresetExams() {
     | {
         id: string;
         name: string;
+        description: string;
+        category?: 'trilha' | 'simulado';
       }
     | undefined
   >();
@@ -127,12 +130,22 @@ export default function ManagePresetExams() {
   const watchedThemeId = form.watch('themeId');
 
   // Filter questions based on theme and search
-  const filteredQuestions = questions.filter(
-    question =>
-      (selectedThemeFilter === 'all' ||
-        question.themeId === selectedThemeFilter) &&
-      question.title.toLowerCase().includes(searchValue.toLowerCase()),
-  );
+  const filteredQuestions = questions.filter(question => {
+    // First filter by search text
+    const matchesSearch =
+      searchValue === '' ||
+      question.title.toLowerCase().includes(searchValue.toLowerCase()) ||
+      question.questionCode
+        ?.toLowerCase()
+        .includes(searchValue.toLowerCase()) ||
+      false;
+
+    // Then filter by selected theme
+    const matchesTheme =
+      selectedThemeFilter === 'all' || question.themeId === selectedThemeFilter;
+
+    return matchesSearch && matchesTheme;
+  });
 
   // Handle question selection toggle
   const handleToggleQuestion = (questionId: string) => {
@@ -403,7 +416,7 @@ export default function ManagePresetExams() {
                           <Input
                             id="searchQuestions"
                             type="text"
-                            placeholder="Buscar por título..."
+                            placeholder="Buscar por código ou título..."
                             value={searchValue}
                             onChange={e => setSearchValue(e.target.value)}
                           />
@@ -431,8 +444,16 @@ export default function ManagePresetExams() {
                                     handleToggleQuestion(question._id)
                                   }
                                 />
-                                <Label htmlFor={question._id}>
-                                  {question.title}
+                                <Label
+                                  htmlFor={question._id}
+                                  className="flex flex-col"
+                                >
+                                  <span className="text-sm font-medium">
+                                    {question.questionCode || 'Sem código'}
+                                  </span>
+                                  <span className="text-muted-foreground text-xs">
+                                    {question.title}
+                                  </span>
                                 </Label>
                               </div>
                             ))
@@ -457,56 +478,65 @@ export default function ManagePresetExams() {
             </Dialog>
           </div>
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Descrição</TableHead>
-                <TableHead>Categoria</TableHead>
-                <TableHead>Questões</TableHead>
-                <TableHead>Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {presetQuizzes.map(quiz => (
-                <TableRow key={quiz._id}>
-                  <TableCell>{quiz.name}</TableCell>
-                  <TableCell>{quiz.description}</TableCell>
-                  <TableCell>
-                    {quiz.category === 'trilha' ? 'Trilha' : 'Simulado'}
-                  </TableCell>
-                  <TableCell>{quiz.questions.length} questões</TableCell>
-                  <TableCell>
-                    <Button
-                      variant="outline"
-                      onClick={() =>
-                        setEditingExam({ id: quiz._id, name: quiz.name })
-                      }
-                    >
-                      Editar
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <div className="grid gap-4">
+            {presetQuizzes.map(quiz => (
+              <Card key={quiz._id}>
+                <CardHeader>
+                  <CardTitle>{quiz.name}</CardTitle>
+                  <CardDescription>{quiz.description}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nome</TableHead>
+                        <TableHead>Descrição</TableHead>
+                        <TableHead>Categoria</TableHead>
+                        <TableHead>Questões</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      <TableRow>
+                        <TableCell>{quiz.name}</TableCell>
+                        <TableCell>{quiz.description}</TableCell>
+                        <TableCell>
+                          {quiz.category === 'trilha' ? 'Trilha' : 'Simulado'}
+                        </TableCell>
+                        <TableCell>{quiz.questions.length} questões</TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </CardContent>
+                <CardFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      setEditingExam({
+                        id: quiz._id,
+                        name: quiz.name,
+                        description: quiz.description,
+                        category: quiz.category,
+                      })
+                    }
+                  >
+                    Editar
+                  </Button>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
         </CardContent>
       </Card>
 
       {editingExam && (
         <EditExamDialog
           open={!!editingExam}
-          onOpenChange={() => setEditingExam(undefined)}
+          onOpenChange={open => !open && setEditingExam(undefined)}
           quiz={{
             id: editingExam.id,
-            name:
-              presetQuizzes.find(quiz => quiz._id === editingExam.id)?.name ??
-              '',
-            description:
-              presetQuizzes.find(quiz => quiz._id === editingExam.id)
-                ?.description ?? '',
-            category: presetQuizzes.find(quiz => quiz._id === editingExam.id)
-              ?.category,
+            name: editingExam.name,
+            description: editingExam.description,
+            category: editingExam.category,
           }}
           questions={questions}
           presetQuizzes={presetQuizzes}

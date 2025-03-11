@@ -22,6 +22,7 @@ import type * as tags from "../tags.js";
 import type * as themes from "../themes.js";
 import type * as users from "../users.js";
 import type * as userStats from "../userStats.js";
+import type * as utils from "../utils.js";
 
 import type {
   ApiFromModules,
@@ -51,6 +52,7 @@ declare const fullApi: ApiFromModules<{
   themes: typeof themes;
   users: typeof users;
   userStats: typeof userStats;
+  utils: typeof utils;
 }>;
 declare const fullApiWithMounts: typeof fullApi;
 

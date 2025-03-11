@@ -10,6 +10,9 @@ interface ThemeState {
   newTheme: string;
   newSubtheme: string;
   newGroup: string;
+  newThemePrefix: string;
+  newSubthemePrefix: string;
+  newGroupPrefix: string;
 
   // Selection actions
   setSelectedTheme: (themeId: string | undefined) => void;
@@ -20,6 +23,9 @@ interface ThemeState {
   setNewTheme: (name: string) => void;
   setNewSubtheme: (name: string) => void;
   setNewGroup: (name: string) => void;
+  setNewThemePrefix: (prefix: string) => void;
+  setNewSubthemePrefix: (prefix: string) => void;
+  setNewGroupPrefix: (prefix: string) => void;
   clearNewTheme: () => void;
   clearNewSubtheme: () => void;
   clearNewGroup: () => void;
@@ -37,6 +43,9 @@ export const useThemeStore = create<ThemeState>(set => ({
   newTheme: '',
   newSubtheme: '',
   newGroup: '',
+  newThemePrefix: '',
+  newSubthemePrefix: '',
+  newGroupPrefix: '',
 
   // Selection actions
   setSelectedTheme: themeId =>
@@ -61,10 +70,13 @@ export const useThemeStore = create<ThemeState>(set => ({
   setNewTheme: name => set({ newTheme: name }),
   setNewSubtheme: name => set({ newSubtheme: name }),
   setNewGroup: name => set({ newGroup: name }),
+  setNewThemePrefix: prefix => set({ newThemePrefix: prefix }),
+  setNewSubthemePrefix: prefix => set({ newSubthemePrefix: prefix }),
+  setNewGroupPrefix: prefix => set({ newGroupPrefix: prefix }),
 
-  clearNewTheme: () => set({ newTheme: '' }),
-  clearNewSubtheme: () => set({ newSubtheme: '' }),
-  clearNewGroup: () => set({ newGroup: '' }),
+  clearNewTheme: () => set({ newTheme: '', newThemePrefix: '' }),
+  clearNewSubtheme: () => set({ newSubtheme: '', newSubthemePrefix: '' }),
+  clearNewGroup: () => set({ newGroup: '', newGroupPrefix: '' }),
 
   reset: () =>
     set({
@@ -74,5 +86,8 @@ export const useThemeStore = create<ThemeState>(set => ({
       newTheme: '',
       newSubtheme: '',
       newGroup: '',
+      newThemePrefix: '',
+      newSubthemePrefix: '',
+      newGroupPrefix: '',
     }),
 }));
