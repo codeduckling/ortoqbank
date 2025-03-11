@@ -1,6 +1,7 @@
 import { v } from 'convex/values';
 
 import { mutation, query } from './_generated/server';
+import { generateDefaultPrefix, normalizeText } from './utils';
 
 // Queries
 export const list = query({
@@ -34,8 +35,11 @@ export const getHierarchicalData = query({
 
 // Mutations
 export const create = mutation({
-  args: { name: v.string() },
-  handler: async (context, { name }) => {
+  args: {
+    name: v.string(),
+    prefix: v.optional(v.string()),
+  },
+  handler: async (context, { name, prefix }) => {
     // Check if theme with same name already exists
     const existing = await context.db
       .query('themes')
@@ -46,7 +50,16 @@ export const create = mutation({
       throw new Error(`Theme "${name}" already exists`);
     }
 
-    return await context.db.insert('themes', { name });
+    // Generate default prefix from name if not provided
+    let actualPrefix = prefix || generateDefaultPrefix(name, 3);
+
+    // Ensure the prefix is normalized (remove accents)
+    actualPrefix = normalizeText(actualPrefix).toUpperCase();
+
+    return await context.db.insert('themes', {
+      name,
+      prefix: actualPrefix,
+    });
   },
 });
 
@@ -54,8 +67,9 @@ export const update = mutation({
   args: {
     id: v.id('themes'),
     name: v.string(),
+    prefix: v.optional(v.string()),
   },
-  handler: async (context, { id, name }) => {
+  handler: async (context, { id, name, prefix }) => {
     // Check if theme exists
     const existing = await context.db.get(id);
     if (!existing) {
@@ -72,7 +86,14 @@ export const update = mutation({
       throw new Error(`Theme "${name}" already exists`);
     }
 
-    return await context.db.patch(id, { name });
+    // Normalize the prefix if one is provided
+    const updates: any = { name };
+    if (prefix !== undefined) {
+      updates.prefix = normalizeText(prefix).toUpperCase();
+    }
+
+    // Update theme
+    return await context.db.patch(id, updates);
   },
 });
 

@@ -2,6 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery } from 'convex/react';
+import { v } from 'convex/values';
 import { useEffect, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 
@@ -30,6 +31,7 @@ import { useToast } from '@/hooks/use-toast';
 
 import { api } from '../../../../../../convex/_generated/api';
 import { Id } from '../../../../../../convex/_generated/dataModel';
+import { normalizeText } from '../../../../../../convex/utils';
 import { QuestionOption } from './question-option';
 import { QuestionFormData, questionSchema } from './schema';
 
@@ -106,6 +108,85 @@ export function QuestionForm({
   // Add refs to store editor instances
   const [questionEditor, setQuestionEditor] = useState<any>();
   const [explanationEditor, setExplanationEditor] = useState<any>();
+  const [generatedId, setGeneratedId] = useState<string>('');
+
+  // Watch for changes in theme, subtheme, and group
+  const selectedThemeId = form.watch('themeId');
+  const selectedSubthemeId = form.watch('subthemeId');
+  const selectedGroupId = form.watch('groupId');
+
+  // Query to get theme question counts
+  const queryCountByTheme = useQuery(api.questions.countQuestionsByTheme, {
+    questionMode: 'all',
+  });
+
+  // Generate an ID when relevant fields change or data loads
+  useEffect(() => {
+    // Don't try to generate if theme not selected or data not loaded
+    if (!selectedThemeId || !themes) {
+      setGeneratedId('');
+      return;
+    }
+
+    const theme = themes.find(t => t._id === selectedThemeId);
+    if (!theme) {
+      setGeneratedId('');
+      return;
+    }
+
+    // Get theme prefix from the database or default to first 3 letters
+    // Ensure the prefix is normalized to prevent accents, spaces, dots, etc.
+    const themePrefix = theme.prefix
+      ? normalizeText(theme.prefix).toUpperCase()
+      : normalizeText(theme.name.slice(0, 3)).toUpperCase();
+
+    // Build parts of the ID
+    let codePrefix = themePrefix;
+
+    // Add subtheme prefix if selected
+    if (selectedSubthemeId && subthemes) {
+      const subtheme = subthemes.find(s => s._id === selectedSubthemeId);
+      if (subtheme?.prefix) {
+        // Ensure subtheme prefix is properly normalized
+        const normalizedSubthemePrefix = normalizeText(
+          subtheme.prefix,
+        ).toUpperCase();
+        codePrefix += `-${normalizedSubthemePrefix}`;
+      }
+    }
+
+    // Add group prefix if selected
+    if (selectedGroupId && groups) {
+      const group = groups.find(g => g._id === selectedGroupId);
+      if (group?.prefix) {
+        // Ensure group prefix is properly normalized
+        const normalizedGroupPrefix = normalizeText(group.prefix).toUpperCase();
+        codePrefix += `-${normalizedGroupPrefix}`;
+      }
+    }
+
+    // Get theme question counts from the query result
+    if (!queryCountByTheme) {
+      return; // Wait for query to load
+    }
+
+    const themeData = queryCountByTheme.find(
+      t => t.theme._id === selectedThemeId,
+    );
+
+    const count = (themeData?.count || 0) + 1;
+    const paddedCount = String(count).padStart(3, '0');
+
+    setGeneratedId(`${codePrefix}-${paddedCount}`);
+  }, [
+    selectedThemeId,
+    selectedSubthemeId,
+    selectedGroupId,
+    themes,
+    subthemes,
+    groups,
+    queryCountByTheme,
+  ]);
 
   const onSubmit = async (data: QuestionFormData) => {
     try {
@@ -136,26 +217,29 @@ export function QuestionForm({
         return await Promise.all(promises);
       };
 
-      // Process both text fields
-      const [updatedQuestionContent, updatedExplanationContent] =
-        await Promise.all([
-          processContent(data.questionText.content),
-          processContent(data.explanationText.content),
-        ]);
+      const processedQuestionText = {
+        type: 'doc',
+        content: await processContent(data.questionText.content),
+      };
 
-      const updatedData = {
+      const processedExplanationText = {
+        type: 'doc',
+        content: await processContent(data.explanationText.content),
+      };
+
+      // Include generated question code in submission
+      const submissionData = {
         ...data,
-        questionText: { ...data.questionText, content: updatedQuestionContent },
-        explanationText: {
-          ...data.explanationText,
-          content: updatedExplanationContent,
-        },
+        // Make one final pass with normalizeText to guarantee no special characters
+        questionCode: normalizeText(generatedId).toUpperCase(),
+        questionText: processedQuestionText,
+        explanationText: processedExplanationText,
       };
 
       // Check for any remaining blob URLs after processing
       if (
-        hasBlobUrls(updatedData.questionText.content) ||
-        hasBlobUrls(updatedData.explanationText.content)
+        hasBlobUrls(submissionData.questionText.content) ||
+        hasBlobUrls(submissionData.explanationText.content)
       ) {
         toast({
           title: 'Erro ao salvar questão',
@@ -166,7 +250,7 @@ export function QuestionForm({
       }
 
       const processedData = {
-        ...updatedData,
+        ...submissionData,
         themeId: selectedTheme!,
         subthemeId: selectedSubtheme,
         groupId: selectedSubtheme ? (data.groupId as Id<'groups'>) : undefined,
@@ -228,6 +312,26 @@ export function QuestionForm({
             </FormItem>
           )}
         />
+
+        {/* Display generated ID */}
+        <div className="flex flex-row items-center gap-4 py-2">
+          <div className="flex-1">
+            <div className="mb-1 text-sm font-medium">Código da Questão</div>
+            <div className="flex items-center gap-2">
+              <div
+                className={`rounded-md border px-3 py-1 ${generatedId ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20' : 'bg-muted'}`}
+              >
+                {generatedId || 'Selecione um tema para gerar o código'}
+              </div>
+              {generatedId && (
+                <div className="text-muted-foreground text-xs">
+                  Este código será salvo com a questão e ajudará na
+                  identificação
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
 
         <FormField
           control={form.control}

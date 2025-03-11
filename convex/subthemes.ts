@@ -2,6 +2,7 @@ import { v } from 'convex/values';
 
 import { Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
+import { generateDefaultPrefix, normalizeText } from './utils';
 
 // Queries
 export const list = query({
@@ -35,17 +36,25 @@ export const create = mutation({
   args: {
     name: v.string(),
     themeId: v.id('themes'),
+    prefix: v.optional(v.string()),
   },
-  handler: async (context, { name, themeId }) => {
+  handler: async (context, { name, themeId, prefix }) => {
     // Check if theme exists
     const theme = await context.db.get(themeId);
     if (!theme) {
       throw new Error('Theme not found');
     }
 
+    // Generate default prefix from name if not provided
+    let actualPrefix = prefix || generateDefaultPrefix(name, 2);
+
+    // Ensure the prefix is normalized (remove accents)
+    actualPrefix = normalizeText(actualPrefix).toUpperCase();
+
     return await context.db.insert('subthemes', {
       name,
       themeId,
+      prefix: actualPrefix,
     });
   },
 });
@@ -55,8 +64,9 @@ export const update = mutation({
     id: v.id('subthemes'),
     name: v.string(),
     themeId: v.id('themes'),
+    prefix: v.optional(v.string()),
   },
-  handler: async (context, { id, name, themeId }) => {
+  handler: async (context, { id, name, themeId, prefix }) => {
     // Check if subtheme exists
     const existing = await context.db.get(id);
     if (!existing) {
@@ -69,7 +79,13 @@ export const update = mutation({
       throw new Error('Theme not found');
     }
 
-    return await context.db.patch(id, { name, themeId });
+    // Normalize the prefix if one is provided
+    const updates: any = { name, themeId };
+    if (prefix !== undefined) {
+      updates.prefix = normalizeText(prefix).toUpperCase();
+    }
+
+    return await context.db.patch(id, updates);
   },
 });
 

@@ -4,6 +4,7 @@ import { Id } from '../../../../../../convex/_generated/dataModel';
 
 export const questionSchema = z.object({
   title: z.string().min(1, 'O título é obrigatório'),
+  questionCode: z.string().optional(),
   questionText: z.any(),
   alternatives: z
     .array(z.string())
