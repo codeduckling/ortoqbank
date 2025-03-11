@@ -35,7 +35,12 @@ interface EditQuizDialogProps {
     description: string;
     category?: 'trilha' | 'simulado';
   };
-  questions: Array<{ _id: Id<'questions'>; title: string; themeId: string }>;
+  questions: Array<{
+    _id: Id<'questions'>;
+    title: string;
+    themeId: string;
+    questionCode?: string;
+  }>;
   presetQuizzes: Array<{
     _id: Id<'presetQuizzes'>;
     name: string;
@@ -125,8 +130,13 @@ export function EditExamDialog({
     }
   };
 
-  const filteredQuestions = questions.filter(question =>
-    question.title.toLowerCase().includes(searchValue.toLowerCase()),
+  const filteredQuestions = questions.filter(
+    question =>
+      question.title.toLowerCase().includes(searchValue.toLowerCase()) ||
+      question.questionCode
+        ?.toLowerCase()
+        .includes(searchValue.toLowerCase()) ||
+      false,
   );
 
   return (
@@ -171,7 +181,7 @@ export function EditExamDialog({
           </div>
           <Input
             type="text"
-            placeholder="Buscar questões..."
+            placeholder="Buscar questões por código ou título..."
             value={searchValue}
             onChange={event => setSearchValue(event.target.value)}
           />
@@ -186,7 +196,14 @@ export function EditExamDialog({
                   checked={selectedQuestions.has(question._id)}
                   onCheckedChange={() => handleToggleQuestion(question._id)}
                 />
-                <Label htmlFor={question._id}>{question.title}</Label>
+                <Label htmlFor={question._id} className="flex flex-col">
+                  <span className="text-sm font-medium">
+                    {question.questionCode || 'Sem código'}
+                  </span>
+                  <span className="text-muted-foreground text-xs">
+                    {question.title}
+                  </span>
+                </Label>
               </div>
             ))}
           </ScrollArea>
