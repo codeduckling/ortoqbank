@@ -1,7 +1,9 @@
+import { v } from 'convex/values';
 import { convexTest } from 'convex-test';
 import { describe, expect, test } from 'vitest';
 
 import { api } from './_generated/api';
+import { Doc, Id } from './_generated/dataModel';
 import schema from './schema';
 
 describe('Subthemes', () => {
@@ -28,7 +30,7 @@ describe('Subthemes', () => {
 
       // Find our subtheme
       const testSubtheme = hierarchicalData.subthemes.find(
-        s => s._id === subthemeId,
+        (s: Doc<'subthemes'>) => s._id === subthemeId,
       );
       expect(testSubtheme).toMatchObject({
         name: 'Test Subtheme',
@@ -63,7 +65,7 @@ describe('Subthemes', () => {
         {},
       );
       const updatedSubtheme = hierarchicalData.subthemes.find(
-        s => s._id === subthemeId,
+        (s: Doc<'subthemes'>) => s._id === subthemeId,
       );
       expect(updatedSubtheme).toMatchObject({
         name: 'Updated Subtheme',
@@ -94,7 +96,7 @@ describe('Subthemes', () => {
         {},
       );
       const deletedSubtheme = hierarchicalData.subthemes.find(
-        s => s._id === subthemeId,
+        (s: Doc<'subthemes'>) => s._id === subthemeId,
       );
       expect(deletedSubtheme).toBeUndefined();
     });
@@ -126,9 +128,11 @@ describe('Subthemes', () => {
         {},
       );
 
-      const theme = hierarchicalData.themes.find(t => t._id === themeId);
+      const theme = hierarchicalData.themes.find(
+        (t: Doc<'themes'>) => t._id === themeId,
+      );
       const subthemes = hierarchicalData.subthemes.filter(
-        s => s.themeId === themeId,
+        (s: Doc<'subthemes'>) => s.themeId === themeId,
       );
 
       expect(theme).toMatchObject({

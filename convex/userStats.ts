@@ -1,15 +1,34 @@
 import { v } from 'convex/values';
-import { query, internalMutation } from './_generated/server';
 
+import { api } from './_generated/api';
+import { Doc, Id } from './_generated/dataModel';
+import { internalMutation, query } from './_generated/server';
 import { getCurrentUserOrThrow } from './users';
-import { getTotalQuestionCount } from './questionStats';
+
+type UserStats = {
+  overall: {
+    totalAnswered: number;
+    totalCorrect: number;
+    totalIncorrect: number;
+    totalBookmarked: number;
+    correctPercentage: number;
+  };
+  byTheme: {
+    themeId: Id<'themes'>;
+    themeName: string;
+    total: number;
+    correct: number;
+    percentage: number;
+  }[];
+  totalQuestions: number;
+};
 
 /**
  * Get user statistics from the persistent userQuestionStats table
  */
 export const getUserStatsFromTable = query({
   args: {},
-  handler: async ctx => {
+  handler: async (ctx): Promise<UserStats> => {
     const userId = await getCurrentUserOrThrow(ctx);
 
     // Get all user question stats
@@ -32,15 +51,17 @@ export const getUserStatsFromTable = query({
     const totalCorrect = totalAnswered - totalIncorrect;
     const totalBookmarked = bookmarks.length;
 
-    // Get total questions count
-    // This efficiently retrieves the count of all questions in the database
-    const totalQuestions = await getTotalQuestionCount(ctx, {});
+    // Get total questions count using aggregate
+    const totalQuestions = await ctx.runQuery(
+      api.questionStats.getTotalQuestionCount,
+      {},
+    );
 
     // Get theme data
     const questionsWithThemes = await Promise.all(
       questionStats.map(async stat => {
         const question = await ctx.db.get(stat.questionId);
-        if (!question) return null;
+        if (!question) return;
 
         return {
           questionId: stat.questionId,
@@ -50,29 +71,25 @@ export const getUserStatsFromTable = query({
       }),
     );
 
-    // Filter out nulls (deleted questions)
+    // Filter out undefined (deleted questions)
     const validQuestionsWithThemes = questionsWithThemes.filter(
-      q => q !== null,
+      (q): q is NonNullable<typeof q> => q !== undefined,
     );
 
     // Calculate stats by theme
     const themeStatsMap = new Map<
-      string,
+      Id<'themes'>,
       { total: number; correct: number; themeName: string }
     >();
 
     // Process each question
     for (const question of validQuestionsWithThemes) {
-      if (!question) continue;
-
-      // Get theme info
       const theme = await ctx.db.get(question.themeId);
       if (!theme) continue;
 
       const themeId = question.themeId;
       const themeName = theme.name;
 
-      // Update theme stats
       if (!themeStatsMap.has(themeId)) {
         themeStatsMap.set(themeId, {
           total: 0,
@@ -90,7 +107,7 @@ export const getUserStatsFromTable = query({
     }
 
     // Convert Map to array for easier handling in frontend
-    const themeStats = Array.from(themeStatsMap.entries())
+    const themeStats = [...themeStatsMap]
       .map(([themeId, stats]) => ({
         themeId,
         themeName: stats.themeName,
@@ -99,7 +116,7 @@ export const getUserStatsFromTable = query({
         percentage:
           stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0,
       }))
-      .sort((a, b) => b.total - a.total); // Sort by most questions answered
+      .sort((a, b) => b.total - a.total);
 
     return {
       overall: {
@@ -148,15 +165,15 @@ export const _updateQuestionStats = internalMutation({
           isIncorrect: false,
           answeredAt: now,
         });
-      } else if (!args.isCorrect) {
-        // If the answer is incorrect, mark it as incorrect
+      } else if (args.isCorrect) {
+        // Just update the timestamp
         await ctx.db.patch(existingStat._id, {
-          isIncorrect: true,
           answeredAt: now,
         });
       } else {
-        // Just update the timestamp
+        // If the answer is incorrect, mark it as incorrect
         await ctx.db.patch(existingStat._id, {
+          isIncorrect: true,
           answeredAt: now,
         });
       }
@@ -266,7 +283,7 @@ export const getQuestionStatus = query({
       hasAnswered: stat ? stat.hasAnswered : false,
       isIncorrect: stat ? stat.isIncorrect : false,
       isBookmarked: !!bookmark,
-      answeredAt: stat ? stat.answeredAt : null,
+      answeredAt: stat ? stat.answeredAt : undefined,
     };
   },
 });
