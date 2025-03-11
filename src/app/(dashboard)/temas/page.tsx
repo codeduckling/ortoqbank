@@ -62,6 +62,10 @@ export default function ThemesPage() {
   const incompleteSessions =
     useQuery(api.quizSessions.listIncompleteSessions) || [];
 
+  // Query to get all completed sessions for the current user
+  const completedSessions =
+    useQuery(api.quizSessions.getAllCompletedSessions) || [];
+
   // Create a map of quizId to sessionId for incomplete sessions
   const incompleteSessionMap = incompleteSessions.reduce(
     (map: Record<string, Id<'quizSessions'>>, session) => {
@@ -69,6 +73,15 @@ export default function ThemesPage() {
       return map;
     },
     {} as Record<string, Id<'quizSessions'>>,
+  );
+
+  // Create a map to track which quizzes have completed sessions
+  const hasCompletedSessionMap = completedSessions.reduce(
+    (map: Record<string, boolean>, session) => {
+      map[session.quizId] = true;
+      return map;
+    },
+    {} as Record<string, boolean>,
   );
 
   // Group trilhas by theme
@@ -192,14 +205,16 @@ export default function ThemesPage() {
                                 ? 'Retomar Teste'
                                 : 'Iniciar Teste'}
                             </Button>
-                            <Link
-                              href={`/quiz-results/${exam._id}`}
-                              className="flex-1 md:flex-none"
-                            >
-                              <Button variant="outline" className="w-full">
-                                Ver Resultados
-                              </Button>
-                            </Link>
+                            {hasCompletedSessionMap[exam._id] && (
+                              <Link
+                                href={`/quiz-results/${exam._id}`}
+                                className="flex-1 md:flex-none"
+                              >
+                                <Button variant="outline" className="w-full">
+                                  Ver Resultados
+                                </Button>
+                              </Link>
+                            )}
                           </div>
                         </div>
                       </div>
