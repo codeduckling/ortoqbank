@@ -65,6 +65,8 @@ export default function TestForm() {
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showNameModal, setShowNameModal] = useState(false);
+  const [formData, setFormData] = useState<TestFormData | undefined>();
   const [submissionState, setSubmissionState] = useState<
     'idle' | 'loading' | 'success' | 'error'
   >('idle');
@@ -92,6 +94,7 @@ export default function TestForm() {
   } = useForm<TestFormData>({
     resolver: zodResolver(testFormSchema),
     defaultValues: {
+      name: 'Personalizado',
       testMode: 'study',
       questionMode: 'all',
       numQuestions: 30,
@@ -108,6 +111,7 @@ export default function TestForm() {
   const selectedGroups = watch('selectedGroups');
   const questionMode = watch('questionMode');
   const numQuestions = watch('numQuestions');
+  const quizName = watch('name');
 
   // Query question counts by mode (efficient new approach)
   const questionModeCounts = useQuery(api.questions.countQuestionsByMode, {
@@ -145,20 +149,27 @@ export default function TestForm() {
   };
 
   const onSubmit = async (data: TestFormData) => {
+    setFormData(data);
+    setShowNameModal(true);
+  };
+
+  const submitWithName = async (testName: string) => {
+    if (!formData) return;
+
     try {
       setIsSubmitting(true);
       setSubmissionState('loading');
 
       // Map string arrays to appropriate ID types
       const formattedData = {
-        name: `Personalizado`,
+        name: testName,
         description: `Teste criado em ${new Date().toLocaleDateString()}`,
-        testMode: data.testMode,
-        questionMode: mapQuestionMode(data.questionMode),
-        numQuestions: data.numQuestions,
-        selectedThemes: data.selectedThemes as Id<'themes'>[],
-        selectedSubthemes: data.selectedSubthemes as Id<'subthemes'>[],
-        selectedGroups: data.selectedGroups as Id<'groups'>[],
+        testMode: formData.testMode,
+        questionMode: mapQuestionMode(formData.questionMode),
+        numQuestions: formData.numQuestions,
+        selectedThemes: formData.selectedThemes as Id<'themes'>[],
+        selectedSubthemes: formData.selectedSubthemes as Id<'subthemes'>[],
+        selectedGroups: formData.selectedGroups as Id<'groups'>[],
       };
 
       // Create the custom quiz
@@ -202,6 +213,8 @@ export default function TestForm() {
         });
       }
       setIsSubmitting(false);
+    } finally {
+      setShowNameModal(false);
     }
   };
 
@@ -303,6 +316,75 @@ export default function TestForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
+      {/* Modal for entering quiz name */}
+      <Dialog open={showNameModal} onOpenChange={setShowNameModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogTitle>Nome do Teste</DialogTitle>
+          <DialogDescription>
+            Agora que você configurou seu teste, dê um nome a ele.
+          </DialogDescription>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="test-name">Nome do Teste</Label>
+              <Input
+                id="test-name"
+                placeholder="Digite um nome para o teste"
+                defaultValue="Personalizado"
+                className="w-full"
+                autoFocus
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const input = e.currentTarget as HTMLInputElement;
+                    if (input.value.length >= 3) {
+                      submitWithName(input.value);
+                    } else {
+                      toast({
+                        title: 'Nome muito curto',
+                        description:
+                          'O nome precisa ter pelo menos 3 caracteres',
+                        variant: 'destructive',
+                      });
+                    }
+                  }
+                }}
+              />
+              <p className="text-muted-foreground text-xs">
+                O nome deve ter pelo menos 3 caracteres.
+              </p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowNameModal(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                onClick={e => {
+                  const input = document.querySelector(
+                    '#test-name',
+                  ) as HTMLInputElement;
+                  if (input.value.length >= 3) {
+                    submitWithName(input.value);
+                  } else {
+                    toast({
+                      title: 'Nome muito curto',
+                      description: 'O nome precisa ter pelo menos 3 caracteres',
+                      variant: 'destructive',
+                    });
+                  }
+                }}
+              >
+                Criar Teste
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Modal for all feedback states */}
       <Dialog
         open={isSubmitting || submissionState === 'error'}
