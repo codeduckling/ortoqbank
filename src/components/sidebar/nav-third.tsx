@@ -1,21 +1,11 @@
 'use client';
 
 import { useUser } from '@clerk/nextjs';
-import {
-  BookOpenIcon,
-  FileClockIcon,
-  FileTextIcon,
-  HeadsetIcon,
-  LogOutIcon,
-  type LucideIcon,
-  PenSquareIcon,
-  UserCircleIcon,
-} from 'lucide-react';
+import { HeadsetIcon, type LucideIcon, UserCircleIcon } from 'lucide-react';
 import Link from 'next/link';
 
 import {
   SidebarGroup,
-  SidebarGroupContent,
   SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
@@ -33,7 +23,7 @@ interface MenuItem {
 
 const items: MenuItem[] = [
   { title: 'Suporte', url: '/', icon: HeadsetIcon },
-  { title: 'Logout', url: '/', icon: LogOutIcon },
+
   {
     title: 'Admin',
     url: '/admin',
