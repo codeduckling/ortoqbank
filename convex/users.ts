@@ -103,33 +103,24 @@ export const hasCurrentYearAccess = query({
   args: {},
   handler: async ctx => {
     const user = await getCurrentUser(ctx);
-    if (!user) return false;
+    if (!user) return { hasAccess: false };
 
     // Get current year
-    const now = new Date();
-    const currentYear = now.getFullYear();
+    const currentYear = new Date().getFullYear().toString();
 
-    // Get start and end timestamps for the current year
-    const yearStart = new Date(currentYear, 0, 1).getTime(); // Jan 1 of current year
-    const yearEnd = new Date(currentYear, 11, 31, 23, 59, 59).getTime(); // Dec 31 of current year
-
-    // Check for purchases in the current year with successful status
-    const currentYearPurchase = await ctx.db
+    // Check for purchases with the matching product year only
+    const purchaseWithYear = await ctx.db
       .query('purchases')
       .withIndex('by_user', q => q.eq('userId', user._id))
       .filter(q =>
         q.and(
           q.eq(q.field('stripePurchaseStatus'), 'succeeded'),
-          q.gte(q.field('stripePurchaseDate'), yearStart),
-          q.lte(q.field('stripePurchaseDate'), yearEnd),
+          q.eq(q.field('productYear'), currentYear),
         ),
       )
       .first();
 
-    if (currentYearPurchase === null) {
-      return { hasAccess: false };
-    }
-
-    return { hasAccess: true };
+    // Access granted only if user has purchased the correct year pass
+    return { hasAccess: purchaseWithYear !== null };
   },
 });

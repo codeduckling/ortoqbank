@@ -82,7 +82,13 @@ async function handleCheckoutSessionCompleted(
   const productId =
     typeof price.product === 'string' ? price.product : price.product.id;
 
-  console.log(`Recording purchase for user ${userId}, product ${productId}`);
+  // Get the product metadata
+  const product = price.product as Stripe.Product;
+  const productYear = product.metadata?.year;
+
+  console.log(
+    `Recording purchase for user ${userId}, product ${productId}, year ${productYear}`,
+  );
 
   // Call Convex directly with fetch instead of using the client
   await convex.mutation(api.purchases.recordPurchase, {
@@ -90,6 +96,7 @@ async function handleCheckoutSessionCompleted(
     stripeProductId: productId,
     stripePurchaseId: session.id,
     stripePurchaseStatus: 'succeeded',
+    productYear: productYear,
   });
 
   console.log('Purchase recorded successfully');
