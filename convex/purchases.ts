@@ -13,6 +13,7 @@ export const recordPurchase = mutation({
     stripeProductId: v.string(),
     stripePurchaseId: v.string(),
     stripePurchaseStatus: v.string(),
+    productYear: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     // Create a purchase record
@@ -22,6 +23,7 @@ export const recordPurchase = mutation({
       stripePurchaseId: args.stripePurchaseId,
       stripePurchaseDate: Date.now(),
       stripePurchaseStatus: args.stripePurchaseStatus,
+      productYear: args.productYear,
     });
   },
 });

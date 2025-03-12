@@ -111,7 +111,7 @@ export const createCheckoutSession = action({
     // Default URLs
     const successUrl =
       args.successUrl ||
-      `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/dashboard?success=true`;
+      `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/perfil`;
     const cancelUrl =
       args.cancelUrl ||
       `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}?canceled=true`;

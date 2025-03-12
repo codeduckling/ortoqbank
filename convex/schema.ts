@@ -123,6 +123,7 @@ export default defineSchema({
     stripePurchaseId: v.string(),
     stripePurchaseDate: v.number(),
     stripePurchaseStatus: v.string(),
+    productYear: v.optional(v.string()), // Year the product is valid for
   })
     .index('by_user_stripePurchaseId', ['userId', 'stripePurchaseId'])
     .index('by_user', ['userId']),

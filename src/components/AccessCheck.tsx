@@ -2,13 +2,9 @@
 
 import { useQuery } from 'convex/react';
 import { Check, GraduationCap, Loader2, Target } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-
-import { Button } from '@/components/ui/button';
 
 import { api } from '../../convex/_generated/api';
 import DynamicPricingCards from './dynamic-pricing-cards';
-import PurchaseButton from './purchase-button';
 
 export default function AccessCheck({
   children,
@@ -16,7 +12,6 @@ export default function AccessCheck({
   children: React.ReactNode;
 }) {
   const accessResult = useQuery(api.users.hasCurrentYearAccess);
-  const router = useRouter();
 
   // While loading, show a loading indicator
   if (accessResult === undefined) {
