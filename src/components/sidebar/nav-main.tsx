@@ -1,7 +1,6 @@
 import {
   BookOpenIcon,
   FileTextIcon,
-  HeadsetIcon,
   type LucideIcon,
   UserCircleIcon,
 } from 'lucide-react';
