@@ -1,83 +1,20 @@
 'use client';
 
-import { useAuth, useUser } from '@clerk/nextjs';
 import { useQuery } from 'convex/react';
 import { Check, GraduationCap, Loader2, Target } from 'lucide-react';
-import { createContext, useContext, useEffect, useState } from 'react';
 
 import { api } from '../../convex/_generated/api';
 import DynamicPricingCards from './dynamic-pricing-cards';
 
-// Create a context to cache access results
-type AccessContextType = {
-  hasAccess: boolean | undefined;
-  isLoading: boolean;
-};
-
-const AccessContext = createContext<AccessContextType>({
-  hasAccess: undefined,
-  isLoading: true,
-});
-
-// Provider component to be used at the layout level
-export function AccessProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useUser();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [adminCheckComplete, setAdminCheckComplete] = useState(false);
-
-  // Only run the Convex query if user is not an admin
-  const accessResult = useQuery(
-    api.users.hasCurrentYearAccess,
-    isAdmin ? 'skip' : undefined,
-  );
-
-  // Check if user is admin based on Clerk metadata (only once per session)
-  useEffect(() => {
-    if (!user || adminCheckComplete) return;
-
-    try {
-      // Access the user's metadata to check for admin role
-      const role = user.publicMetadata?.role;
-      setIsAdmin(role === 'admin');
-    } catch (error) {
-      console.error('Error checking admin role:', error);
-    } finally {
-      setAdminCheckComplete(true);
-    }
-  }, [user, adminCheckComplete]);
-
-  // Determine overall access status
-  const hasAccess =
-    isAdmin ||
-    (accessResult &&
-      typeof accessResult === 'object' &&
-      accessResult.hasAccess);
-
-  const isLoading =
-    !adminCheckComplete || (accessResult === undefined && !isAdmin);
-
-  return (
-    <AccessContext.Provider value={{ hasAccess, isLoading }}>
-      {children}
-    </AccessContext.Provider>
-  );
-}
-
-// Hook to use the access context
-export function useAccess() {
-  return useContext(AccessContext);
-}
-
-// Simplified AccessCheck component that uses the context
 export default function AccessCheck({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { hasAccess, isLoading } = useAccess();
+  const accessResult = useQuery(api.users.hasCurrentYearAccess);
 
   // While loading, show a loading indicator
-  if (isLoading) {
+  if (accessResult === undefined) {
     return (
       <div className="flex min-h-[300px] flex-col items-center justify-center p-8 text-center">
         <Loader2 className="mb-4 h-10 w-10 animate-spin text-[#2196F3]" />
@@ -86,8 +23,12 @@ export default function AccessCheck({
     );
   }
 
-  // If user has access, show the children
-  if (hasAccess) {
+  // If user has active access, show the children
+  if (
+    accessResult &&
+    typeof accessResult === 'object' &&
+    accessResult.hasAccess
+  ) {
     return <>{children}</>;
   }
 
@@ -99,8 +40,8 @@ export default function AccessCheck({
           Acesso OrtoQBank
         </h2>
         <p className="text-lg text-gray-600">
-          Para acessar este conteúdo, você precisa adquirir o passe anual de{' '}
-          {new Date().getFullYear()}.
+          Para acessar este conteúdo, você precisa adquirir um dos passes anuais
+          disponíveis.
         </p>
       </div>
 
