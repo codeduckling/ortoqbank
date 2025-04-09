@@ -8,7 +8,7 @@ import { Id } from '../../../../../convex/_generated/dataModel';
 
 export default function QuizPage() {
   const { id } = useParams() as {
-    id: Id<'presetQuizzes'> | Id<'customQuizzes'>;
+    id: Id<'presetQuizzes'>;
   };
 
   return <Quiz quizId={id} mode="study" />;
