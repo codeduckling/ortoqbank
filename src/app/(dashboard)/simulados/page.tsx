@@ -102,15 +102,15 @@ export default function SimuladoPage() {
   const handleExamClick = async (quizId: Id<'presetQuizzes'>) => {
     // Check if there's an incomplete session for this quiz
     if (incompleteSessionMap[quizId]) {
-      // Navigate to the existing quiz
-      router.push(`/preset-quiz/${quizId}`);
+      // Navigate to the simulado quiz instead of preset-quiz
+      router.push(`/simulados/${quizId}`);
     } else {
       // Start a new session
       const { sessionId } = await startSession({
         quizId,
         mode: 'exam',
       });
-      router.push(`/preset-quiz/${quizId}`);
+      router.push(`/simulados/${quizId}`);
     }
   };
 
