@@ -16,7 +16,7 @@ const staffMembers: StaffMember[] = [
       'Ortopedista pelo Instituto de Ortopedia e Traumatologia do HC-FMUSP (IOT)',
       'Fellowship Cirurgia da Coluna Vertebral (IOT)',
     ],
-    imageUrl: '/doc1.webp',
+    imageUrl: '/doc3.webp',
   },
   {
     name: 'Vitor Ricardo Moraes',
@@ -28,17 +28,13 @@ const staffMembers: StaffMember[] = [
     ],
     imageUrl: '/doc2.webp',
   },
-  {
-    name: 'Flavio de Fava Sanches',
-    role: 'Cirurgia do Joelho',
-    description: [
-      'Médico graduado pela PUC-SP',
-      'Ortopedista pelo Instituto de Ortopedia e Traumatologia do HC-FMUSP (IOT)',
-      'Fellowship Cirurgia do Joelho (IOT)',
-    ],
-    imageUrl: '/doc3.webp',
-  },
 ];
+
+// Easily adjustable image dimensions
+const STAFF_IMAGE = {
+  width: 380,
+  height: 140,
+};
 
 export default function StaffSection() {
   return (
@@ -47,20 +43,22 @@ export default function StaffSection() {
         <h2 className="mb-8 text-center text-3xl font-bold text-[#2196F3] md:text-4xl">
           Nossa Equipe
         </h2>
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+        <div className="mx-auto grid max-w-4xl grid-cols-1 gap-8 md:grid-cols-2">
           {staffMembers.map((member, index) => (
             <div
               key={index}
-              className="mx-auto max-w-[320px] overflow-hidden rounded-lg border border-blue-200 bg-white shadow-lg md:max-w-full"
+              className="mx-auto w-full max-w-[380px] overflow-hidden rounded-lg border border-blue-200 bg-white shadow-lg"
             >
-              <div className="relative h-[180px] w-full md:h-[250px]">
+              {/* Image container with fixed height constraint */}
+              <div className="h-[370px] overflow-hidden">
                 <Image
                   src={member.imageUrl || '/placeholder.svg'}
                   alt={`Foto de ${member.name}`}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 33vw"
+                  width={STAFF_IMAGE.width}
+                  height={STAFF_IMAGE.height}
                   priority={index === 0}
-                  className="rounded-t-lg object-cover object-top"
+                  className="w-full rounded-t-lg object-cover"
+                  style={{ height: '540px' }}
                 />
               </div>
               <div className="p-4">
