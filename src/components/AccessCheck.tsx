@@ -11,7 +11,8 @@ export default function AccessCheck({
 }: {
   children: React.ReactNode;
 }) {
-  const accessResult = useQuery(api.users.hasCurrentYearAccess);
+  /*  const accessResult = useQuery(api.users.hasCurrentYearAccess); */
+  const accessResult = { hasAccess: true };
 
   // While loading, show a loading indicator
   if (accessResult === undefined) {

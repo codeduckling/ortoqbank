@@ -103,15 +103,15 @@ export default function ThemesPage() {
   const handleExamClick = async (quizId: Id<'presetQuizzes'>) => {
     // Check if there's an incomplete session for this quiz
     if (incompleteSessionMap[quizId]) {
-      // Navigate to the existing quiz
-      router.push(`/preset-quiz/${quizId}`);
+      // Navigate to the tema quiz instead of preset-quiz
+      router.push(`/temas/${quizId}`);
     } else {
       // Start a new session
       const { sessionId } = await startSession({
         quizId,
         mode: 'study',
       });
-      router.push(`/preset-quiz/${quizId}`);
+      router.push(`/temas/${quizId}`);
     }
   };
 

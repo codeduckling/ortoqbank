@@ -37,7 +37,7 @@ Payment processing for subscriptions or licenses.
 
 Redirection to the application upon successful payment.
 
-2.1.2 Authentication & User Management
+2.1.2 Authentication & User Management (using Clerk)
 
 Email/password authentication.
 
@@ -49,11 +49,11 @@ Fully responsive web application for mobile, tablet, and desktop.
 
 2.1.4 Content Organization
 
-Question bank structured by themes and subthemes.
+Question bank structured by themes,subthemes and groups (under subthemes).
 
-Admins can create predefined themes and subthemes.
+Admins can create predefined themes,subthemes and groups.
 
-Users can create custom study modules using question tags.
+Users can create custom study quizzes.
 
 Each module will track user progress and completed questions.
 
@@ -61,9 +61,10 @@ Each module will track user progress and completed questions.
 
 Display one question at a time.
 
-Instant feedback on correct/incorrect answers.
+Instant feedback on correct/incorrect answers (on study mode) otherwise progress
+imediately on exam mode.
 
-Explanations for correct and incorrect responses.
+Explanations for correct and incorrect responses only on study mode.
 
 2.1.6 Progress Tracking
 
@@ -83,9 +84,7 @@ Management of questions, answers, categories, and modules.
 
 Image upload support (via CDN, up to 10 GB storage limit).
 
-Question versioning (historical records and different versions of questions).
-
-2.1.9 Payment Integration
+2.1.9 Payment Integration (using MercadoPago API)
 
 Setup for receiving payments for subscriptions or licenses.
 
@@ -103,66 +102,26 @@ Options: Multiple-choice answers.
 
 Correct Answer: Defined answer key.
 
-Tags: Metadata for categorization and filtering.
+Theme, Subtheme and Group: Only theme is mandatory.
 
-2.2.2 Module Types
+2.2.2 Quiz Types
 
-Standard Modules
+Preset Quizzes: Created by administrators. Preset Quizzes can be either
+Simulador Or Trilha (exam or study mode respectively)
 
-Created by administrators.
+Custom Quizzes: Created by users (individual use). Private to the user who
+created them.
 
-Available to all users.
+Past Exams Screen: User can retry same quiz for improvement.
 
-Categorized using question tags.
-
-Custom Modules
-
-Created by both admins and users.
-
-Private to the user who created them.
-
-Configured by selecting tags for personalized learning.
-
-Past Exams
-
-Treated as standard modules but displayed separately.
-
-Based on previously administered exam questions.
-
-2.2.3 Module Functionality
+2.2.3 Quiz Functionality
 
 Users progress through questions sequentially.
 
-System records accuracy and progress.
-
-Dashboard displays performance metrics.
+System records accuracy and progress on the server (it must sync on any device).
 
 2.2.4 Study vs. Simulation Modes
 
 Study Mode: Immediate answer feedback.
 
 Simulation Mode: No feedback until the entire module is completed.
-
-3. Out of Scope
-
-Any features or requirements not explicitly listed as "mandatory" are considered
-out of scope and require contractual revisions for inclusion. Examples:
-
-Additional feature expansions without additional costs.
-
-Advanced reporting tools and analytics dashboards.
-
-Integrations with third-party services not mentioned.
-
-Aesthetic changes beyond initial design specifications.
-
-Extra pages beyond the main landing page.
-
-4. Additional Notes
-
-The logo, colors, and brand identity will be provided by the client.
-
-No UX/UI redesign beyond initial design specifications.
-
-The system will be delivered as a functional MVP with room for future
-enhancements.
