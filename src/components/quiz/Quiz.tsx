@@ -28,9 +28,28 @@ export default function Quiz({ quizId, mode }: QuizProps) {
     progress,
     submitAnswer,
     completeQuiz,
+    startQuiz,
     bookmarkStatuses,
     toggleBookmark,
+    isLoading,
   } = useQuiz(quizId, mode);
+  const [sessionInitialized, setSessionInitialized] = useState(false);
+
+  // Initialize a quiz session if one doesn't exist
+  useEffect(() => {
+    const initializeSession = async () => {
+      if (!isLoading && !progress && !sessionInitialized) {
+        setSessionInitialized(true);
+        try {
+          await startQuiz();
+        } catch (error) {
+          console.error('Error initializing quiz session:', error);
+        }
+      }
+    };
+
+    initializeSession();
+  }, [progress, isLoading, startQuiz, sessionInitialized]);
 
   if (!quizData || !progress) return <div>Loading...</div>;
 
@@ -141,7 +160,10 @@ function QuizStepper({
 
     setIsLoading(true);
     try {
-      await onSubmitAnswer(selectedAlternative);
+      // If the quiz is already complete, don't try to submit another answer
+      if (!progress.isComplete) {
+        await onSubmitAnswer(selectedAlternative);
+      }
 
       // Check if this was the last question in exam mode
       if (
@@ -149,6 +171,16 @@ function QuizStepper({
         currentStepIndex === quizData.questions.length - 1
       ) {
         await handleComplete();
+      }
+    } catch (error) {
+      console.error('Error submitting answer:', error);
+
+      // If we're on the last question in exam mode, still try to navigate to results
+      if (
+        mode === 'exam' &&
+        currentStepIndex === quizData.questions.length - 1
+      ) {
+        router.push(`/quiz-results/${quizData._id}`);
       }
     } finally {
       setIsLoading(false);
@@ -172,6 +204,8 @@ function QuizStepper({
       } else {
         stepper.next();
       }
+    } catch (error) {
+      console.error('Error navigating:', error);
     } finally {
       setIsLoading(false);
     }
@@ -181,12 +215,32 @@ function QuizStepper({
 
   const handleComplete = async () => {
     try {
-      await completeQuiz();
-      // Use a generic route for all quiz results instead of the theme-specific route
+      // Only call completeQuiz if the session exists, is not already complete,
+      // and the quiz is in progress (has some answers)
+      if (
+        progress &&
+        !progress.isComplete &&
+        progress.answers &&
+        progress.answers.length > 0
+      ) {
+        try {
+          await completeQuiz();
+        } catch (error) {
+          // Catch and log the error, but continue to navigate
+          console.error('Error completing quiz (non-blocking):', error);
+        }
+      } else {
+        console.log(
+          'Quiz already complete or no answers, skipping completion API call',
+        );
+      }
+
+      // Always navigate to results regardless of completion status
       router.push(`/quiz-results/${quizData._id}`);
     } catch (error) {
-      console.error('Error completing quiz:', error);
-      // Error handling is managed by the caller functions through finally blocks
+      console.error('Error in handleComplete:', error);
+      // If completing the quiz fails but we can still navigate, go to results anyway
+      router.push(`/quiz-results/${quizData._id}`);
     }
   };
 
