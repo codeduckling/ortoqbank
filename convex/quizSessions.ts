@@ -1,9 +1,9 @@
 import { v } from 'convex/values';
 
+import { internal } from './_generated/api';
 import { Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
 import { getCurrentUserOrThrow } from './users';
-import { internal } from './_generated/api';
 
 //@deprecated('Use getActiveSession instead')
 export const getCurrentSession = query({
