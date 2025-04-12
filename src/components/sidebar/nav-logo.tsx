@@ -2,14 +2,21 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 import { Separator } from '../ui/separator';
-import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '../ui/sidebar';
+import {
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  useSidebar,
+} from '../ui/sidebar';
 
 export default function NavLogo() {
+  const { setOpenMobile } = useSidebar();
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>
         <SidebarMenuButton variant="logo" size="lg" asChild>
-          <Link href="/">
+          <Link href="/" onClick={() => setOpenMobile(false)}>
             <div className="flex aspect-square size-8 items-center justify-center rounded-lg">
               <Image
                 src="/logo.webp"

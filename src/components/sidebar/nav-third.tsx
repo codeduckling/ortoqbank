@@ -10,6 +10,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from '../ui/sidebar';
 
 type UserRole = 'admin' | 'moderator' | 'user';
@@ -41,6 +42,7 @@ const items: MenuItem[] = [
 
 export default function NavThird() {
   const { user } = useUser();
+  const { setOpenMobile } = useSidebar();
 
   // Get user's role from metadata
   const userRole = user?.publicMetadata?.role as UserRole | undefined;
@@ -68,7 +70,11 @@ export default function NavThird() {
         {items.filter(hasAccess).map(item => (
           <SidebarMenuItem key={item.title}>
             <SidebarMenuButton asChild>
-              <Link href={item.url} className="flex items-center gap-3 py-5">
+              <Link
+                href={item.url}
+                className="flex items-center gap-3 py-5"
+                onClick={() => setOpenMobile(false)}
+              >
                 <item.icon className="size-5" />
                 <span className="text-base">{item.title}</span>
               </Link>
