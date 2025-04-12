@@ -29,13 +29,13 @@ export default function Pricing() {
             </ul>
 
             <div className="mb-8 text-center">
-              <p className="mb-1 text-gray-600">
-                De: <span className="line-through">XXXXX</span>
-              </p>
+              <p className="mb-1 text-gray-600">De: R$ 1.999,90</p>
               <p className="mb-4 text-2xl font-bold text-[#2196F3]">
-                por até 4x de A
+                por R$1.899,90 no PIX
               </p>
-              <p className="text-lg font-medium text-gray-700">ou B à vista</p>
+              <p className="text-lg font-medium text-gray-700">
+                parcelado em até 6x
+              </p>
             </div>
 
             <Button className="hover:bg-opacity-90 w-full bg-[#2196F3] text-lg font-semibold text-white">
