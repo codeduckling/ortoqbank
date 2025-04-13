@@ -7,6 +7,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from '../ui/sidebar';
 
 interface MenuItem {
@@ -21,6 +22,8 @@ const items: MenuItem[] = [
 ];
 
 export default function NavSecondary() {
+  const { setOpenMobile } = useSidebar();
+
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Personalizado</SidebarGroupLabel>
@@ -28,7 +31,11 @@ export default function NavSecondary() {
         {items.map(item => (
           <SidebarMenuItem key={item.title}>
             <SidebarMenuButton asChild>
-              <Link href={item.url} className="flex items-center gap-3 py-5">
+              <Link
+                href={item.url}
+                className="flex items-center gap-3 py-5"
+                onClick={() => setOpenMobile(false)}
+              >
                 <item.icon className="size-5" />
                 <span className="text-base">{item.title}</span>
               </Link>

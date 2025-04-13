@@ -11,6 +11,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from '../ui/sidebar';
 
 interface MenuItem {
@@ -22,18 +23,23 @@ interface MenuItem {
 const items: MenuItem[] = [
   { title: 'Meu Perfil', url: '/perfil', icon: UserCircleIcon },
   { title: 'Trilhas', url: '/temas', icon: BookOpenIcon },
-
   { title: 'Simulados', url: '/simulados', icon: FileTextIcon },
 ];
 
 export default function NavMain() {
+  const { setOpenMobile } = useSidebar();
+
   return (
     <SidebarGroup>
       <SidebarMenu>
         {items.map(item => (
           <SidebarMenuItem key={item.title}>
             <SidebarMenuButton asChild>
-              <Link href={item.url} className="flex items-center gap-3 py-5">
+              <Link
+                href={item.url}
+                className="flex items-center gap-3 py-5"
+                onClick={() => setOpenMobile(false)}
+              >
                 <item.icon className="size-5" />
                 <span className="text-base">{item.title}</span>
               </Link>
