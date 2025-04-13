@@ -87,12 +87,7 @@ export default function ProfilePage() {
             description={`${stats.overall.totalCorrect} respostas corretas`}
             color="green"
           />
-          <StatCard
-            title="Taxa de Erro"
-            value={`${100 - stats.overall.correctPercentage}%`}
-            description={`${stats.overall.totalIncorrect} respostas incorretas`}
-            color="red"
-          />
+
           <StatCard
             title="Questões Salvas"
             value={stats.overall.totalBookmarked}

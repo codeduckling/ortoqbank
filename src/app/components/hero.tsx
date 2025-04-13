@@ -33,9 +33,7 @@ export default function HeroSection() {
                   <Button size="lg">Começar agora</Button>
                 </SignInButton>
 
-                <Button asChild variant="outline" size="lg">
-                  <Link href="/sobre">Saiba mais</Link>
-                </Button>
+
               </div>
             </div>
             <div className="flex justify-center lg:col-span-8">

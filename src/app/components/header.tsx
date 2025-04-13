@@ -27,49 +27,7 @@ export default function Header() {
           />
           <span className="font-sifonn text-2xl font-bold">OrtoQBank</span>
         </Link>
-
-        <div className="flex items-center space-x-6">
-          {/* Desktop Navigation */}
-          <NavigationMenu className="hidden md:block">
-            <NavigationMenuList className="gap-4">
-              <NavigationMenuItem>
-                <Link href="#sobre">
-                  <NavigationMenuLink
-                    className={
-                      navigationMenuTriggerStyle() +
-                      ' h-9 bg-transparent px-3 text-lg leading-none font-medium text-white hover:bg-white hover:text-[#2196F3]'
-                    }
-                  >
-                    Sobre
-                  </NavigationMenuLink>
-                </Link>
-              </NavigationMenuItem>
-              <NavigationMenuItem>
-                <Link href="#precos">
-                  <NavigationMenuLink
-                    className={
-                      navigationMenuTriggerStyle() +
-                      ' h-9 bg-transparent px-3 text-lg leading-none font-medium text-white hover:bg-white hover:text-[#2196F3]'
-                    }
-                  >
-                    Preços
-                  </NavigationMenuLink>
-                </Link>
-              </NavigationMenuItem>
-              <NavigationMenuItem>
-                <Link href="#faq">
-                  <NavigationMenuLink
-                    className={
-                      navigationMenuTriggerStyle() +
-                      ' h-9 bg-transparent px-3 text-lg leading-none font-medium text-white hover:bg-white hover:text-[#2196F3]'
-                    }
-                  >
-                    FAQ
-                  </NavigationMenuLink>
-                </Link>
-              </NavigationMenuItem>
-            </NavigationMenuList>
-          </NavigationMenu>
+        <div className="flex items-center gap-8">
 
           <SignInButton forceRedirectUrl="/criar-teste">
             <Button className="rounded-full border border-white px-4 py-1.5 text-sm font-medium transition-colors hover:bg-white hover:text-[#2196F3]">
