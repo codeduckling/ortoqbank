@@ -112,6 +112,7 @@ export const update = mutation({
   args: {
     id: v.id('questions'),
     questionText: v.object({ type: v.string(), content: v.array(v.any()) }),
+    questionCode: v.optional(v.string()),
     title: v.string(),
     explanationText: v.object({ type: v.string(), content: v.array(v.any()) }),
     alternatives: v.array(v.string()),
