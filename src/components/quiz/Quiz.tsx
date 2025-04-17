@@ -290,10 +290,10 @@ function QuizStepper({
                   <QuizFeedback
                     isCorrect={feedback.isCorrect}
                     message={feedback.message}
-                    explanationHtml={
+                    explanation={
                       feedback.explanation
-                        ? renderContent(JSON.parse(feedback.explanation))
-                        : ''
+                        ? JSON.parse(feedback.explanation)
+                        : undefined
                     }
                   />
                 )}

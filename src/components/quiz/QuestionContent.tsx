@@ -1,16 +1,15 @@
-import { renderContent } from '@/lib/utils/render-content';
+import StructuredContentRenderer, {
+  ContentNode,
+} from '../common/StructuredContentRenderer';
 
 interface QuestionContentProps {
-  content: any; // Use a more specific type if available
+  content: ContentNode | null | undefined; // Use the imported type and allow null/undefined
 }
 
 export default function QuestionContent({ content }: QuestionContentProps) {
   return (
-    <div
-      className="prose max-w-none"
-      dangerouslySetInnerHTML={{
-        __html: renderContent(content),
-      }}
-    />
+    <div className="prose max-w-none">
+      <StructuredContentRenderer node={content} />
+    </div>
   );
 }
