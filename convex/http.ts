@@ -2,7 +2,6 @@ import type { WebhookEvent } from '@clerk/backend';
 import { httpRouter } from 'convex/server';
 import { Webhook } from 'svix';
 
-import stripe from '../src/lib/stripe';
 import { internal } from './_generated/api';
 import { httpAction } from './_generated/server';
 
@@ -20,15 +19,8 @@ http.route({
       case 'user.created': // intentional fallthrough
       case 'user.updated': {
         try {
-          const customer = await stripe.customers.create({
-            email: event.data.email_addresses[0].email_address,
-            name: `${event.data.first_name} ${event.data.last_name}`.trim(),
-            metadata: { clerkId: event.data.id },
-          });
-
           await ctx.runMutation(internal.users.upsertFromClerk, {
             data: event.data,
-            stripeCustomerId: customer.id,
           });
         } catch (error) {
           console.error('Error upserting user from Clerk', error);

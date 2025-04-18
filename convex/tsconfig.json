@@ -20,6 +20,6 @@
     "isolatedModules": true,
     "noEmit": true
   },
-  "include": ["./**/*", "../src/lib/stripe.ts"],
+  "include": ["./**/*"],
   "exclude": ["./_generated"]
 }

@@ -22,26 +22,17 @@ export const getUserByClerkId = internalQuery({
   },
 });
 
-export const getUserByStripeCustomerId = query({
-  args: { stripeCustomerId: v.string() },
-  handler: async (ctx, args) => {
-    return await userByStripeCustomerId(ctx, args.stripeCustomerId);
-  },
-});
-
 export const upsertFromClerk = internalMutation({
   args: {
     data: v.any() as Validator<UserJSON>,
-    stripeCustomerId: v.string(),
   }, // no runtime validation, trust Clerk
-  async handler(context, { data, stripeCustomerId }) {
+  async handler(context, { data }) {
     const userAttributes = {
       email: data.email_addresses[0].email_address,
       clerkUserId: data.id,
       firstName: data.first_name ?? undefined,
       lastName: data.last_name ?? undefined,
       imageUrl: data.image_url ?? undefined,
-      stripeCustomerId: stripeCustomerId,
     };
 
     const user = await userByClerkUserId(context, data.id);
@@ -86,41 +77,3 @@ async function userByClerkUserId(context: QueryContext, clerkUserId: string) {
     .withIndex('by_clerkUserId', q => q.eq('clerkUserId', clerkUserId))
     .unique();
 }
-
-async function userByStripeCustomerId(
-  context: QueryContext,
-  stripeCustomerId: string,
-) {
-  return await context.db
-    .query('users')
-    .withIndex('by_stripeCustomerId', q =>
-      q.eq('stripeCustomerId', stripeCustomerId),
-    )
-    .unique();
-}
-
-export const hasCurrentYearAccess = query({
-  args: {},
-  handler: async ctx => {
-    const user = await getCurrentUser(ctx);
-    if (!user) return { hasAccess: false };
-
-    // Get current year
-    const currentYear = new Date().getFullYear().toString();
-
-    // Check for purchases with the matching product year only
-    const purchaseWithYear = await ctx.db
-      .query('purchases')
-      .withIndex('by_user', q => q.eq('userId', user._id))
-      .filter(q =>
-        q.and(
-          q.eq(q.field('stripePurchaseStatus'), 'succeeded'),
-          q.eq(q.field('productYear'), currentYear),
-        ),
-      )
-      .first();
-
-    // Access granted only if user has purchased the correct year pass
-    return { hasAccess: purchaseWithYear !== null };
-  },
-});
