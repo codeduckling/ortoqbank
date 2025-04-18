@@ -16,7 +16,7 @@ const staffMembers: StaffMember[] = [
       'Ortopedista pelo Instituto de Ortopedia e Traumatologia do HC-FMUSP (IOT)',
       'Fellowship Cirurgia da Coluna Vertebral (IOT)',
     ],
-    imageUrl: '/doc3.webp',
+    imageUrl: '/medico2.jpeg',
   },
   {
     name: 'Vitor Ricardo Moraes',
@@ -26,15 +26,9 @@ const staffMembers: StaffMember[] = [
       'Ortopedista pelo Instituto de Ortopedia e Traumatologia do HC-FMUSP (IOT)',
       'Fellowship Cirurgia do Joelho (IOT)',
     ],
-    imageUrl: '/doc2.webp',
+    imageUrl: '/medico1.jpg',
   },
 ];
-
-// Easily adjustable image dimensions
-const STAFF_IMAGE = {
-  width: 380,
-  height: 140,
-};
 
 export default function StaffSection() {
   return (
@@ -47,18 +41,16 @@ export default function StaffSection() {
           {staffMembers.map((member, index) => (
             <div
               key={index}
-              className="mx-auto w-full max-w-[380px] overflow-hidden rounded-lg border border-blue-200 bg-white shadow-lg"
+              className="mx-auto w-full max-w-[330px] overflow-hidden rounded-lg border border-blue-200 bg-white shadow-lg"
             >
-              {/* Image container with fixed height constraint */}
-              <div className="h-[370px] overflow-hidden">
+              <div className="overflow-hidden">
                 <Image
                   src={member.imageUrl || '/placeholder.svg'}
                   alt={`Foto de ${member.name}`}
-                  width={STAFF_IMAGE.width}
-                  height={STAFF_IMAGE.height}
+                  width={330}
+                  height={330}
                   priority={index === 0}
-                  className="w-full rounded-t-lg object-cover"
-                  style={{ height: '540px' }}
+                  className="rounded-t-lg object-cover"
                 />
               </div>
               <div className="p-4">

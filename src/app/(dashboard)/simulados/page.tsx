@@ -134,7 +134,9 @@ export default function SimuladoPage() {
 
   return (
     <div className="container mx-auto p-6">
-      <h1 className="mb-6 text-2xl font-bold">Simulados</h1>
+      <h1 className="mb-8 text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+        Simulados
+      </h1>
       <Accordion type="single" collapsible className="space-y-4">
         {Object.entries(simuladosByTheme).map(([themeId, simulados]) => {
           // Special handling for general (themeless) simulados
@@ -152,10 +154,10 @@ export default function SimuladoPage() {
               value={themeId}
               className="overflow-hidden"
             >
-              <AccordionTrigger className="hover:bg-muted/20 px-4 py-3 hover:no-underline">
+              <AccordionTrigger className="hover:bg-muted/20 py-3 hover:no-underline md:px-4">
                 <div className="flex items-center gap-3">
-                  <Book className="h-8 w-8" />
-                  <span className="text-2xl font-medium">{title}</span>
+                  <Book className="h-6 w-6 md:h-8 md:w-8" />
+                  <span className="font-medium md:text-xl">{title}</span>
                   <span className="text-muted-foreground text-md">
                     ({simulados.length} simulados)
                   </span>
