@@ -39,7 +39,7 @@ export function MobileBottomNav() {
         const isActive = pathname === item.href;
 
         return (
-          <Link key={item.href} href={item.href} legacyBehavior passHref>
+          <Link key={item.href} href={item.href} passHref>
             <Button
               variant="ghost"
               className={cn(
