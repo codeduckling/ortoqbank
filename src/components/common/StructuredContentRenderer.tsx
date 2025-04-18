@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import React from 'react';
 
 // Define a basic type for the content nodes.
@@ -113,6 +114,37 @@ function renderNode(node: ContentNode, key: string | number): React.ReactNode {
     }
     case 'hardBreak': {
       element = <br key={key} />;
+      break;
+    }
+    case 'image': {
+      const { src, alt, width, height, style } = node.attrs || {};
+      // Basic image rendering, consider adding error handling or placeholders
+
+      // Parse the style string into an object
+      const parsedStyles: Record<string, string> = {};
+      if (typeof style === 'string') {
+        style.split(';').forEach(declaration => {
+          const [property, value] = declaration.split(':');
+          if (property && value) {
+            // Convert kebab-case to camelCase for React style properties
+            const camelCaseProperty = property
+              .trim()
+              .replaceAll(/-([a-z])/g, g => g[1].toUpperCase());
+            parsedStyles[camelCaseProperty] = value.trim();
+          }
+        });
+      }
+
+      element = (
+        <img
+          key={key}
+          src={src}
+          alt={alt || ''}
+          width={width} // Keep width/height attributes if they exist for semantics/SSR
+          height={height}
+          style={parsedStyles as React.CSSProperties} // Apply the parsed style object, cast to CSSProperties
+        />
+      );
       break;
     }
     default: {
