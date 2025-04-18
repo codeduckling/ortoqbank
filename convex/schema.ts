@@ -116,15 +116,4 @@ export default defineSchema({
     .index('by_user', ['userId'])
     .index('by_user_incorrect', ['userId', 'isIncorrect'])
     .index('by_user_answered', ['userId', 'hasAnswered']),
-
-  purchases: defineTable({
-    userId: v.id('users'),
-    stripeProductId: v.string(),
-    stripePurchaseId: v.string(),
-    stripePurchaseDate: v.number(),
-    stripePurchaseStatus: v.string(),
-    productYear: v.optional(v.string()), // Year the product is valid for
-  })
-    .index('by_user_stripePurchaseId', ['userId', 'stripePurchaseId'])
-    .index('by_user', ['userId']),
 });

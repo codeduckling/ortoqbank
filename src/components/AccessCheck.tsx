@@ -1,10 +1,6 @@
 'use client';
 
-import { useQuery } from 'convex/react';
 import { Check, GraduationCap, Loader2, Target } from 'lucide-react';
-
-import { api } from '../../convex/_generated/api';
-import DynamicPricingCards from './dynamic-pricing-cards';
 
 export default function AccessCheck({
   children,
@@ -47,7 +43,6 @@ export default function AccessCheck({
       </div>
 
       {/* Dynamic Pricing Cards - Fetched from Stripe */}
-      <DynamicPricingCards />
 
       {/* Benefits section */}
       <div className="mb-8 grid gap-6 md:grid-cols-3">
