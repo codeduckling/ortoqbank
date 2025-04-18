@@ -1,12 +1,16 @@
+import StructuredContentRenderer, {
+  ContentNode,
+} from '../common/StructuredContentRenderer';
+
 interface QuizFeedbackProps {
   isCorrect: boolean;
-  explanationHtml: string;
+  explanation: ContentNode | null | undefined;
   message?: string;
 }
 
 export default function QuizFeedback({
   isCorrect,
-  explanationHtml,
+  explanation,
   message,
 }: QuizFeedbackProps) {
   // This component only handles the text feedback and explanation,
@@ -20,10 +24,9 @@ export default function QuizFeedback({
       <p className="font-semibold">
         {message || (isCorrect ? 'Correto! ✓' : 'Incorreto! ✗')}
       </p>
-      <div
-        className="prose mt-2 max-w-none"
-        dangerouslySetInnerHTML={{ __html: explanationHtml }}
-      />
+      <div className="prose mt-2 max-w-none">
+        <StructuredContentRenderer node={explanation} />
+      </div>
     </div>
   );
 }
