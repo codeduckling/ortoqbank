@@ -41,7 +41,7 @@ export default function ProfilePage() {
         {
           name: 'Não Respondidas',
           value: stats.totalQuestions - stats.overall.totalAnswered,
-          color: '#e5e7eb', // light gray
+          color: '#f97316', // orange
         },
       ];
 
@@ -52,47 +52,49 @@ export default function ProfilePage() {
         {
           name: 'Corretas',
           value: stats.overall.totalCorrect,
-          color: '#22c55e', // green
+          color: '#3b82f6', // blue
         },
         {
           name: 'Incorretas',
           value: stats.overall.totalIncorrect,
-          color: '#ef4444', // red
+          color: '#f97316', // orange
         },
       ];
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="mb-4 text-xl font-semibold">Meu Perfil</h1>
+    <div className="container mx-auto p-6">
+      <h1 className="mb-8 text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+        Meu Perfil
+      </h1>
 
       {isLoading ? (
         // Loading state
-        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
+        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-28 w-full rounded-lg" />
           ))}
         </div>
       ) : (
         // Stats cards
-        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
+        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
           <StatCard
             title="Questões Respondidas"
             value={stats.overall.totalAnswered}
             description={`${completionPercentage}% do banco de questões (${stats.totalQuestions} total)`}
-            color="blue"
+            color="white"
           />
           <StatCard
             title="Taxa de Acerto"
             value={`${stats.overall.correctPercentage}%`}
             description={`${stats.overall.totalCorrect} respostas corretas`}
-            color="green"
+            color="white"
           />
 
           <StatCard
             title="Questões Salvas"
             value={stats.overall.totalBookmarked}
             description="Questões marcadas para revisão"
-            color="purple"
+            color="white"
           />
         </div>
       )}

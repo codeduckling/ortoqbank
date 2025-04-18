@@ -5,7 +5,11 @@ import React from 'react';
 export interface ContentNode {
   type: string;
   text?: string;
-  marks?: Array<{ type: string; [key: string]: any }>; // Allow additional mark attributes
+  marks?: Array<{
+    type: string;
+    attrs?: { [key: string]: any };
+    [key: string]: any;
+  }>; // Allow additional mark attributes like color
   content?: ContentNode[];
   attrs?: { [key: string]: any }; // Handle attributes like for images or links
 }
@@ -50,6 +54,14 @@ function renderNode(node: ContentNode, key: string | number): React.ReactNode {
       );
       break;
     }
+    case 'orderedList': {
+      element = (
+        <ol key={key} className="list-decimal space-y-1 pl-5">
+          {children}
+        </ol>
+      );
+      break;
+    }
     case 'listItem': {
       // List items render their children (which are often paragraphs)
       element = <li key={key}>{children}</li>;
@@ -57,44 +69,59 @@ function renderNode(node: ContentNode, key: string | number): React.ReactNode {
     }
     case 'text': {
       // Apply marks to text nodes
-      element = <>{node.text}</>;
+      let textElement: React.ReactNode = <>{node.text}</>;
+      let currentStyle: React.CSSProperties = {};
+
       if (node.marks) {
         node.marks.forEach(mark => {
           switch (mark.type) {
             case 'bold': {
-              element = <strong>{element}</strong>;
+              textElement = <strong>{textElement}</strong>;
               break;
             }
             case 'italic': {
-              element = <em>{element}</em>;
+              textElement = <em>{textElement}</em>;
               break;
             }
-            // Add cases for other marks like 'underline', 'strike', 'code', etc.
+            case 'underline': {
+              textElement = <u>{textElement}</u>;
+              break;
+            }
+            case 'strike': {
+              textElement = <s>{textElement}</s>;
+              break;
+            }
+            case 'textStyle': {
+              if (mark.attrs?.color) {
+                currentStyle.color = mark.attrs.color;
+              }
+              break;
+            }
             default: {
               break;
             }
           }
         });
       }
-      // Wrap in a span or fragment. Using Fragment as it doesn't add extra DOM nodes.
-      // Key needs to be applied to the outermost element returned by the switch case
-      // or handled by the caller mapping over renderNode. Let's apply key where element is assigned.
-      return <React.Fragment key={key}>{element}</React.Fragment>;
+      // Apply inline styles if any exist
+      if (Object.keys(currentStyle).length > 0) {
+        textElement = <span style={currentStyle}>{textElement}</span>;
+      }
+      // Assign the final fragment to the element variable
+      element = <React.Fragment key={key}>{textElement}</React.Fragment>;
+      break;
     }
     case 'hardBreak': {
       element = <br key={key} />;
       break;
     }
-    // Add cases for other node types you might have (e.g., headings, images, blockquotes)
     default: {
       console.warn(`Unsupported node type: ${node.type}`);
-      // Render nothing or a placeholder for unsupported types
       element = undefined;
+      break;
     }
   }
 
-  // Return the element. If it's a simple type like text or br, the key was handled above.
-  // For wrapper elements like p, ul, li, the key is applied directly.
   return element;
 }
 
@@ -105,6 +132,5 @@ export default function StructuredContentRenderer({
     return;
   }
 
-  // Render the root node (usually 'doc')
   return <>{renderNode(node, 'root')}</>;
 }

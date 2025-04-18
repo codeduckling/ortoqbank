@@ -10,7 +10,7 @@ export default function Header() {
       <div className="container mx-auto flex items-center justify-between px-4 py-4">
         <Link href="/" className="flex items-center space-x-2">
           <Image
-            src="/logo.webp"
+            src="/logo-transparente.png"
             alt="OrtoQBank Logo"
             width={40}
             height={40}

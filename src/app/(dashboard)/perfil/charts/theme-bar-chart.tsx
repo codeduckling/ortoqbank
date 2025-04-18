@@ -20,6 +20,17 @@ interface ThemeStats {
   percentage: number;
 }
 
+// Helper function to determine fill color
+const getFillColor = (percentage: number): string => {
+  if (percentage > 70) {
+    return '#1d4ed8'; // Dark blue
+  }
+  if (percentage > 40) {
+    return '#3b82f6'; // Medium blue
+  }
+  return '#93c5fd'; // Light blue
+};
+
 interface ThemeBarChartProps {
   themeStats: ThemeStats[];
 }
@@ -76,23 +87,10 @@ export function ThemeBarChart({ themeStats = [] }: ThemeBarChartProps) {
               {data.map((entry, index) => (
                 <Cell
                   key={`cell-${index}`}
-                  fill={
-                    entry.percentage > 70
-                      ? '#1d4ed8' // Dark blue
-                      : (entry.percentage > 40
-                        ? '#3b82f6' // Medium blue
-                        : '#93c5fd') // Light blue
-                  }
+                  fill={getFillColor(entry.percentage)}
                 />
               ))}
             </Bar>
-            <Bar
-              name="Total de Questões"
-              dataKey="total"
-              fill="#bfdbfe"
-              radius={[4, 4, 0, 0]}
-              opacity={0.7}
-            />
           </BarChart>
         </ResponsiveContainer>
       </div>
