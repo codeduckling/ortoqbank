@@ -29,6 +29,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 
 import { api } from '../../../../../../convex/_generated/api';
@@ -445,7 +451,22 @@ export default function TestForm() {
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-sm font-medium">Modo</h3>
-              <InfoCircle className="text-muted-foreground h-4 w-4" />
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <InfoCircle className="text-muted-foreground h-4 w-4" />
+                  </TooltipTrigger>
+                  <TooltipContent
+                    className="max-w-xs border border-black"
+                    side="right"
+                  >
+                    <p>
+                      Modo Simulado simula condições de prova, enquanto Modo
+                      Estudo permite revisar respostas imediatamente.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
             <div className="flex items-start">
               <Tabs
@@ -478,6 +499,22 @@ export default function TestForm() {
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-sm font-medium">Questões</h3>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <InfoCircle className="text-muted-foreground h-4 w-4" />
+                  </TooltipTrigger>
+                  <TooltipContent
+                    className="max-w-xs border border-black"
+                    side="right"
+                  >
+                    <p>
+                      Filtre as questões por status: Todas, Não respondidas,
+                      Incorretas ou Marcadas.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
             <RadioGroup
               value={questionMode}
@@ -530,7 +567,26 @@ export default function TestForm() {
 
           {/* Themes */}
           <div className="space-y-2">
-            <h3 className="text-sm font-medium">Temas</h3>
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-sm font-medium">Temas</h3>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <InfoCircle className="text-muted-foreground h-4 w-4" />
+                  </TooltipTrigger>
+                  <TooltipContent
+                    className="max-w-xs border border-black"
+                    side="right"
+                  >
+                    <p>
+                      Selecione um ou mais temas para filtrar as questões.
+                      Clicar em um tema mostra os subtemas e grupos
+                      relacionados.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <div className="xs:grid-cols-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
               {themes?.map(theme => {
                 // Get question count for this theme from our new API
@@ -595,9 +651,29 @@ export default function TestForm() {
           {/* Number of Questions */}
           <div className="space-y-4">
             <div className="flex flex-col gap-2">
-              <h3 className="text-sm font-medium">
-                Quantidade Máxima de Questões
-              </h3>
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-sm font-medium">
+                  Quantidade Máxima de Questões
+                </h3>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <InfoCircle className="text-muted-foreground h-4 w-4" />
+                    </TooltipTrigger>
+                    <TooltipContent
+                      className="max-w-xs border border-black"
+                      side="right"
+                    >
+                      <p>
+                        Defina o número máximo de questões para o seu teste
+                        (entre 1 e 120). O teste terá no máximo este número de
+                        questões, ou o total de questões disponíveis se for
+                        menor.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <div className="w-24">
                 <Input
                   type="number"

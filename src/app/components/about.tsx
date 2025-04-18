@@ -91,8 +91,8 @@ export default function About() {
               Conteúdo Atualizado
             </h3>
             <p className="text-center text-gray-600">
-              Material constantemente atualizado de acordo com as últimas
-              diretrizes e publicações científicas relevantes para a prova.
+              Material constantemente atualizado de acordo com as referências
+              bibliográficas da SBOT e com as novas provas.
             </p>
           </div>
         </div>
