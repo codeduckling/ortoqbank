@@ -79,16 +79,12 @@ export default function FAQ() {
     {
       question: 'Como funciona a garantia?',
       answer:
-        'Se por algum motivo você não gostar do curso, envie um e-mail para o suporte e devolvemos seu investimento.',
+        'É garantido ao consumidor um período de testes. Se por algum motivo você não gostar do curso, envie um e-mail para o suporte (ortoqbank@gmail.com) dentro do período de 7 dias e devolvemos seu investimento.',
     },
     {
       question: 'Onde tiro minhas dúvidas?',
-      answer: (
-        <ul className="list-disc space-y-1 pl-5">
-          <li>Pelo nosso perfil oficial do instagram</li>
-          <li>Suporte via e-mail</li>
-        </ul>
-      ),
+      answer:
+        'Pelo nosso perfil oficial do instagram @ortoqbank Suporte via e-mail ortoqbank@gmail.com',
     },
     {
       question: 'Qual a duração do acesso?',
@@ -103,7 +99,7 @@ export default function FAQ() {
     {
       question: 'Grupos de residentes têm desconto?',
       answer:
-        'Sim, junte seus colegas e entre em contato conosco pelo instagram (@) ou e-mail oficial para adquirir condições especiais.',
+        'Sim, junte seus colegas e entre em contato conosco pelo instagram (@ortoqbank) ou e-mail oficial (ortoqbank@gmail.com) para adquirir condições especiais.',
     },
   ];
 

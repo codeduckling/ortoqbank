@@ -4,8 +4,6 @@ import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
 
-import { MobileMenu } from './mobile-menu';
-
 export default function Header() {
   return (
     <header className="bg-[#2196F3] text-white">
