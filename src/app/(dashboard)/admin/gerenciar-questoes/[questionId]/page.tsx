@@ -4,8 +4,8 @@ import { useQuery } from 'convex/react';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
 
+import QuestionContent from '@/components/quiz/QuestionContent';
 import { Button } from '@/components/ui/button';
-import { renderContent } from '@/lib/utils/render-content';
 
 import { api } from '../../../../../../convex/_generated/api';
 import { Id } from '../../../../../../convex/_generated/dataModel';
@@ -58,12 +58,7 @@ export default function ViewQuestion() {
       <div className="space-y-4">
         <div className="rounded-lg border p-4">
           <h2 className="mb-2 font-semibold">Pergunta:</h2>
-          <div
-            className="prose max-w-none"
-            dangerouslySetInnerHTML={{
-              __html: renderContent(question.questionText),
-            }}
-          />
+          <QuestionContent content={question.questionText} />
         </div>
 
         <div className="rounded-lg border p-4">
@@ -87,12 +82,7 @@ export default function ViewQuestion() {
 
         <div className="rounded-lg border p-4">
           <h2 className="mb-2 font-semibold">Explicação:</h2>
-          <div
-            className="prose max-w-none"
-            dangerouslySetInnerHTML={{
-              __html: renderContent(question.explanationText),
-            }}
-          />
+          <QuestionContent content={question.explanationText} />
         </div>
 
         <div className="rounded-lg border p-4">

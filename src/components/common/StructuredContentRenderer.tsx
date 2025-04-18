@@ -36,10 +36,10 @@ function renderNode(node: ContentNode, key: string | number): React.ReactNode {
     case 'paragraph': {
       // Render paragraph, handling empty paragraphs potentially
       element = (
-        <p key={key} className="mb-4 whitespace-pre-wrap">
+        <p key={key} className="whitespace-pre-wrap">
           {children || <br />}
         </p>
-      ); // Add break for empty p to maintain space
+      );
       break;
     }
     case 'bulletList': {
