@@ -149,9 +149,11 @@ export default function ThemesPage() {
             >
               <AccordionTrigger className="hover:bg-muted/20 px-4 py-3 hover:no-underline">
                 <div className="flex items-center gap-3">
-                  <Icon className="h-5 w-5" />
-                  <span className="font-medium">{theme?.name || 'Trilha'}</span>
-                  <span className="text-muted-foreground text-sm">
+                  <Icon className="h-8 w-8" />
+                  <span className="text-2xl font-medium">
+                    {theme?.name || 'Trilha'}
+                  </span>
+                  <span className="text-muted-foreground text-md">
                     ({trilhas.length} testes)
                   </span>
                 </div>
@@ -184,13 +186,9 @@ export default function ThemesPage() {
                                 </Badge>
                               )}
                             </div>
-
-                            <p className="text-muted-foreground text-sm">
-                              {exam.description}
-                            </p>
                             <div className="mt-1 flex items-center gap-2">
                               <FileText className="text-muted-foreground h-3 w-3" />
-                              <span className="text-muted-foreground text-xs">
+                              <span className="text-muted-foreground text-md">
                                 {exam.questions.length} questões
                               </span>
                             </div>

@@ -154,9 +154,9 @@ export default function SimuladoPage() {
             >
               <AccordionTrigger className="hover:bg-muted/20 px-4 py-3 hover:no-underline">
                 <div className="flex items-center gap-3">
-                  <Book className="h-5 w-5" />
-                  <span className="font-medium">{title}</span>
-                  <span className="text-muted-foreground text-sm">
+                  <Book className="h-8 w-8" />
+                  <span className="text-2xl font-medium">{title}</span>
+                  <span className="text-muted-foreground text-md">
                     ({simulados.length} simulados)
                   </span>
                 </div>
@@ -182,12 +182,12 @@ export default function SimuladoPage() {
                               <h3 className="font-medium">{simulado.name}</h3>
                               {getStatusBadge(status)}
                             </div>
-                            <p className="text-muted-foreground text-sm">
+                            <p className="text-muted-foreground text-md">
                               {simulado.description}
                             </p>
                             <div className="mt-1 flex items-center gap-2">
                               <FileText className="text-muted-foreground h-3 w-3" />
-                              <span className="text-muted-foreground text-xs">
+                              <span className="text-muted-foreground text-md">
                                 {simulado.questions.length} questões
                               </span>
                             </div>
