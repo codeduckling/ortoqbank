@@ -1,11 +1,74 @@
 import { paginationOptsValidator } from 'convex/server';
+// Import context types from convex/server
+import { GenericMutationCtx, GenericQueryCtx } from 'convex/server';
 import { v } from 'convex/values';
 
-import { mutation, query } from './_generated/server';
+import { api, internal } from './_generated/api';
+import { DataModel, Doc, Id } from './_generated/dataModel';
+import {
+  // Keep these for defining the actual mutations/queries
+  internalAction,
+  internalMutation,
+  mutation,
+  query,
+} from './_generated/server';
+import { questionCountByThemeAggregate } from './questionCountByTheme';
 import {
   _updateQuestionStatsOnDelete,
   _updateQuestionStatsOnInsert,
 } from './questionStats';
+
+// ---------- Helper Functions for Question CRUD + Aggregate Sync ----------
+
+// Use GenericMutationCtx with DataModel
+async function _internalInsertQuestion(
+  ctx: GenericMutationCtx<DataModel>,
+  data: Omit<Doc<'questions'>, '_id' | '_creationTime'>,
+) {
+  const questionId = await ctx.db.insert('questions', data);
+  const questionDoc = (await ctx.db.get(questionId))!;
+  await questionCountByThemeAggregate.insert(ctx, questionDoc);
+  // Also update the other aggregate if needed
+  await _updateQuestionStatsOnInsert(ctx, questionDoc);
+  return questionId;
+}
+
+async function _internalUpdateQuestion(
+  ctx: GenericMutationCtx<DataModel>,
+  id: Id<'questions'>,
+  updates: Partial<Doc<'questions'>>,
+) {
+  const oldQuestionDoc = await ctx.db.get(id);
+  if (!oldQuestionDoc) {
+    throw new Error(`Question not found for update: ${id}`);
+  }
+  await ctx.db.patch(id, updates);
+  const newQuestionDoc = (await ctx.db.get(id))!;
+  await questionCountByThemeAggregate.replace(
+    ctx,
+    oldQuestionDoc,
+    newQuestionDoc,
+  );
+  // Note: Add update logic for _updateQuestionStats if needed here as well
+}
+
+async function _internalDeleteQuestion(
+  ctx: GenericMutationCtx<DataModel>,
+  id: Id<'questions'>,
+) {
+  const questionDoc = await ctx.db.get(id);
+  if (!questionDoc) {
+    console.warn(`Question not found for deletion: ${id}`);
+    return false; // Indicate deletion didn't happen
+  }
+  await ctx.db.delete(id);
+  await questionCountByThemeAggregate.delete(ctx, questionDoc);
+  // Also update the other aggregate
+  await _updateQuestionStatsOnDelete(ctx, questionDoc);
+  return true; // Indicate successful deletion
+}
+
+// -----------------------------------------------------------------------
 
 const validateNoBlobs = (content: any[]) => {
   for (const node of content) {
@@ -27,40 +90,29 @@ export const create = mutation({
     subthemeId: v.optional(v.id('subthemes')),
     groupId: v.optional(v.id('groups')),
   },
-  handler: async (context, arguments_) => {
-    // Validate both text fields
-    validateNoBlobs(arguments_.questionText.content);
-    validateNoBlobs(arguments_.explanationText.content);
+  handler: async (ctx, args) => {
+    validateNoBlobs(args.questionText.content);
+    validateNoBlobs(args.explanationText.content);
 
-    const identity = await context.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error('Not authenticated');
-    }
-
-    const user = await context.db
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error('Not authenticated');
+    const user = await ctx.db
       .query('users')
       .withIndex('by_clerkUserId', q => q.eq('clerkUserId', identity.subject))
       .unique();
+    if (!user) throw new Error('User not found');
 
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    const id = await context.db.insert('questions', {
-      ...arguments_,
-      normalizedTitle: arguments_.title.trim().toLowerCase(),
+    // Prepare data and call the internal helper
+    const questionData = {
+      ...args,
+      normalizedTitle: args.title.trim().toLowerCase(),
       authorId: user._id,
-      isPublic: false,
-      alternatives: arguments_.alternatives,
-    });
+      isPublic: false, // Default value
+    };
 
-    // Get the inserted question and update the aggregate count
-    const questionDoc = await context.db.get(id);
-    if (questionDoc) {
-      await _updateQuestionStatsOnInsert(context, questionDoc);
-    }
-
-    return id;
+    // Use the helper function
+    const questionId = await _internalInsertQuestion(ctx, questionData);
+    return questionId;
   },
 });
 
@@ -72,12 +124,10 @@ export const list = query({
       .order('desc')
       .paginate(arguments_.paginationOpts);
 
-    // Fetch themes for all questions in the current page
     const themes = await Promise.all(
       questions.page.map(question => context.db.get(question.themeId)),
     );
 
-    // Combine questions with theme data
     return {
       ...questions,
       page: questions.page.map((question, index) => ({
@@ -96,10 +146,8 @@ export const getById = query({
       throw new Error('Question not found');
     }
 
-    // Fetch the associated theme
     const theme = await context.db.get(question.themeId);
 
-    // Fetch the subtheme if it exists
     const subtheme = question.subthemeId
       ? await context.db.get(question.subthemeId)
       : undefined;
@@ -122,23 +170,24 @@ export const update = mutation({
     groupId: v.optional(v.id('groups')),
     isPublic: v.optional(v.boolean()),
   },
-  handler: async (context, arguments_) => {
-    const identity = await context.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error('Not authenticated');
-    }
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error('Not authenticated');
 
-    const question = await context.db.get(arguments_.id);
-    if (!question) {
-      throw new Error('Question not found');
-    }
+    // Don't need to check if question exists here, helper does it
 
-    const { id, ...updateData } = arguments_;
-    return await context.db.patch(arguments_.id, {
+    const { id, ...updateData } = args;
+
+    // Prepare update data
+    const updates = {
       ...updateData,
-      normalizedTitle: arguments_.title.trim().toLowerCase(),
-      alternatives: arguments_.alternatives,
-    });
+      normalizedTitle: args.title?.trim().toLowerCase(), // Handle optional title in updates
+    };
+
+    // Use the helper function
+    await _internalUpdateQuestion(ctx, id, updates);
+
+    return true; // Indicate success
   },
 });
 
@@ -180,11 +229,9 @@ export const countQuestionsByMode = query({
       throw new Error('User not found');
     }
 
-    // Get total question count for 'all' mode
     const totalQuestions = await ctx.db.query('questions').collect();
     const totalCount = totalQuestions.length;
 
-    // Initialize result with all questions count
     const result = {
       all: totalCount,
       unanswered: 0,
@@ -192,7 +239,6 @@ export const countQuestionsByMode = query({
       bookmarked: 0,
     };
 
-    // For 'incorrect' mode - count questions user has answered incorrectly
     const incorrectStats = await ctx.db
       .query('userQuestionStats')
       .withIndex('by_user_incorrect', q =>
@@ -201,14 +247,12 @@ export const countQuestionsByMode = query({
       .collect();
     result.incorrect = incorrectStats.length;
 
-    // For 'bookmarked' mode - count bookmarked questions
     const bookmarks = await ctx.db
       .query('userBookmarks')
       .withIndex('by_user', q => q.eq('userId', user._id))
       .collect();
     result.bookmarked = bookmarks.length;
 
-    // For 'unanswered' mode - calculate from all answered
     const answeredStats = await ctx.db
       .query('userQuestionStats')
       .withIndex('by_user_answered', q =>
@@ -221,116 +265,14 @@ export const countQuestionsByMode = query({
   },
 });
 
-export const countQuestionsByTheme = query({
-  args: {
-    questionMode: v.union(
-      v.literal('all'),
-      v.literal('unanswered'),
-      v.literal('incorrect'),
-      v.literal('bookmarked'),
-    ),
-  },
+export const getQuestionCountForTheme = query({
+  args: { themeId: v.id('themes') },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error('Not authenticated');
-    }
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerkUserId', q => q.eq('clerkUserId', identity.subject))
-      .unique();
-
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    // Get all themes
-    const themes = await ctx.db.query('themes').collect();
-
-    // Initialize result structure
-    const result = await Promise.all(
-      themes.map(async theme => {
-        // Get questions for this theme
-        const themeQuestions = await ctx.db
-          .query('questions')
-          .filter(q => q.eq(q.field('themeId'), theme._id))
-          .collect();
-
-        const themeQuestionIds = new Set(themeQuestions.map(q => q._id));
-        const totalCount = themeQuestions.length;
-
-        // Default counts
-        let count = totalCount;
-
-        if (args.questionMode !== 'all') {
-          // For 'bookmarked' mode
-          switch (args.questionMode) {
-            case 'bookmarked': {
-              const themeBookmarks = await ctx.db
-                .query('userBookmarks')
-                .withIndex('by_user', q => q.eq('userId', user._id))
-                .collect();
-
-              // Filter bookmarks by this theme's questions
-              const bookmarkedInTheme = themeBookmarks.filter(b =>
-                themeQuestionIds.has(b.questionId),
-              );
-              count = bookmarkedInTheme.length;
-
-              break;
-            }
-            case 'incorrect': {
-              const incorrectStats = await ctx.db
-                .query('userQuestionStats')
-                .withIndex('by_user_incorrect', q =>
-                  q.eq('userId', user._id).eq('isIncorrect', true),
-                )
-                .collect();
-
-              // Filter by theme
-              const incorrectInTheme = incorrectStats.filter(stat =>
-                themeQuestionIds.has(stat.questionId),
-              );
-              count = incorrectInTheme.length;
-
-              break;
-            }
-            case 'unanswered': {
-              const answeredStats = await ctx.db
-                .query('userQuestionStats')
-                .withIndex('by_user_answered', q =>
-                  q.eq('userId', user._id).eq('hasAnswered', true),
-                )
-                .collect();
-
-              // Get IDs of answered questions in this theme
-              const answeredQuestionIds = new Set(
-                answeredStats
-                  .filter(stat => themeQuestionIds.has(stat.questionId))
-                  .map(stat => stat.questionId),
-              );
-
-              // Count unanswered as total - answered
-              count = totalCount - answeredQuestionIds.size;
-
-              break;
-            }
-            // No default
-          }
-        }
-
-        return {
-          theme: {
-            _id: theme._id,
-            name: theme.name,
-          },
-          count,
-        };
-      }),
-    );
-
-    return result;
+    const count = await questionCountByThemeAggregate.count(ctx, {
+      namespace: args.themeId,
+      bounds: {},
+    });
+    return count;
   },
 });
 
@@ -361,12 +303,9 @@ export const countAvailableQuestionsEfficient = query({
       throw new Error('User not found');
     }
 
-    // Step 1: Get base question set based on filters
     let query = ctx.db.query('questions');
 
-    // Apply theme filter if provided
     if (args.selectedThemes && args.selectedThemes.length > 0) {
-      // Use "in" operator instead of includes for proper filtering
       query = query.filter(q =>
         q.or(
           ...args.selectedThemes!.map(themeId =>
@@ -376,9 +315,7 @@ export const countAvailableQuestionsEfficient = query({
       );
     }
 
-    // Apply subtheme filter if provided
     if (args.selectedSubthemes && args.selectedSubthemes.length > 0) {
-      // Use "in" operator instead of includes for proper filtering
       query = query.filter(q =>
         q.or(
           ...args.selectedSubthemes!.map(subthemeId =>
@@ -388,9 +325,7 @@ export const countAvailableQuestionsEfficient = query({
       );
     }
 
-    // Apply group filter if provided
     if (args.selectedGroups && args.selectedGroups.length > 0) {
-      // Use "in" operator instead of includes for proper filtering
       query = query.filter(q =>
         q.or(
           ...args.selectedGroups!.map(groupId =>
@@ -404,21 +339,17 @@ export const countAvailableQuestionsEfficient = query({
     const filteredQuestionIds = new Set(questions.map(q => q._id));
     let count = questions.length;
 
-    // Step 2: Apply question mode filter
     switch (args.questionMode) {
       case 'all': {
-        // Already filtered above
         break;
       }
 
       case 'bookmarked': {
-        // Get bookmarked questions
         const bookmarks = await ctx.db
           .query('userBookmarks')
           .withIndex('by_user', q => q.eq('userId', user._id))
           .collect();
 
-        // Filter bookmarks to those in our filtered set
         const validBookmarks = bookmarks.filter(b =>
           filteredQuestionIds.has(b.questionId),
         );
@@ -428,7 +359,6 @@ export const countAvailableQuestionsEfficient = query({
       }
 
       case 'incorrect': {
-        // Get incorrectly answered questions
         const incorrectStats = await ctx.db
           .query('userQuestionStats')
           .withIndex('by_user_incorrect', q =>
@@ -436,7 +366,6 @@ export const countAvailableQuestionsEfficient = query({
           )
           .collect();
 
-        // Filter to those in our filtered set
         const validIncorrect = incorrectStats.filter(stat =>
           filteredQuestionIds.has(stat.questionId),
         );
@@ -446,7 +375,6 @@ export const countAvailableQuestionsEfficient = query({
       }
 
       case 'unanswered': {
-        // Get all answered questions
         const answeredStats = await ctx.db
           .query('userQuestionStats')
           .withIndex('by_user_answered', q =>
@@ -454,14 +382,12 @@ export const countAvailableQuestionsEfficient = query({
           )
           .collect();
 
-        // Get IDs of answered questions in our filtered set
         const answeredIds = new Set(
           answeredStats
             .filter(stat => filteredQuestionIds.has(stat.questionId))
             .map(stat => stat.questionId),
         );
 
-        // Unanswered count is total filtered - answered
         count = count - answeredIds.size;
         break;
       }
@@ -473,28 +399,56 @@ export const countAvailableQuestionsEfficient = query({
 
 export const deleteQuestion = mutation({
   args: { id: v.id('questions') },
-  handler: async (context, args) => {
-    const identity = await context.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error('Not authenticated');
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error('Not authenticated');
+
+    // Use the helper function
+    const success = await _internalDeleteQuestion(ctx, args.id);
+    return success;
+  },
+});
+
+// --- Backfill Action ---
+// This action should be run manually ONCE after deployment
+// to populate the aggregate with existing question data.
+export const backfillThemeCounts = internalAction({
+  handler: async ctx => {
+    console.log('Starting backfill for question theme counts...');
+    let count = 0;
+    // Fetch all existing questions using api
+    const questions = await ctx.runQuery(api.questions.listAll);
+
+    // Iterate and insert each question into the aggregate using internal
+    for (const questionDoc of questions) {
+      try {
+        await ctx.runMutation(internal.questions.insertIntoThemeAggregate, {
+          questionDoc,
+        });
+        count++;
+      } catch (error) {
+        console.error(
+          `Failed to insert question ${questionDoc._id} into theme aggregate:`,
+          error,
+        );
+      }
     }
 
-    const question = await context.db.get(args.id);
-    if (!question) {
-      throw new Error('Question not found');
-    }
+    console.log(
+      `Successfully backfilled ${count} questions into theme aggregate.`,
+    );
+    return { count };
+  },
+});
 
-    // Get the question before deleting it
-    const questionDoc = await context.db.get(args.id);
-
-    // Delete the question
-    await context.db.delete(args.id);
-
-    // Update the aggregate count
-    if (questionDoc) {
-      await _updateQuestionStatsOnDelete(context, questionDoc);
-    }
-
-    return true;
+// Helper internal mutation for the backfill action to call
+// Using a mutation ensures atomicity for each aggregate insert
+export const insertIntoThemeAggregate = internalMutation({
+  args: { questionDoc: v.any() }, // Pass the whole doc
+  handler: async (ctx, args) => {
+    // We need to cast the doc because internal mutations don't
+    // have full type inference across action/mutation boundary easily.
+    const questionDoc = args.questionDoc as Doc<'questions'>;
+    await questionCountByThemeAggregate.insert(ctx, questionDoc);
   },
 });
