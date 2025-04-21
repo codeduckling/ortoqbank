@@ -74,9 +74,10 @@ export default defineConfig({
   webServer: {
     command: process.env.CI ? 'npm run build && npm run start' : 'npm run dev',
     url: 'http://localhost:3000',
-    timeout: 120_000, // 2 minutes timeout for slow CI systems
+    timeout: 180_000, // 3 minutes timeout for slow CI systems
     reuseExistingServer: !process.env.CI,
     stdout: 'pipe',
     stderr: 'pipe',
+    ignoreHTTPSErrors: true,
   },
 });
