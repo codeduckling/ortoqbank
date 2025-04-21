@@ -32,7 +32,7 @@ export function TestModeSelector({ value, onChange }: TestModeSelectorProps) {
         </Popover>
       </div>
       <div className="flex items-start">
-        <Tabs value={value} onValueChange={onChange}>
+        <Tabs value={value} onValueChange={onChange as (value: string) => void}>
           <TabsList className="grid grid-cols-2">
             <TabsTrigger
               value="exam"
