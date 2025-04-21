@@ -38,7 +38,6 @@ export default function RichTextEditor({
     extensions: [
       StarterKitExtension,
       UnderlineExtension,
-      ImageExtension,
       ExtendedImage,
       ResizeImage,
       Color,
