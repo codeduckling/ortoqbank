@@ -37,6 +37,7 @@ export default [
       'unicorn/filename-case': 'off',
       'playwright/no-useless-await': 'off',
       'unicorn/no-nested-ternary': 'off',
+      'unicorn/no-abusive-eslint-disable': 'off',
     },
   },
   {
