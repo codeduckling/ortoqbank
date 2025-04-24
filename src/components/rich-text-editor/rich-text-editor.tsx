@@ -10,6 +10,7 @@ import { useEffect } from 'react';
 import ResizeImage from 'tiptap-extension-resize-image';
 
 import TextEditorMenuBar from './editor-menu-bar';
+import { pendingUploads } from './image-upload-button';
 
 interface RichTextEditorProps {
   onChange?: (value: any) => void;
@@ -54,6 +55,41 @@ export default function RichTextEditor({
         role: 'textbox',
         'aria-label': 'Rich text editor',
       },
+      handlePaste: (view, event) => {
+        if (!editor) return false;
+
+        // Process images from clipboard
+        const items = event.clipboardData?.items;
+        if (items) {
+          // Look for image data in the clipboard
+          for (const item of items) {
+            if (item.type.startsWith('image/')) {
+              const file = item.getAsFile();
+              if (!file) continue;
+
+              // Prevent default paste behavior
+              event.preventDefault();
+
+              // Handle the image file
+              const blobUrl = URL.createObjectURL(file);
+              pendingUploads.set(blobUrl, { file, blobUrl });
+
+              const imageAttributes: ImageAttributes = {
+                src: blobUrl,
+                alt: file.name,
+                style:
+                  'width: 250px; height: auto; resize: both; overflow: hidden;',
+              };
+
+              editor.chain().focus().setImage(imageAttributes).run();
+              return true;
+            }
+          }
+        }
+
+        // Let Tiptap handle other paste events
+        return false;
+      },
     },
   });
 
@@ -64,7 +100,14 @@ export default function RichTextEditor({
   }, [editor, onEditorReady]);
 
   return (
-    <div>
+    <div className="rich-text-container">
+      <style jsx global>{`
+        .rich-text-container img {
+          resize: both !important;
+          overflow: hidden !important;
+          max-width: 100%;
+        }
+      `}</style>
       <TextEditorMenuBar editor={editor} />
       <EditorContent editor={editor} />
     </div>
