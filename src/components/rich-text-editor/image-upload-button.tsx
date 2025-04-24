@@ -33,10 +33,11 @@ export function ImageUploadButton({ editor }: { editor: Editor }) {
         // Store file and blobUrl for later upload
         pendingUploads.set(blobUrl, { file, blobUrl });
 
-        // Insert blob URL into editor
+        // Insert blob URL into editor with resizable style
         const imageAttributes: ImageAttributes = {
           src: blobUrl,
-          style: 'width: 250px; height: 250px;',
+          alt: file.name,
+          style: 'width: 250px; height: auto; resize: both; overflow: hidden;',
         };
 
         editor.chain().focus().setImage(imageAttributes).run();
