@@ -26,11 +26,11 @@ export async function POST(req: NextRequest) {
 
         items: [
           {
-            id: 'id-do-seu-produto',
-            description: 'Descrição do produto',
-            title: 'Nome do produto',
+            id: '4042011329',
+            description: 'Acesso ao ortoqbank 2025',
+            title: 'Ortoqbank 2025',
             quantity: 1,
-            unit_price: 9.99,
+            unit_price: 1999.9,
             currency_id: 'BRL',
             category_id: 'category', // Recomendado inserir, mesmo que não tenha categoria - Aumenta a pontuação da sua integração com o Mercado Pago
           },
