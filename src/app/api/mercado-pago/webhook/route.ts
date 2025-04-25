@@ -10,6 +10,11 @@ export async function POST(request: Request) {
   try {
     verifyMercadoPagoSignature(request);
 
+    const validationResponse = verifyMercadoPagoSignature(request);
+    if (validationResponse) {
+      return validationResponse;
+    }
+
     const body = await request.json();
 
     const { type, data } = body;
