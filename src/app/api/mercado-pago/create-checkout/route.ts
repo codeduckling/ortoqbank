@@ -7,16 +7,19 @@ export async function POST(req: NextRequest) {
   const { testeId, userEmail } = await req.json();
 
   try {
+    // Define the regular and PIX prices directly
+    const REGULAR_PRICE = 1999.9;
+    const PIX_PRICE = 1899;
+    const DISCOUNT_AMOUNT = REGULAR_PRICE - PIX_PRICE;
+
     const preference = new Preference(mpClient);
 
     const createdPreference = await preference.create({
       body: {
-        external_reference: testeId, // IMPORTANTE: Isso aumenta a pontuação da sua integração com o Mercado Pago - É o id da compra no nosso sistema
+        external_reference: testeId,
         metadata: {
-          testeId, // O Mercado Pago converte para snake_case, ou seja, testeId vai virar teste_id
-          // userEmail: userEmail,
-          // plan: '123'
-          //etc
+          testeId,
+          userEmail,
         },
         ...(userEmail && {
           payer: {
@@ -24,56 +27,65 @@ export async function POST(req: NextRequest) {
           },
         }),
 
+        // Original items implementation
         items: [
           {
             id: '4042011329',
             description: 'Acesso ao ortoqbank 2025',
             title: 'Ortoqbank 2025',
             quantity: 1,
-            unit_price: 1999.9,
+            unit_price: REGULAR_PRICE,
             currency_id: 'BRL',
-            category_id: 'category', // Recomendado inserir, mesmo que não tenha categoria - Aumenta a pontuação da sua integração com o Mercado Pago
+            category_id: 'education',
           },
         ],
+
+        // Payment method configuration with PIX discount
         payment_methods: {
-          // Descomente para desativar métodos de pagamento
-          //   excluded_payment_methods: [
-          //     {
-          //       id: "bolbradesco",
-          //     },
-          //     {
-          //       id: "pec",
-          //     },
-          //   ],
-          //   excluded_payment_types: [
-          //     {
-          //       id: "debit_card",
-          //     },
-          //     {
-          //       id: "credit_card",
-          //     },
-          //   ],
-          installments: 12, // Número máximo de parcelas permitidas - calculo feito automaticamente
+          // Set PIX as the default payment method
+
+          // Configure discounts for payment methods
+          discounts: [
+            {
+              payment_method_id: 'pix',
+              type: 'fixed',
+              value: DISCOUNT_AMOUNT,
+            },
+          ],
+
+          installments: 12,
         },
-        auto_return: 'approved',
+
+        // Only use auto_return in production
+        ...(process.env.NODE_ENV === 'production' && {
+          auto_return: 'approved',
+        }),
+
         back_urls: {
           success: `${req.headers.get('origin')}/?status=sucesso`,
           failure: `${req.headers.get('origin')}/?status=falha`,
-          pending: `${req.headers.get('origin')}/api/mercado-pago/pending`, // Criamos uma rota para lidar com pagamentos pendentes
+          pending: `${req.headers.get('origin')}/api/mercado-pago/pending`,
         },
+
+        statement_descriptor: 'ORTOQBANK',
       },
     });
 
     if (!createdPreference.id) {
-      throw new Error('No preferenceID');
+      throw new Error('Failed to create preference');
     }
 
     return NextResponse.json({
       preferenceId: createdPreference.id,
       initPoint: createdPreference.init_point,
+      regularPrice: REGULAR_PRICE,
+      pixPrice: PIX_PRICE,
     });
   } catch (error) {
-    console.error(error);
-    return NextResponse.error();
+    console.error('Error creating Mercado Pago preference:', error);
+    return NextResponse.json(
+      { error: 'Failed to create checkout preference' },
+      { status: 500 },
+    );
   }
 }

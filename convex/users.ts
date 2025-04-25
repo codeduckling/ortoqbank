@@ -24,21 +24,65 @@ export const getUserByClerkId = internalQuery({
 
 export const upsertFromClerk = internalMutation({
   args: {
-    data: v.any() as Validator<UserJSON>,
+    data: v.any(),
   }, // no runtime validation, trust Clerk
   async handler(context, { data }) {
-    const userAttributes = {
-      email: data.email_addresses[0].email_address,
+    // Extract any payment data from Clerk's public metadata
+    const publicMetadata = data.public_metadata || {};
+    const isPaidFromClerk = publicMetadata.paid === true;
+
+    // Get existing user to preserve payment data if it exists
+    const existingUser = await userByClerkUserId(context, data.id);
+
+    // Base user data to update or insert
+    const userData = {
+      firstName: data.first_name || undefined,
+      lastName: data.last_name || undefined,
+      email: data.email_addresses?.[0]?.email_address,
       clerkUserId: data.id,
-      firstName: data.first_name ?? undefined,
-      lastName: data.last_name ?? undefined,
-      imageUrl: data.image_url ?? undefined,
+      imageUrl: data.image_url,
     };
 
-    const user = await userByClerkUserId(context, data.id);
-    await (user === null
-      ? context.db.insert('users', userAttributes)
-      : context.db.patch(user._id, userAttributes));
+    if (existingUser !== null) {
+      // Update existing user, preserving payment data if it exists
+      // and not overriding with new payment data from Clerk
+      const paymentData = isPaidFromClerk
+        ? {
+            paid: true,
+            paymentId: publicMetadata.paymentId,
+            testeId: publicMetadata.testeId,
+            paymentDate: publicMetadata.paymentDate,
+            paymentStatus: publicMetadata.paymentStatus,
+          }
+        : {
+            // Keep existing payment data if it exists
+            paid: existingUser.paid,
+            paymentId: existingUser.paymentId,
+            testeId: existingUser.testeId,
+            paymentDate: existingUser.paymentDate,
+            paymentStatus: existingUser.paymentStatus,
+          };
+
+      return await context.db.patch(existingUser._id, {
+        ...userData,
+        ...paymentData,
+      });
+    }
+
+    // Create new user with payment data if it exists in Clerk
+    if (isPaidFromClerk) {
+      return await context.db.insert('users', {
+        ...userData,
+        paid: true,
+        paymentId: publicMetadata.paymentId,
+        testeId: publicMetadata.testeId,
+        paymentDate: publicMetadata.paymentDate,
+        paymentStatus: publicMetadata.paymentStatus,
+      });
+    }
+
+    // Create new user without payment data
+    return await context.db.insert('users', userData);
   },
 });
 
@@ -77,3 +121,53 @@ async function userByClerkUserId(context: QueryContext, clerkUserId: string) {
     .withIndex('by_clerkUserId', q => q.eq('clerkUserId', clerkUserId))
     .unique();
 }
+
+// Add this function to check if a user has paid access
+export const checkUserPaid = query({
+  args: {},
+  returns: v.boolean(),
+  async handler(ctx) {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return false;
+    }
+
+    const user = await userByClerkUserId(ctx, identity.subject);
+    if (!user) {
+      return false;
+    }
+
+    return user.paid === true;
+  },
+});
+
+// You can also add this function to get user payment details
+export const getUserPaymentDetails = query({
+  args: {},
+  returns: v.object({
+    paid: v.optional(v.boolean()),
+    paymentId: v.optional(v.string()),
+    testeId: v.optional(v.string()),
+    paymentDate: v.optional(v.string()),
+    paymentStatus: v.optional(v.string()),
+  }),
+  async handler(ctx) {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return { paid: false };
+    }
+
+    const user = await userByClerkUserId(ctx, identity.subject);
+    if (!user) {
+      return { paid: false };
+    }
+
+    return {
+      paid: user.paid,
+      paymentId: user.paymentId,
+      testeId: user.testeId,
+      paymentDate: user.paymentDate,
+      paymentStatus: user.paymentStatus,
+    };
+  },
+});

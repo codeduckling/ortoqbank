@@ -2,7 +2,6 @@ import Image from 'next/image';
 
 interface StaffMember {
   name: string;
-  role: string;
   description: string[];
   imageUrl: string;
 }
@@ -10,23 +9,21 @@ interface StaffMember {
 const staffMembers: StaffMember[] = [
   {
     name: 'Daniel Duarte Perini',
-    role: 'Cirurgia da Coluna Vertebral',
     description: [
       'Médico graduado pela Faculdade de Medicina da USP (FMUSP)',
       'Ortopedista pelo Instituto de Ortopedia e Traumatologia do HC-FMUSP (IOT)',
       'Fellowship Cirurgia da Coluna Vertebral (IOT)',
     ],
-    imageUrl: '/medico2.jpeg',
+    imageUrl: '/medico1.jpg',
   },
   {
     name: 'Vitor Ricardo Moraes',
-    role: 'Cirurgia do Joelho',
     description: [
       'Médico graduado pela Faculdade de Medicina de Ribeirão Preto da USP (FMRP-USP)',
       'Ortopedista pelo Instituto de Ortopedia e Traumatologia do HC-FMUSP (IOT)',
       'Fellowship Cirurgia do Joelho (IOT)',
     ],
-    imageUrl: '/medico1.jpg',
+    imageUrl: '/medico2.jpg',
   },
 ];
 
@@ -57,9 +54,7 @@ export default function StaffSection() {
                 <h3 className="mb-1 text-xl font-semibold text-[#2196F3]">
                   {member.name}
                 </h3>
-                <p className="mb-2 text-sm font-medium text-gray-600">
-                  {member.role}
-                </p>
+
                 <ul className="list-disc space-y-1 pl-4 text-sm text-gray-600">
                   {member.description.map((point, i) => (
                     <li key={i}>{point}</li>

@@ -9,11 +9,15 @@ export default defineSchema({
     email: v.string(),
     imageUrl: v.optional(v.string()),
     clerkUserId: v.string(),
-    stripeCustomerId: v.optional(v.string()),
-    stripeSubscriptionId: v.optional(v.string()),
+    // Payment fields from Mercado Pago
+    paid: v.optional(v.boolean()),
+    paymentId: v.optional(v.string()),
+    testeId: v.optional(v.string()),
+    paymentDate: v.optional(v.string()),
+    paymentStatus: v.optional(v.string()),
   })
     .index('by_clerkUserId', ['clerkUserId'])
-    .index('by_stripeCustomerId', ['stripeCustomerId']),
+    .index('by_paid', ['paid']),
 
   themes: defineTable({
     name: v.string(),
