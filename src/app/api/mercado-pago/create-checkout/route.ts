@@ -8,9 +8,9 @@ export async function POST(req: NextRequest) {
 
   try {
     // Define the regular and PIX prices directly
-    const regularPrice = 1999.9;
-    const pixPrice = 1899;
-    const discountAmount = regularPrice - pixPrice;
+    const REGULAR_PRICE = 1999.9;
+    const PIX_PRICE = 1899;
+    const DISCOUNT_AMOUNT = REGULAR_PRICE - PIX_PRICE;
 
     const preference = new Preference(mpClient);
 
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
             description: 'Acesso ao ortoqbank 2025',
             title: 'Ortoqbank 2025',
             quantity: 1,
-            unit_price: regularPrice,
+            unit_price: REGULAR_PRICE,
             currency_id: 'BRL',
             category_id: 'education',
           },
@@ -50,14 +50,18 @@ export async function POST(req: NextRequest) {
             {
               payment_method_id: 'pix',
               type: 'fixed',
-              value: discountAmount,
+              value: DISCOUNT_AMOUNT,
             },
           ],
 
           installments: 12,
         },
 
-        auto_return: 'approved',
+        // Only use auto_return in production
+        ...(process.env.NODE_ENV === 'production' && {
+          auto_return: 'approved',
+        }),
+
         back_urls: {
           success: `${req.headers.get('origin')}/?status=sucesso`,
           failure: `${req.headers.get('origin')}/?status=falha`,
@@ -75,8 +79,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       preferenceId: createdPreference.id,
       initPoint: createdPreference.init_point,
-      regularPrice: regularPrice,
-      pixPrice: pixPrice,
+      regularPrice: REGULAR_PRICE,
+      pixPrice: PIX_PRICE,
     });
   } catch (error) {
     console.error('Error creating Mercado Pago preference:', error);

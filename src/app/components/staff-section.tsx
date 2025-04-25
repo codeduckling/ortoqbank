@@ -16,7 +16,7 @@ const staffMembers: StaffMember[] = [
       'Ortopedista pelo Instituto de Ortopedia e Traumatologia do HC-FMUSP (IOT)',
       'Fellowship Cirurgia da Coluna Vertebral (IOT)',
     ],
-    imageUrl: '/medico2.jpeg',
+    imageUrl: '/medico1.jpg',
   },
   {
     name: 'Vitor Ricardo Moraes',
@@ -26,7 +26,7 @@ const staffMembers: StaffMember[] = [
       'Ortopedista pelo Instituto de Ortopedia e Traumatologia do HC-FMUSP (IOT)',
       'Fellowship Cirurgia do Joelho (IOT)',
     ],
-    imageUrl: '/medico1.jpg',
+    imageUrl: '/medico2.jpg',
   },
 ];
 
