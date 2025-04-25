@@ -11,7 +11,7 @@ export default async function Layout({
 }) {
   const isAdmin = await checkRole('admin');
 
-  const mainClassName = `w-full bg-gradient-to-t from-indigo-50 to-white ${isAdmin ? '' : 'select-none'}`;
+  const mainClassName = `w-full ${isAdmin ? '' : 'select-none'}`;
 
   return (
     <SidebarProvider>
