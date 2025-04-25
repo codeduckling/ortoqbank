@@ -3,6 +3,17 @@ import 'server-only';
 import { clerkClient } from '@clerk/nextjs/server';
 import { PaymentResponse } from 'mercadopago/dist/clients/payment/commonTypes';
 
+/**
+ * Checks if the payment status represents a completed transaction
+ */
+function isCompletedPayment(status: string | undefined): boolean {
+  if (!status) return false;
+
+  // Mercado Pago payment statuses that indicate successful payment
+  const successStatuses = ['approved', 'authorized'];
+  return successStatuses.includes(status);
+}
+
 export async function handleMercadoPagoPayment(paymentData: PaymentResponse) {
   const metadata = paymentData.metadata;
   const userEmail = metadata.user_email; // Os metadados do Mercado Pago são convertidos para snake_case
@@ -10,6 +21,14 @@ export async function handleMercadoPagoPayment(paymentData: PaymentResponse) {
 
   if (!userEmail) {
     console.error('Missing user email in payment metadata');
+    return;
+  }
+
+  // Verify that payment is completed before proceeding
+  if (!isCompletedPayment(paymentData.status)) {
+    console.log(
+      `Payment ${paymentData.id} has status ${paymentData.status || 'undefined'}, not updating user`,
+    );
     return;
   }
 
