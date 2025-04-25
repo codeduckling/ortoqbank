@@ -43,7 +43,6 @@ export async function POST(req: NextRequest) {
         // Payment method configuration with PIX discount
         payment_methods: {
           // Set PIX as the default payment method
-          default_payment_method_id: 'pix',
 
           // Configure discounts for payment methods
           discounts: [
