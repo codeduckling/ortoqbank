@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery } from 'convex/react';
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -22,8 +23,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useDebounce } from '@/hooks/use-debounce';
 import { useToast } from '@/hooks/use-toast';
 
+import { api } from '../../../../../../convex/_generated/api';
 import { Id } from '../../../../../../convex/_generated/dataModel';
 
 interface EditQuizDialogProps {
@@ -35,12 +38,6 @@ interface EditQuizDialogProps {
     description: string;
     category?: 'trilha' | 'simulado';
   };
-  questions: Array<{
-    _id: Id<'questions'>;
-    title: string;
-    themeId: string;
-    questionCode?: string;
-  }>;
   presetQuizzes: Array<{
     _id: Id<'presetQuizzes'>;
     name: string;
@@ -61,13 +58,13 @@ export function EditExamDialog({
   open,
   onOpenChange,
   quiz,
-  questions,
   presetQuizzes,
   onUpdateQuiz,
   onDeleteQuiz,
 }: EditQuizDialogProps) {
   const { toast } = useToast();
-  const [searchValue, setSearchValue] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const debouncedSearchValue = useDebounce(searchInput, 500); // 500ms debounce delay
   const [name, setName] = useState(quiz.name);
   const [description, setDescription] = useState(quiz.description);
   const [category, setCategory] = useState<'trilha' | 'simulado'>(
@@ -78,6 +75,13 @@ export function EditExamDialog({
   const [selectedQuestions, setSelectedQuestions] = useState<Set<string>>(
     new Set(presetQuizzes.find(q => q._id === quiz.id)?.questions ?? []),
   );
+
+  // Use the searchByCode query instead of client-side filtering
+  const searchResults =
+    useQuery(
+      api.questions.searchByCode,
+      debouncedSearchValue.trim() ? { code: debouncedSearchValue } : 'skip',
+    ) || [];
 
   const handleToggleQuestion = (questionId: string) => {
     const newSelected = new Set(selectedQuestions);
@@ -130,15 +134,6 @@ export function EditExamDialog({
     }
   };
 
-  const filteredQuestions = questions.filter(
-    question =>
-      question.title.toLowerCase().includes(searchValue.toLowerCase()) ||
-      question.questionCode
-        ?.toLowerCase()
-        .includes(searchValue.toLowerCase()) ||
-      false,
-  );
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl">
@@ -181,31 +176,54 @@ export function EditExamDialog({
           </div>
           <Input
             type="text"
-            placeholder="Buscar questões por código ou título..."
-            value={searchValue}
-            onChange={event => setSearchValue(event.target.value)}
+            placeholder="Buscar questões por código..."
+            value={searchInput}
+            onChange={event => setSearchInput(event.target.value)}
           />
+          <p className="text-muted-foreground text-xs">
+            Digite um código para pesquisar questões. A busca será realizada
+            após uma breve pausa na digitação.
+          </p>
           <ScrollArea className="h-[400px] rounded-md border p-4">
-            {filteredQuestions.map(question => (
-              <div
-                key={question._id}
-                className="mb-2 flex items-center space-x-2"
-              >
-                <Checkbox
-                  id={question._id}
-                  checked={selectedQuestions.has(question._id)}
-                  onCheckedChange={() => handleToggleQuestion(question._id)}
-                />
-                <Label htmlFor={question._id} className="flex flex-col">
-                  <span className="text-sm font-medium">
-                    {question.questionCode || 'Sem código'}
-                  </span>
-                  <span className="text-muted-foreground text-xs">
-                    {question.title}
-                  </span>
-                </Label>
+            {debouncedSearchValue.trim() ? (
+              searchResults.length === 0 ? (
+                <div className="flex h-full items-center justify-center">
+                  <p className="text-muted-foreground text-sm">
+                    Nenhuma questão encontrada com este código
+                  </p>
+                </div>
+              ) : (
+                searchResults.map(question => (
+                  <div
+                    key={question._id}
+                    className="mb-2 flex items-center space-x-2"
+                  >
+                    <Checkbox
+                      id={question._id}
+                      checked={selectedQuestions.has(question._id)}
+                      onCheckedChange={() => handleToggleQuestion(question._id)}
+                    />
+                    <Label htmlFor={question._id} className="flex flex-col">
+                      <span className="text-sm font-medium">
+                        {question.questionCode || 'Sem código'}
+                      </span>
+                      <span className="text-muted-foreground text-xs">
+                        {question.title}
+                      </span>
+                      <span className="text-muted-foreground text-xs">
+                        Tema: {question.theme?.name || 'Não especificado'}
+                      </span>
+                    </Label>
+                  </div>
+                ))
+              )
+            ) : (
+              <div className="flex h-full items-center justify-center">
+                <p className="text-muted-foreground text-sm">
+                  Digite um código para pesquisar questões
+                </p>
               </div>
-            ))}
+            )}
           </ScrollArea>
         </div>
         <DialogFooter>

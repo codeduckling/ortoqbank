@@ -13,11 +13,11 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+import StructuredContentRenderer from '@/components/common/StructuredContentRenderer';
 import QuestionContent from '@/components/quiz/QuestionContent';
 import QuizProgressResults from '@/components/quiz/QuizProgressResults';
 import { Button } from '@/components/ui/button';
 import { formatDate } from '@/lib/utils';
-import { renderContent } from '@/lib/utils/render-content';
 
 import { api } from '../../../../../convex/_generated/api';
 import { Id } from '../../../../../convex/_generated/dataModel';
@@ -205,12 +205,9 @@ export default function UniversalQuizResultsPage() {
             {feedback.explanation && (
               <div className="mt-2">
                 <div className="text-sm font-medium">Explicação:</div>
-                <div
-                  className="mt-1 text-sm"
-                  dangerouslySetInnerHTML={{
-                    __html: renderContent(feedback.explanation),
-                  }}
-                />
+                <div className="mt-1 text-sm">
+                  <StructuredContentRenderer node={feedback.explanation} />
+                </div>
               </div>
             )}
           </div>

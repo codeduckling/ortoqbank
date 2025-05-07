@@ -375,3 +375,29 @@ export const updateName = mutation({
     return { success: true };
   },
 });
+
+export const searchByName = query({
+  args: {
+    name: v.string(),
+  },
+  handler: async (ctx, args) => {
+    if (!args.name || args.name.trim() === '') {
+      return [];
+    }
+
+    const userId = await getCurrentUserOrThrow(ctx);
+
+    // Normalize the search term
+    const searchTerm = args.name.trim();
+
+    // Use the search index for efficient text search
+    // Also filter by the current user's ID since custom quizzes are user-specific
+    const matchingQuizzes = await ctx.db
+      .query('customQuizzes')
+      .withSearchIndex('search_by_name', q => q.search('name', searchTerm))
+      .filter(q => q.eq(q.field('authorId'), userId._id))
+      .take(50); // Limit results to reduce bandwidth
+
+    return matchingQuizzes;
+  },
+});
