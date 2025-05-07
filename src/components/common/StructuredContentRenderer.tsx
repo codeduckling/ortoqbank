@@ -16,8 +16,27 @@ export interface ContentNode {
 }
 
 // Props for the main renderer component
+// Update to accept either a ContentNode object or a string representation
+// Also add support for the future migration path with dedicated string fields
 interface StructuredContentRendererProps {
-  node: ContentNode | null | undefined;
+  node?: ContentNode | string | null | undefined;
+  // Support for the new migration fields
+  stringContent?: string | null | undefined;
+}
+
+// Helper function to parse a string to ContentNode
+function parseContentNode(
+  content: string | ContentNode,
+): ContentNode | undefined {
+  if (typeof content === 'string') {
+    try {
+      return JSON.parse(content) as ContentNode;
+    } catch (error) {
+      console.error('Failed to parse content string:', error);
+      return undefined;
+    }
+  }
+  return content;
 }
 
 // Helper function to render a single node
@@ -159,10 +178,25 @@ function renderNode(node: ContentNode, key: string | number): React.ReactNode {
 
 export default function StructuredContentRenderer({
   node,
+  stringContent,
 }: StructuredContentRendererProps) {
+  // First try the dedicated string field (future migration path)
+  if (stringContent) {
+    const parsedContent = parseContentNode(stringContent);
+    if (parsedContent) {
+      return <>{renderNode(parsedContent, 'root')}</>;
+    }
+  }
+
+  // Fall back to the original node field
   if (!node) {
     return;
   }
 
-  return <>{renderNode(node, 'root')}</>;
+  const parsedNode = parseContentNode(node);
+  if (!parsedNode) {
+    return;
+  }
+
+  return <>{renderNode(parsedNode, 'root')}</>;
 }
