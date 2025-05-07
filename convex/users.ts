@@ -4,6 +4,7 @@ import { v, type Validator } from 'convex/values';
 import {
   internalMutation,
   internalQuery,
+  mutation,
   query,
   type QueryCtx as QueryContext,
 } from './_generated/server';
@@ -41,6 +42,7 @@ export const upsertFromClerk = internalMutation({
       email: data.email_addresses?.[0]?.email_address,
       clerkUserId: data.id,
       imageUrl: data.image_url,
+      termsAccepted: data.terms_accepted,
     };
 
     if (existingUser !== null) {
@@ -169,5 +171,29 @@ export const getUserPaymentDetails = query({
       paymentDate: user.paymentDate,
       paymentStatus: user.paymentStatus,
     };
+  },
+});
+
+export const getTermsAccepted = query({
+  args: {},
+  returns: v.boolean(),
+  async handler(ctx) {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return false;
+    const user = await userByClerkUserId(ctx, identity.subject);
+    return user?.termsAccepted === true;
+  },
+});
+
+export const setTermsAccepted = mutation({
+  args: { accepted: v.boolean() },
+  returns: v.null(),
+  async handler(ctx, args) {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return;
+    const user = await userByClerkUserId(ctx, identity.subject);
+    if (!user) return;
+    await ctx.db.patch(user._id, { termsAccepted: args.accepted });
+    return;
   },
 });

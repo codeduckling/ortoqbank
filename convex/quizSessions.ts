@@ -139,14 +139,19 @@ export const submitAnswerAndProgress = mutation({
     const isAnswerCorrect =
       args.selectedAlternativeIndex === currentQuestion.correctAlternativeIndex;
 
-    // 4. Save answer and feedback for current question - use string format for explanation
+    // 4. Save answer and feedback for current question - ensure explanation is a string
+    const explanationString =
+      typeof currentQuestion.explanationTextString === 'string'
+        ? currentQuestion.explanationTextString
+        : JSON.stringify(currentQuestion.explanationTextString);
+
     await ctx.db.patch(session._id, {
       answers: [...session.answers, args.selectedAlternativeIndex],
       answerFeedback: [
         ...session.answerFeedback,
         {
           isCorrect: isAnswerCorrect,
-          explanation: currentQuestion.explanationTextString,
+          explanation: explanationString,
           correctAlternative: currentQuestion.correctAlternativeIndex,
         },
       ],
@@ -163,7 +168,7 @@ export const submitAnswerAndProgress = mutation({
     return {
       isAnswerCorrect,
       feedback: isAnswerCorrect ? 'Correct!' : 'Incorrect',
-      explanation: currentQuestion.explanationTextString,
+      explanation: explanationString,
       correctAlternative: currentQuestion.correctAlternativeIndex,
       nextQuestionIndex: session.currentQuestionIndex + 1,
       isComplete: session.currentQuestionIndex + 1 >= quiz.questions.length,
