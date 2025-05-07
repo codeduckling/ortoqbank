@@ -75,25 +75,26 @@ export const migrateQuestion = internalMutation({
       }
 
       // Convert content objects to strings using ternary expressions
-      // For questionText
+      // For questionText - keep as string if already string, otherwise stringify
       const stringifiedQuestionText =
         typeof question.questionText === 'string'
           ? question.questionText
           : JSON.stringify(question.questionText);
 
-      // For explanationText
+      // For explanationText - keep as string if already string, otherwise stringify
       const stringifiedExplanationText =
         typeof question.explanationText === 'string'
           ? question.explanationText
           : JSON.stringify(question.explanationText);
 
-      // Update the question with both approaches:
-      // 1. Update the existing fields to strings
-      // 2. Add to the new dedicated string fields
-      // 3. Mark as migrated
+      // IMPORTANT: Only write to the new string fields
+      // DO NOT overwrite the original fields since they're still accessed as objects
       await ctx.db.patch(args.questionId, {
-        questionText: stringifiedQuestionText,
-        explanationText: stringifiedExplanationText,
+        // Do not overwrite the original fields:
+        // questionText: stringifiedQuestionText,
+        // explanationText: stringifiedExplanationText,
+
+        // Only add to the new string fields
         questionTextString: stringifiedQuestionText,
         explanationTextString: stringifiedExplanationText,
         contentMigrated: true,

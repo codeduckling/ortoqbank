@@ -18,20 +18,23 @@ We're using a multi-phase approach to safely migrate content:
 ### Phase 2: Data Migration
 
 - Run the migration script to convert existing content to strings
-- Both the original fields and the new string fields will be populated
-- The migration will preserve all existing data
+- **IMPORTANT**: The migration preserves the original object fields
+  (`questionText` and `explanationText`)
+- The string versions are stored in the new dedicated fields
+  (`questionTextString` and `explanationTextString`)
+- This dual approach maintains backward compatibility with existing code
 
 ### Phase 3: Code Updates
 
 - Modified the `StructuredContentRenderer` component to handle both formats
-- New code will write to both formats during the transition period
-- UI will prefer the new string fields but fall back to the original fields
+- New code will be updated to use the new string fields
+- Legacy code continues to work by accessing the original object fields
 
 ### Phase 4: Finalization (Future)
 
-- After confirming everything works correctly, we'll finalize the migration
-- We'll update the schema to use only the string fields
-- The old fields will be removed
+- After confirming all code has been updated to use the new string fields
+- Run a final migration to clean up if needed
+- Optionally remove the original object fields if no longer needed
 
 ## How to Run the Migration
 
@@ -72,10 +75,11 @@ Or from the Convex Dashboard by:
 
 ### Data Format
 
-The content objects from TipTap are being stored as JSON strings:
+The content objects from TipTap are being stored as JSON strings in the new
+fields:
 
 ```javascript
-// Before (Object format)
+// Original object format (preserved)
 questionText: {
   type: "doc",
   content: [
@@ -86,8 +90,23 @@ questionText: {
   ]
 }
 
-// After (String format)
-questionText: "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"text\":\"Sample text\",\"type\":\"text\"}]}]}"
+// New string fields
+questionTextString: "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"text\":\"Sample text\",\"type\":\"text\"}]}]}"
+```
+
+### Required Code Updates
+
+After running the migration, you should gradually update code that accesses
+these fields:
+
+```typescript
+// BEFORE: Accessing object directly
+const questionContent = question.questionText;
+
+// AFTER: Using string field and parsing when needed
+const questionContent = question.questionTextString
+  ? JSON.parse(question.questionTextString)
+  : question.questionText;
 ```
 
 ### Renderer Compatibility

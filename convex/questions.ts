@@ -117,8 +117,14 @@ export const create = mutation({
     // Prepare data and call the internal helper
     const questionData = {
       ...args,
-      questionText: stringifiedQuestionText,
-      explanationText: stringifiedExplanationText,
+      // Keep original objects for backward compatibility
+      questionText: args.questionText,
+      explanationText: args.explanationText,
+      // Add string versions in the new fields
+      questionTextString: stringifiedQuestionText,
+      explanationTextString: stringifiedExplanationText,
+      // Set migration flag
+      contentMigrated: true,
       normalizedTitle: args.title.trim().toLowerCase(),
       authorId: user._id,
       isPublic: false, // Default value
@@ -200,8 +206,14 @@ export const update = mutation({
     // Prepare update data
     const updates = {
       ...updateData,
-      questionText: stringifiedQuestionText,
-      explanationText: stringifiedExplanationText,
+      // Keep original objects for backward compatibility
+      questionText: args.questionText,
+      explanationText: args.explanationText,
+      // Add string versions in the new fields
+      questionTextString: stringifiedQuestionText,
+      explanationTextString: stringifiedExplanationText,
+      // Set migration flag
+      contentMigrated: true,
       normalizedTitle: args.title?.trim().toLowerCase(), // Handle optional title in updates
     };
 
