@@ -201,6 +201,25 @@ export default function TestForm() {
                   { shouldValidate: true },
                 );
               }}
+              onToggleMultipleGroups={groupIds => {
+                const current = selectedGroups || [];
+                // Create a new set from the current groups
+                const updatedGroups = new Set(current);
+
+                // For each group ID in the array, toggle its presence in the set
+                groupIds.forEach(groupId => {
+                  if (updatedGroups.has(groupId)) {
+                    updatedGroups.delete(groupId);
+                  } else {
+                    updatedGroups.add(groupId);
+                  }
+                });
+
+                // Update the form state with the new array
+                form.setValue('selectedGroups', [...updatedGroups], {
+                  shouldValidate: true,
+                });
+              }}
             />
           )}
 

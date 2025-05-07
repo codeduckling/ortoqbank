@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from 'convex/react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -23,27 +23,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useDebounce } from '@/hooks/use-debounce';
 import { useToast } from '@/hooks/use-toast';
 
 import { api } from '../../../../../../convex/_generated/api';
 import { Id } from '../../../../../../convex/_generated/dataModel';
-
-// Debounce helper function
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
-}
 
 interface EditQuizDialogProps {
   open: boolean;
