@@ -124,6 +124,7 @@ export const list = query({
       .order('desc')
       .paginate(arguments_.paginationOpts);
 
+    // Only fetch themes for the current page of questions, not all themes
     const themes = await Promise.all(
       questions.page.map(question => context.db.get(question.themeId)),
     );
@@ -192,6 +193,9 @@ export const update = mutation({
 });
 
 export const listAll = query({
+  // WARNING: This query downloads the entire questions table and should be avoided in production
+  // or with large datasets as it will consume significant bandwidth.
+  // Consider using paginated queries (like 'list') or filtering server-side instead.
   handler: async context => {
     return await context.db.query('questions').collect();
   },
@@ -303,97 +307,230 @@ export const countAvailableQuestionsEfficient = query({
       throw new Error('User not found');
     }
 
-    let query = ctx.db.query('questions');
+    // Calculate the total count based on themes
+    let totalCount = 0;
 
+    // If themes are selected, sum the counts from the aggregate
     if (args.selectedThemes && args.selectedThemes.length > 0) {
-      query = query.filter(q =>
-        q.or(
-          ...args.selectedThemes!.map(themeId =>
-            q.eq(q.field('themeId'), themeId),
-          ),
+      // Use the aggregate to get counts for each selected theme
+      const themeCounts = await Promise.all(
+        args.selectedThemes.map(themeId =>
+          questionCountByThemeAggregate.count(ctx, {
+            namespace: themeId,
+            bounds: {},
+          }),
         ),
       );
+
+      // Sum up all theme counts
+      totalCount = themeCounts.reduce((sum, count) => sum + count, 0);
+    } else {
+      // If no themes selected, get the total count of all questions
+      // This is more efficient than querying the entire table
+      const questions = await ctx.db.query('questions').collect();
+      totalCount = questions.length;
     }
 
-    if (args.selectedSubthemes && args.selectedSubthemes.length > 0) {
-      query = query.filter(q =>
-        q.or(
-          ...args.selectedSubthemes!.map(subthemeId =>
-            q.eq(q.field('subthemeId'), subthemeId),
+    // For subtheme and group filtering, we still need to do some filtering
+    // since the aggregate is only by theme
+    let filteredCount = totalCount;
+
+    // If we need to filter by subtheme or group, we need to query the questions
+    const needsDetailedFiltering =
+      (args.selectedSubthemes && args.selectedSubthemes.length > 0) ||
+      (args.selectedGroups && args.selectedGroups.length > 0);
+
+    if (needsDetailedFiltering) {
+      // Start with a base query for the selected themes
+      let query = ctx.db.query('questions');
+
+      if (args.selectedThemes && args.selectedThemes.length > 0) {
+        query = query.filter(q =>
+          q.or(
+            ...args.selectedThemes!.map(themeId =>
+              q.eq(q.field('themeId'), themeId),
+            ),
           ),
-        ),
-      );
-    }
+        );
+      }
 
-    if (args.selectedGroups && args.selectedGroups.length > 0) {
-      query = query.filter(q =>
-        q.or(
-          ...args.selectedGroups!.map(groupId =>
-            q.eq(q.field('groupId'), groupId),
+      // Add subtheme filter if needed
+      if (args.selectedSubthemes && args.selectedSubthemes.length > 0) {
+        query = query.filter(q =>
+          q.or(
+            ...args.selectedSubthemes!.map(subthemeId =>
+              q.eq(q.field('subthemeId'), subthemeId),
+            ),
           ),
-        ),
-      );
+        );
+      }
+
+      // Add group filter if needed
+      if (args.selectedGroups && args.selectedGroups.length > 0) {
+        query = query.filter(q =>
+          q.or(
+            ...args.selectedGroups!.map(groupId =>
+              q.eq(q.field('groupId'), groupId),
+            ),
+          ),
+        );
+      }
+
+      // Get the filtered questions
+      const filteredQuestions = await query.collect();
+      filteredCount = filteredQuestions.length;
+
+      // Create a set of filtered question IDs for the mode-specific filtering
+      const filteredQuestionIds = new Set(filteredQuestions.map(q => q._id));
+
+      // Apply mode-specific filtering
+      switch (args.questionMode) {
+        case 'all': {
+          // No additional filtering needed
+          break;
+        }
+
+        case 'bookmarked': {
+          // Get bookmarked questions and count only those in our filtered set
+          const bookmarks = await ctx.db
+            .query('userBookmarks')
+            .withIndex('by_user', q => q.eq('userId', user._id))
+            .collect();
+
+          const validBookmarkCount = bookmarks.filter(b =>
+            filteredQuestionIds.has(b.questionId),
+          ).length;
+
+          filteredCount = validBookmarkCount;
+          break;
+        }
+
+        case 'incorrect': {
+          // Get incorrect stats and count only those in our filtered set
+          const incorrectStats = await ctx.db
+            .query('userQuestionStats')
+            .withIndex('by_user_incorrect', q =>
+              q.eq('userId', user._id).eq('isIncorrect', true),
+            )
+            .collect();
+
+          const validIncorrectCount = incorrectStats.filter(stat =>
+            filteredQuestionIds.has(stat.questionId),
+          ).length;
+
+          filteredCount = validIncorrectCount;
+          break;
+        }
+
+        case 'unanswered': {
+          // Get answered stats and subtract from total
+          const answeredStats = await ctx.db
+            .query('userQuestionStats')
+            .withIndex('by_user_answered', q =>
+              q.eq('userId', user._id).eq('hasAnswered', true),
+            )
+            .collect();
+
+          const answeredCount = answeredStats.filter(stat =>
+            filteredQuestionIds.has(stat.questionId),
+          ).length;
+
+          filteredCount = filteredCount - answeredCount;
+          break;
+        }
+      }
+    } else {
+      // If we don't need detailed filtering, we can apply mode-specific
+      // filtering directly to the total count
+      switch (args.questionMode) {
+        case 'all': {
+          // No adjustment needed
+          break;
+        }
+
+        case 'bookmarked': {
+          // Get all bookmarks (we can't easily filter by theme at the aggregate level)
+          const bookmarks = await ctx.db
+            .query('userBookmarks')
+            .withIndex('by_user', q => q.eq('userId', user._id))
+            .collect();
+
+          // Count bookmarks that match the selected themes
+          if (args.selectedThemes && args.selectedThemes.length > 0) {
+            // For each bookmark, we need to check if it's in the selected themes
+            const bookmarkQuestions = await Promise.all(
+              bookmarks.map(b => ctx.db.get(b.questionId)),
+            );
+
+            const filteredBookmarks = bookmarkQuestions.filter(
+              q => q && args.selectedThemes!.includes(q.themeId),
+            );
+
+            filteredCount = filteredBookmarks.length;
+          } else {
+            filteredCount = bookmarks.length;
+          }
+          break;
+        }
+
+        case 'incorrect': {
+          // Get incorrect stats
+          const incorrectStats = await ctx.db
+            .query('userQuestionStats')
+            .withIndex('by_user_incorrect', q =>
+              q.eq('userId', user._id).eq('isIncorrect', true),
+            )
+            .collect();
+
+          // Filter by selected themes if needed
+          if (args.selectedThemes && args.selectedThemes.length > 0) {
+            const incorrectQuestions = await Promise.all(
+              incorrectStats.map(s => ctx.db.get(s.questionId)),
+            );
+
+            const filteredIncorrect = incorrectQuestions.filter(
+              q => q && args.selectedThemes!.includes(q.themeId),
+            );
+
+            filteredCount = filteredIncorrect.length;
+          } else {
+            filteredCount = incorrectStats.length;
+          }
+          break;
+        }
+
+        case 'unanswered': {
+          // Get answered stats
+          const answeredStats = await ctx.db
+            .query('userQuestionStats')
+            .withIndex('by_user_answered', q =>
+              q.eq('userId', user._id).eq('hasAnswered', true),
+            )
+            .collect();
+
+          // Determine how many questions in the selected themes have been answered
+          let answeredCount = 0;
+
+          if (args.selectedThemes && args.selectedThemes.length > 0) {
+            const answeredQuestions = await Promise.all(
+              answeredStats.map(s => ctx.db.get(s.questionId)),
+            );
+
+            answeredCount = answeredQuestions.filter(
+              q => q && args.selectedThemes!.includes(q.themeId),
+            ).length;
+          } else {
+            answeredCount = answeredStats.length;
+          }
+
+          // Unanswered = total - answered
+          filteredCount = totalCount - answeredCount;
+          break;
+        }
+      }
     }
 
-    const questions = await query.collect();
-    const filteredQuestionIds = new Set(questions.map(q => q._id));
-    let count = questions.length;
-
-    switch (args.questionMode) {
-      case 'all': {
-        break;
-      }
-
-      case 'bookmarked': {
-        const bookmarks = await ctx.db
-          .query('userBookmarks')
-          .withIndex('by_user', q => q.eq('userId', user._id))
-          .collect();
-
-        const validBookmarks = bookmarks.filter(b =>
-          filteredQuestionIds.has(b.questionId),
-        );
-
-        count = validBookmarks.length;
-        break;
-      }
-
-      case 'incorrect': {
-        const incorrectStats = await ctx.db
-          .query('userQuestionStats')
-          .withIndex('by_user_incorrect', q =>
-            q.eq('userId', user._id).eq('isIncorrect', true),
-          )
-          .collect();
-
-        const validIncorrect = incorrectStats.filter(stat =>
-          filteredQuestionIds.has(stat.questionId),
-        );
-
-        count = validIncorrect.length;
-        break;
-      }
-
-      case 'unanswered': {
-        const answeredStats = await ctx.db
-          .query('userQuestionStats')
-          .withIndex('by_user_answered', q =>
-            q.eq('userId', user._id).eq('hasAnswered', true),
-          )
-          .collect();
-
-        const answeredIds = new Set(
-          answeredStats
-            .filter(stat => filteredQuestionIds.has(stat.questionId))
-            .map(stat => stat.questionId),
-        );
-
-        count = count - answeredIds.size;
-        break;
-      }
-    }
-
-    return { count };
+    return { count: filteredCount };
   },
 });
 
@@ -450,5 +587,46 @@ export const insertIntoThemeAggregate = internalMutation({
     // have full type inference across action/mutation boundary easily.
     const questionDoc = args.questionDoc as Doc<'questions'>;
     await questionCountByThemeAggregate.insert(ctx, questionDoc);
+  },
+});
+
+export const searchByCode = query({
+  args: {
+    code: v.string(),
+  },
+  handler: async (ctx, args) => {
+    if (!args.code || args.code.trim() === '') {
+      return [];
+    }
+
+    // Normalize the search code
+    const searchCode = args.code.trim();
+
+    // Use the search index for efficient text search
+    // This is much more efficient than using a regular index with manual filtering
+    const matchingQuestions = await ctx.db
+      .query('questions')
+      .withSearchIndex('search_by_code', q =>
+        q.search('questionCode', searchCode),
+      )
+      .take(50); // Limit to 50 results to reduce bandwidth
+
+    // If we have questions, fetch their themes
+    if (matchingQuestions.length > 0) {
+      const themes = await Promise.all(
+        matchingQuestions.map(question => ctx.db.get(question.themeId)),
+      );
+
+      // Return minimal data to reduce bandwidth
+      return matchingQuestions.map((question, index) => ({
+        _id: question._id,
+        title: question.title,
+        questionCode: question.questionCode,
+        themeId: question.themeId,
+        theme: themes[index],
+      }));
+    }
+
+    return [];
   },
 });

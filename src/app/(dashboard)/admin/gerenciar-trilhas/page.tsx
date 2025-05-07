@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery } from 'convex/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
@@ -57,6 +57,23 @@ import { api } from '../../../../../convex/_generated/api';
 import { Id } from '../../../../../convex/_generated/dataModel';
 import { EditExamDialog } from './components/edit-quiz-dialog';
 
+// Debounce helper function
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
 const formSchema = z
   .object({
     name: z.string().min(1, 'Nome é obrigatório'),
@@ -96,23 +113,54 @@ export default function ManagePresetExams() {
   >();
 
   // For question filtering in create form
-  const [searchValue, setSearchValue] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const debouncedSearchValue = useDebounce(searchInput, 500); // 500ms debounce delay
   const [selectedThemeFilter, setSelectedThemeFilter] = useState<string>('all');
+
+  // For quiz searching
+  const [quizSearchInput, setQuizSearchInput] = useState('');
+  const debouncedQuizSearchValue = useDebounce(quizSearchInput, 500);
 
   // For storing selected questions during creation
   const [selectedQuestions, setSelectedQuestions] = useState<Set<string>>(
     new Set(),
   );
 
-  // Fetch data
+  // Fetch data - only fetch themes for the creation form
   const themes = useQuery(api.themes.list) || [];
-  const presetQuizzes = useQuery(api.presetQuizzes.list) || [];
-  const questions = useQuery(api.questions.listAll) || [];
+
+  // Use searchByName instead of list for quizzes - only when search is provided
+  const presetQuizzes =
+    useQuery(
+      api.presetQuizzes.searchByName,
+      debouncedQuizSearchValue.trim()
+        ? { name: debouncedQuizSearchValue }
+        : 'skip',
+    ) || [];
+
+  // Use the searchByCode function for code-based question search
+  const questionSearchResults =
+    useQuery(
+      api.questions.searchByCode,
+      debouncedSearchValue.trim() ? { code: debouncedSearchValue } : 'skip',
+    ) || [];
+
+  // Filter by theme if needed
+  const filteredQuestions =
+    selectedThemeFilter === 'all'
+      ? questionSearchResults
+      : questionSearchResults.filter(q => q.themeId === selectedThemeFilter);
 
   // Mutations
   const createPresetQuiz = useMutation(api.presetQuizzes.create);
   const updateQuiz = useMutation(api.presetQuizzes.updateQuiz);
   const deleteQuiz = useMutation(api.presetQuizzes.deleteQuiz);
+
+  // Load the editing quiz details when needed
+  const editingQuizDetails = useQuery(
+    api.presetQuizzes.get,
+    editingExam ? { id: editingExam.id as Id<'presetQuizzes'> } : 'skip',
+  );
 
   // Setup form with react-hook-form
   const form = useForm<z.infer<typeof formSchema>>({
@@ -121,31 +169,12 @@ export default function ManagePresetExams() {
       name: '',
       description: '',
       category: 'simulado',
-      isPublic: true,
       questions: [],
     },
   });
 
   // Watch the theme ID to filter questions
   const watchedThemeId = form.watch('themeId');
-
-  // Filter questions based on theme and search
-  const filteredQuestions = questions.filter(question => {
-    // First filter by search text
-    const matchesSearch =
-      searchValue === '' ||
-      question.title.toLowerCase().includes(searchValue.toLowerCase()) ||
-      question.questionCode
-        ?.toLowerCase()
-        .includes(searchValue.toLowerCase()) ||
-      false;
-
-    // Then filter by selected theme
-    const matchesTheme =
-      selectedThemeFilter === 'all' || question.themeId === selectedThemeFilter;
-
-    return matchesSearch && matchesTheme;
-  });
 
   // Handle question selection toggle
   const handleToggleQuestion = (questionId: string) => {
@@ -280,7 +309,19 @@ export default function ManagePresetExams() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="mb-4 flex justify-end">
+          <div className="mb-4 flex justify-between">
+            <div className="max-w-md">
+              <Input
+                placeholder="Buscar testes por nome..."
+                value={quizSearchInput}
+                onChange={e => setQuizSearchInput(e.target.value)}
+                className="w-full"
+              />
+              <p className="text-muted-foreground mt-1 text-xs">
+                Digite um nome para pesquisar testes. A busca será realizada
+                após uma breve pausa na digitação.
+              </p>
+            </div>
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
                 <Button>Criar Novo Teste</Button>
@@ -416,9 +457,9 @@ export default function ManagePresetExams() {
                           <Input
                             id="searchQuestions"
                             type="text"
-                            placeholder="Buscar por código ou título..."
-                            value={searchValue}
-                            onChange={e => setSearchValue(e.target.value)}
+                            placeholder="Buscar por código da questão..."
+                            value={searchInput}
+                            onChange={e => setSearchInput(e.target.value)}
                           />
                         </div>
 
@@ -426,37 +467,41 @@ export default function ManagePresetExams() {
                           {filteredQuestions.length === 0 ? (
                             <div className="flex h-full items-center justify-center">
                               <p className="text-muted-foreground text-sm">
-                                {watchedThemeId
-                                  ? 'Nenhuma questão encontrada para este tema'
-                                  : 'Selecione um tema para ver as questões'}
+                                {searchInput.trim()
+                                  ? 'Nenhuma questão encontrada com este código'
+                                  : 'Digite um código para pesquisar questões'}
                               </p>
                             </div>
                           ) : (
-                            filteredQuestions.map(question => (
-                              <div
-                                key={question._id}
-                                className="mb-2 flex items-center space-x-2"
-                              >
-                                <Checkbox
-                                  id={question._id}
-                                  checked={selectedQuestions.has(question._id)}
-                                  onCheckedChange={() =>
-                                    handleToggleQuestion(question._id)
-                                  }
-                                />
-                                <Label
-                                  htmlFor={question._id}
-                                  className="flex flex-col"
+                            <div>
+                              {filteredQuestions.map(question => (
+                                <div
+                                  key={question._id}
+                                  className="mb-2 flex items-center space-x-2"
                                 >
-                                  <span className="text-sm font-medium">
-                                    {question.questionCode || 'Sem código'}
-                                  </span>
-                                  <span className="text-muted-foreground text-xs">
-                                    {question.title}
-                                  </span>
-                                </Label>
-                              </div>
-                            ))
+                                  <Checkbox
+                                    id={question._id}
+                                    checked={selectedQuestions.has(
+                                      question._id,
+                                    )}
+                                    onCheckedChange={() =>
+                                      handleToggleQuestion(question._id)
+                                    }
+                                  />
+                                  <Label
+                                    htmlFor={question._id}
+                                    className="flex flex-col"
+                                  >
+                                    <span className="text-sm font-medium">
+                                      {question.questionCode || 'Sem código'}
+                                    </span>
+                                    <span className="text-muted-foreground text-xs">
+                                      {question.title}
+                                    </span>
+                                  </Label>
+                                </div>
+                              ))}
+                            </div>
                           )}
                         </ScrollArea>
                       </div>
@@ -479,56 +524,72 @@ export default function ManagePresetExams() {
           </div>
 
           <div className="grid gap-4">
-            {presetQuizzes.map(quiz => (
-              <Card key={quiz._id}>
-                <CardHeader>
-                  <CardTitle>{quiz.name}</CardTitle>
-                  <CardDescription>{quiz.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Nome</TableHead>
-                        <TableHead>Descrição</TableHead>
-                        <TableHead>Categoria</TableHead>
-                        <TableHead>Questões</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell>{quiz.name}</TableCell>
-                        <TableCell>{quiz.description}</TableCell>
-                        <TableCell>
-                          {quiz.category === 'trilha' ? 'Trilha' : 'Simulado'}
-                        </TableCell>
-                        <TableCell>{quiz.questions.length} questões</TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-                </CardContent>
-                <CardFooter>
-                  <Button
-                    variant="outline"
-                    onClick={() =>
-                      setEditingExam({
-                        id: quiz._id,
-                        name: quiz.name,
-                        description: quiz.description,
-                        category: quiz.category,
-                      })
-                    }
-                  >
-                    Editar
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
+            {debouncedQuizSearchValue.trim() ? (
+              presetQuizzes.length === 0 ? (
+                <div className="text-muted-foreground py-8 text-center">
+                  Nenhum teste encontrado com este nome
+                </div>
+              ) : (
+                presetQuizzes.map(quiz => (
+                  <Card key={quiz._id}>
+                    <CardHeader>
+                      <CardTitle>{quiz.name}</CardTitle>
+                      <CardDescription>{quiz.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Nome</TableHead>
+                            <TableHead>Descrição</TableHead>
+                            <TableHead>Categoria</TableHead>
+                            <TableHead>Questões</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          <TableRow>
+                            <TableCell>{quiz.name}</TableCell>
+                            <TableCell>{quiz.description}</TableCell>
+                            <TableCell>
+                              {quiz.category === 'trilha'
+                                ? 'Trilha'
+                                : 'Simulado'}
+                            </TableCell>
+                            <TableCell>
+                              {quiz.questions.length} questões
+                            </TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                    <CardFooter>
+                      <Button
+                        variant="outline"
+                        onClick={() =>
+                          setEditingExam({
+                            id: quiz._id,
+                            name: quiz.name,
+                            description: quiz.description,
+                            category: quiz.category,
+                          })
+                        }
+                      >
+                        Editar
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                ))
+              )
+            ) : (
+              <div className="text-muted-foreground py-8 text-center">
+                Digite um nome para pesquisar testes
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
 
-      {editingExam && (
+      {editingExam && editingQuizDetails && (
         <EditExamDialog
           open={!!editingExam}
           onOpenChange={open => !open && setEditingExam(undefined)}
@@ -538,8 +599,15 @@ export default function ManagePresetExams() {
             description: editingExam.description,
             category: editingExam.category,
           }}
-          questions={questions}
-          presetQuizzes={presetQuizzes}
+          presetQuizzes={[
+            {
+              _id: editingQuizDetails._id,
+              name: editingQuizDetails.name,
+              description: editingQuizDetails.description,
+              category: editingQuizDetails.category,
+              questions: editingQuizDetails.questions,
+            },
+          ]}
           onUpdateQuiz={handleUpdateExam}
           onDeleteQuiz={handleDeleteExam}
         />

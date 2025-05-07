@@ -54,7 +54,9 @@ export default defineSchema({
     isPublic: v.optional(v.boolean()),
   })
     .index('by_title', ['normalizedTitle'])
-    .searchIndex('search_by_title', { searchField: 'title' }),
+    .index('by_theme', ['themeId'])
+    .searchIndex('search_by_title', { searchField: 'title' })
+    .searchIndex('search_by_code', { searchField: 'questionCode' }),
 
   presetQuizzes: defineTable({
     name: v.string(),
@@ -65,7 +67,7 @@ export default defineSchema({
     subthemeId: v.optional(v.id('subthemes')),
     groupId: v.optional(v.id('groups')),
     isPublic: v.boolean(),
-  }),
+  }).searchIndex('search_by_name', { searchField: 'name' }),
 
   customQuizzes: defineTable({
     name: v.string(),
@@ -82,7 +84,7 @@ export default defineSchema({
     selectedThemes: v.optional(v.array(v.id('themes'))),
     selectedSubthemes: v.optional(v.array(v.id('subthemes'))),
     selectedGroups: v.optional(v.array(v.id('groups'))),
-  }),
+  }).searchIndex('search_by_name', { searchField: 'name' }),
 
   quizSessions: defineTable({
     userId: v.id('users'),
