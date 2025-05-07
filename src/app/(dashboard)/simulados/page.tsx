@@ -2,7 +2,21 @@
 
 import { useUser } from '@clerk/nextjs';
 import { useMutation, useQuery } from 'convex/react';
-import { Book, BookOpen, CheckCircle, Clock, FileText } from 'lucide-react';
+import {
+  Baby,
+  Bone,
+  Book,
+  BookOpen,
+  Brain,
+  CheckCircle,
+  Clock,
+  FileText,
+  Gauge,
+  GraduationCap,
+  LayoutDashboard,
+  Microscope,
+  Stethoscope,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -14,10 +28,39 @@ import {
 } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 
 import { api } from '../../../../convex/_generated/api';
 import { Id } from '../../../../convex/_generated/dataModel';
+
+// Subcategory icons mapping
+const SUBCATEGORY_ICONS: Record<
+  string,
+  React.ComponentType<{ className?: string }>
+> = {
+  TARO: Book,
+  TEOT: Book,
+  Simulados: Stethoscope,
+  Pediatria: Baby,
+  Ortopedia: Bone,
+  Neurologia: Brain,
+  Cardiologia: Gauge,
+  Geral: LayoutDashboard,
+  Laboratório: Microscope,
+  // Default icon for other subcategories
+  default: Book,
+};
+
+// Define the preferred order for the subcategories
+const PREFERRED_SUBCATEGORY_ORDER = [
+  'TARO',
+  'TEOT',
+  'Simulados',
+  'Pediatria',
+  'Ortopedia',
+  'Neurologia',
+  'Cardiologia',
+  'Geral',
+];
 
 function getStatusBadge(status: 'not_started' | 'in_progress' | 'completed') {
   switch (status) {
@@ -58,8 +101,51 @@ export default function SimuladoPage() {
   // Filter to only show simulados (category = "simulado")
   const simulados = presetQuizzes.filter(quiz => quiz.category === 'simulado');
 
-  // Get themes to organize simulados
-  const themes = useQuery(api.themes.list) || [];
+  // Group simulados by subcategory
+  const simuladosBySubcategory: Record<string, typeof simulados> = {};
+
+  // First, separate simulados by subcategory
+  simulados.forEach(simulado => {
+    const subcategory = simulado.subcategory || 'Simulados'; // Default to 'Simulados' if no subcategory
+    if (!simuladosBySubcategory[subcategory]) {
+      simuladosBySubcategory[subcategory] = [];
+    }
+    simuladosBySubcategory[subcategory].push(simulado);
+  });
+
+  // Sort simulados within each subcategory by displayOrder and then by name
+  Object.keys(simuladosBySubcategory).forEach(subcategory => {
+    simuladosBySubcategory[subcategory].sort((a, b) => {
+      // If both have displayOrder, sort by that
+      if (a.displayOrder !== undefined && b.displayOrder !== undefined) {
+        return a.displayOrder - b.displayOrder;
+      }
+      // If only a has displayOrder, a comes first
+      if (a.displayOrder !== undefined) {
+        return -1;
+      }
+      // If only b has displayOrder, b comes first
+      if (b.displayOrder !== undefined) {
+        return 1;
+      }
+      // If neither has displayOrder, sort by name
+      return a.name.localeCompare(b.name);
+    });
+  });
+
+  // Determine the subcategory order to use
+  // Start with the existing subcategories in preferred order
+  const availableSubcategories = Object.keys(simuladosBySubcategory);
+  const subcategoryOrder = [
+    // First include subcategories in the preferred order
+    ...PREFERRED_SUBCATEGORY_ORDER.filter(sc =>
+      availableSubcategories.includes(sc),
+    ),
+    // Then include any additional subcategories not in the preferred order
+    ...availableSubcategories.filter(
+      sc => !PREFERRED_SUBCATEGORY_ORDER.includes(sc),
+    ),
+  ];
 
   // Query to get incomplete sessions for the current user
   const incompleteSessions =
@@ -77,27 +163,6 @@ export default function SimuladoPage() {
     {} as Record<string, Id<'quizSessions'>>,
   );
 
-  // Group simulados by theme (if they have a theme)
-  const simuladosByTheme: Record<string, typeof simulados> = {};
-
-  // First, separate simulados with themes
-  simulados.forEach(simulado => {
-    if (simulado.themeId) {
-      // If it has a theme, add to that theme's group
-      const themeId = simulado.themeId;
-      if (!simuladosByTheme[themeId]) {
-        simuladosByTheme[themeId] = [];
-      }
-      simuladosByTheme[themeId].push(simulado);
-    } else {
-      // If it doesn't have a theme, add to a special "general" group
-      if (!simuladosByTheme['general']) {
-        simuladosByTheme['general'] = [];
-      }
-      simuladosByTheme['general'].push(simulado);
-    }
-  });
-
   // Handle quiz start/resume
   const handleExamClick = async (quizId: Id<'presetQuizzes'>) => {
     // Check if there's an incomplete session for this quiz
@@ -114,12 +179,12 @@ export default function SimuladoPage() {
     }
   };
 
-  if (!themes || !user) {
+  if (!user) {
     return <div>Carregando simulados...</div>;
   }
 
   // If there are no simulados
-  if (Object.keys(simuladosByTheme).length === 0) {
+  if (Object.keys(simuladosBySubcategory).length === 0) {
     return (
       <div className="container mx-auto p-6">
         <h1 className="mb-6 text-2xl font-bold">Simulados</h1>
@@ -137,29 +202,33 @@ export default function SimuladoPage() {
       <h1 className="mb-8 text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
         Simulados
       </h1>
-      <Accordion type="single" collapsible className="space-y-4">
-        {Object.entries(simuladosByTheme).map(([themeId, simulados]) => {
-          // Special handling for general (themeless) simulados
-          let title = 'Simulados Gerais';
+      <Accordion
+        type="single"
+        collapsible
+        className="space-y-4"
+        defaultValue={subcategoryOrder[0]}
+      >
+        {subcategoryOrder.map(subcategory => {
+          const simulados = simuladosBySubcategory[subcategory] || [];
+          if (simulados.length === 0) return;
 
-          // If it's not the general group, find the theme name
-          if (themeId !== 'general') {
-            const theme = themes.find(t => t._id === themeId);
-            title = theme?.name || 'Simulados';
-          }
+          // Get the appropriate icon for this subcategory
+          const Icon =
+            SUBCATEGORY_ICONS[subcategory] || SUBCATEGORY_ICONS.default;
 
           return (
             <AccordionItem
-              key={themeId}
-              value={themeId}
+              key={subcategory}
+              value={subcategory}
               className="overflow-hidden"
             >
               <AccordionTrigger className="hover:bg-muted/20 py-3 hover:no-underline md:px-4">
                 <div className="flex items-center gap-3">
-                  <Book className="h-6 w-6 md:h-8 md:w-8" />
-                  <span className="font-medium md:text-xl">{title}</span>
+                  <Icon className="h-6 w-6 md:h-8 md:w-8" />
+                  <span className="font-medium md:text-xl">{subcategory}</span>
                   <span className="text-muted-foreground text-md">
-                    ({simulados.length} simulados)
+                    ({simulados.length} simulado
+                    {simulados.length === 1 ? '' : 's'})
                   </span>
                 </div>
               </AccordionTrigger>

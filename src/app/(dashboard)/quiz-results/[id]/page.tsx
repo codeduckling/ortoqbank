@@ -104,18 +104,18 @@ export default function UniversalQuizResultsPage() {
   };
 
   // Determine the appropriate return link based on quiz type using ternary
-  const getReturnLink = () => (isCustom ? '/criar-teste' : '/temas');
+  const getReturnLink = () => (isCustom ? '/criar-teste' : '/trilhas');
 
   return (
     <div className="container mx-auto max-w-3xl p-6">
-      <div className="mb-4">
+      {/* <div className="mb-4">
         <Link href={getReturnLink()}>
           <Button variant="ghost" size="sm" className="gap-2">
             <ArrowLeft className="h-4 w-4" />
             Voltar
           </Button>
         </Link>
-      </div>
+      </div> */}
 
       <div className="mb-4">
         <h1 className="text-2xl font-bold">{quiz.name}</h1>
@@ -125,8 +125,7 @@ export default function UniversalQuizResultsPage() {
       </div>
 
       {/* Results summary */}
-      <div className="mb-6 rounded-lg border p-4">
-        <h2 className="mb-4 text-lg font-semibold">Resultado</h2>
+      <div className="mb-6 rounded-lg p-4">
         <div className="flex items-center justify-center gap-8">
           <div className="flex flex-col items-center">
             <CheckCircle className="h-8 w-8 text-green-500" />
@@ -143,7 +142,7 @@ export default function UniversalQuizResultsPage() {
           </div>
 
           <div className="flex flex-col items-center">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 font-bold">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 font-bold">
               {score}%
             </div>
             <span className="mt-1">&nbsp;</span>
@@ -248,11 +247,11 @@ export default function UniversalQuizResultsPage() {
         </Button>
       </div>
 
-      <div className="mt-8 flex justify-center">
+      {/* <div className="mt-8 flex justify-center">
         <Link href={getReturnLink()}>
           <Button>Voltar</Button>
         </Link>
-      </div>
+      </div> */}
     </div>
   );
 }

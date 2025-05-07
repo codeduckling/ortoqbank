@@ -40,7 +40,7 @@ const navItems = [
   },
   {
     href: '/admin/gerenciar-trilhas',
-    label: 'Gerenciar Trilhas',
+    label: 'Trilhas e Simulados',
     icon: SettingsIcon,
   },
 ];

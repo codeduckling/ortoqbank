@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 // Define the main navigation items (excluding Home/Menu trigger)
 const navItems = [
   // { href: '/', label: 'Início', icon: Home }, // Removed Home
-  { href: '/temas', label: 'Temas', icon: LayoutGrid },
+  { href: '/trilhas', label: 'Trilhas', icon: LayoutGrid },
   { href: '/simulados', label: 'Simulados', icon: GraduationCap },
   { href: '/perfil', label: 'Perfil', icon: User },
   // Add more items if necessary

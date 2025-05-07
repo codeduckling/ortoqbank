@@ -48,6 +48,7 @@ export type SafeQuestion = {
   title: Doc<'questions'>['title'];
   questionText: Doc<'questions'>['questionText'];
   alternatives: Doc<'questions'>['alternatives'];
+  questionCode?: Doc<'questions'>['questionCode'];
 };
 
 // Utility function to prepare question data for client
@@ -58,6 +59,7 @@ function sanitizeQuestionForClient(question: Doc<'questions'>): SafeQuestion {
     title: question.title,
     questionText: question.questionText,
     alternatives: question.alternatives,
+    questionCode: question.questionCode,
   };
   return safeQuestion;
 }

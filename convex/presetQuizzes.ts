@@ -12,6 +12,8 @@ export const create = mutation({
     groupId: v.optional(v.id('groups')),
     questions: v.array(v.id('questions')),
     isPublic: v.boolean(),
+    subcategory: v.optional(v.string()),
+    displayOrder: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     // For trilhas, themeId is required
@@ -28,6 +30,8 @@ export const create = mutation({
       groupId: args.groupId,
       questions: args.questions,
       isPublic: args.isPublic,
+      subcategory: args.subcategory,
+      displayOrder: args.displayOrder,
     });
   },
 });
@@ -87,6 +91,8 @@ export const updateQuiz = mutation({
     description: v.string(),
     category: v.union(v.literal('trilha'), v.literal('simulado')),
     questions: v.array(v.id('questions')),
+    subcategory: v.optional(v.string()),
+    displayOrder: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     await ctx.db.patch(args.quizId, {
@@ -94,6 +100,8 @@ export const updateQuiz = mutation({
       description: args.description,
       category: args.category,
       questions: args.questions,
+      subcategory: args.subcategory,
+      displayOrder: args.displayOrder,
     });
   },
 });
@@ -130,6 +138,7 @@ export const getWithQuestions = query({
 export const searchByName = query({
   args: {
     name: v.string(),
+    limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     if (!args.name || args.name.trim() === '') {
@@ -139,11 +148,14 @@ export const searchByName = query({
     // Normalize the search term
     const searchTerm = args.name.trim();
 
+    // Use provided limit or default to 50
+    const limit = args.limit || 50;
+
     // Use the search index for efficient text search
     const matchingQuizzes = await ctx.db
       .query('presetQuizzes')
       .withSearchIndex('search_by_name', q => q.search('name', searchTerm))
-      .take(50); // Limit results to reduce bandwidth
+      .take(limit); // Use the limit parameter
 
     return matchingQuizzes;
   },

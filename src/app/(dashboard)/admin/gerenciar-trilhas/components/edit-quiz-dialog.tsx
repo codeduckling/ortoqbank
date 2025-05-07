@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from 'convex/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -37,6 +37,8 @@ interface EditQuizDialogProps {
     name: string;
     description: string;
     category?: 'trilha' | 'simulado';
+    subcategory?: string;
+    displayOrder?: number;
   };
   presetQuizzes: Array<{
     _id: Id<'presetQuizzes'>;
@@ -44,12 +46,16 @@ interface EditQuizDialogProps {
     description: string;
     questions: string[];
     category?: 'trilha' | 'simulado';
+    subcategory?: string;
+    displayOrder?: number;
   }>;
   onUpdateQuiz: (data: {
     name: string;
     description: string;
     category: 'trilha' | 'simulado';
     questions: string[];
+    subcategory?: string;
+    displayOrder?: number;
   }) => Promise<void>;
   onDeleteQuiz: () => Promise<void>;
 }
@@ -72,9 +78,26 @@ export function EditExamDialog({
       presetQuizzes.find(q => q._id === quiz.id)?.category ||
       'simulado',
   );
+  const [subcategory, setSubcategory] = useState<string | undefined>(
+    quiz.subcategory ||
+      presetQuizzes.find(q => q._id === quiz.id)?.subcategory ||
+      undefined,
+  );
+  const [displayOrder, setDisplayOrder] = useState<number | undefined>(
+    quiz.displayOrder ||
+      presetQuizzes.find(q => q._id === quiz.id)?.displayOrder ||
+      undefined,
+  );
   const [selectedQuestions, setSelectedQuestions] = useState<Set<string>>(
     new Set(presetQuizzes.find(q => q._id === quiz.id)?.questions ?? []),
   );
+
+  // Clear subcategory when category changes to trilha
+  useEffect(() => {
+    if (category === 'trilha') {
+      setSubcategory('');
+    }
+  }, [category]);
 
   // Use the searchByCode query instead of client-side filtering
   const searchResults =
@@ -100,6 +123,8 @@ export function EditExamDialog({
         description,
         category,
         questions: [...selectedQuestions],
+        subcategory,
+        displayOrder,
       });
       toast({
         title: 'Sucesso',
@@ -173,6 +198,29 @@ export function EditExamDialog({
                 <SelectItem value="simulado">Simulado</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="subcategory">Subcategoria</Label>
+            <Input
+              id="subcategory"
+              value={subcategory || ''}
+              onChange={event => setSubcategory(event.target.value)}
+              placeholder="Ex: TARO, TEOT, Simulados"
+              disabled={category === 'trilha'}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="displayOrder">Ordem de exibição</Label>
+            <Input
+              id="displayOrder"
+              type="number"
+              value={displayOrder?.toString() || ''}
+              onChange={event => {
+                const value = event.target.value;
+                setDisplayOrder(value ? Number.parseInt(value, 10) : undefined);
+              }}
+              placeholder="Número para ordenação (menor vem primeiro)"
+            />
           </div>
           <Input
             type="text"

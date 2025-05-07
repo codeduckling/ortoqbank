@@ -57,23 +57,6 @@ import { api } from '../../../../../convex/_generated/api';
 import { Id } from '../../../../../convex/_generated/dataModel';
 import { EditExamDialog } from './components/edit-quiz-dialog';
 
-// Debounce helper function
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
-}
-
 const formSchema = z
   .object({
     name: z.string().min(1, 'Nome é obrigatório'),
@@ -82,8 +65,10 @@ const formSchema = z
     themeId: z.string().optional(),
     subthemeId: z.string().optional(),
     groupId: z.string().optional(),
-    isPublic: z.boolean().default(true),
     questions: z.array(z.string()).min(1, 'Selecione pelo menos uma questão'),
+    isPublic: z.boolean().default(true),
+    subcategory: z.string().optional(),
+    displayOrder: z.number().optional(),
   })
   .refine(
     data => {
@@ -108,18 +93,20 @@ export default function ManagePresetExams() {
         name: string;
         description: string;
         category?: 'trilha' | 'simulado';
+        subcategory?: string;
+        displayOrder?: number;
       }
     | undefined
   >();
 
   // For question filtering in create form
   const [searchInput, setSearchInput] = useState('');
-  const debouncedSearchValue = useDebounce(searchInput, 500); // 500ms debounce delay
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedThemeFilter, setSelectedThemeFilter] = useState<string>('all');
 
   // For quiz searching
   const [quizSearchInput, setQuizSearchInput] = useState('');
-  const debouncedQuizSearchValue = useDebounce(quizSearchInput, 500);
+  const [quizSearchQuery, setQuizSearchQuery] = useState('');
 
   // For storing selected questions during creation
   const [selectedQuestions, setSelectedQuestions] = useState<Set<string>>(
@@ -133,16 +120,14 @@ export default function ManagePresetExams() {
   const presetQuizzes =
     useQuery(
       api.presetQuizzes.searchByName,
-      debouncedQuizSearchValue.trim()
-        ? { name: debouncedQuizSearchValue }
-        : 'skip',
+      quizSearchQuery.trim() ? { name: quizSearchQuery, limit: 10 } : 'skip',
     ) || [];
 
   // Use the searchByCode function for code-based question search
   const questionSearchResults =
     useQuery(
       api.questions.searchByCode,
-      debouncedSearchValue.trim() ? { code: debouncedSearchValue } : 'skip',
+      searchQuery.trim() ? { code: searchQuery, limit: 10 } : 'skip',
     ) || [];
 
   // Filter by theme if needed
@@ -162,6 +147,25 @@ export default function ManagePresetExams() {
     editingExam ? { id: editingExam.id as Id<'presetQuizzes'> } : 'skip',
   );
 
+  // Handle search functions
+  const handleQuizSearch = () => {
+    setQuizSearchQuery(quizSearchInput.trim());
+  };
+
+  const handleQuizClear = () => {
+    setQuizSearchInput('');
+    setQuizSearchQuery('');
+  };
+
+  const handleQuestionSearch = () => {
+    setSearchQuery(searchInput.trim());
+  };
+
+  const handleQuestionClear = () => {
+    setSearchInput('');
+    setSearchQuery('');
+  };
+
   // Setup form with react-hook-form
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -170,11 +174,23 @@ export default function ManagePresetExams() {
       description: '',
       category: 'simulado',
       questions: [],
+      subcategory: '',
+      displayOrder: undefined,
     },
   });
 
   // Watch the theme ID to filter questions
   const watchedThemeId = form.watch('themeId');
+
+  // Watch for category changes to reset subcategory if needed
+  const watchedCategory = form.watch('category');
+
+  // Reset subcategory when category changes to trilha
+  useEffect(() => {
+    if (watchedCategory === 'trilha') {
+      form.setValue('subcategory', '');
+    }
+  }, [watchedCategory, form]);
 
   // Handle question selection toggle
   const handleToggleQuestion = (questionId: string) => {
@@ -205,12 +221,16 @@ export default function ManagePresetExams() {
         themeId?: Id<'themes'>;
         subthemeId?: Id<'subthemes'>;
         groupId?: Id<'groups'>;
+        subcategory?: string;
+        displayOrder?: number;
       } = {
         name: values.name,
         description: values.description,
         category: values.category,
         questions: values.questions as Id<'questions'>[],
         isPublic: values.isPublic,
+        subcategory: values.subcategory || undefined,
+        displayOrder: values.displayOrder || undefined,
       };
 
       // Only include theme-related fields if they have values
@@ -252,6 +272,8 @@ export default function ManagePresetExams() {
     description: string;
     category: 'trilha' | 'simulado';
     questions: string[];
+    subcategory?: string;
+    displayOrder?: number;
   }) => {
     if (!editingExam) return;
 
@@ -262,6 +284,8 @@ export default function ManagePresetExams() {
         description: data.description,
         category: data.category,
         questions: data.questions as Id<'questions'>[],
+        subcategory: data.subcategory,
+        displayOrder: data.displayOrder,
       });
 
       toast({
@@ -303,24 +327,26 @@ export default function ManagePresetExams() {
     <div className="p-6">
       <Card>
         <CardHeader>
-          <CardTitle>Gerenciar Testes</CardTitle>
+          <CardTitle>Gerenciar Trilhas e Simulados</CardTitle>
           <CardDescription>
-            Crie e gerencie testes predefinidos para seus alunos
+            Crie e gerencie trilhas e simulados predefinidos para seus alunos
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="mb-4 flex justify-between">
-            <div className="max-w-md">
+            <div className="flex max-w-md gap-2">
               <Input
                 placeholder="Buscar testes por nome..."
                 value={quizSearchInput}
                 onChange={e => setQuizSearchInput(e.target.value)}
                 className="w-full"
               />
-              <p className="text-muted-foreground mt-1 text-xs">
-                Digite um nome para pesquisar testes. A busca será realizada
-                após uma breve pausa na digitação.
-              </p>
+              <Button onClick={handleQuizSearch}>Buscar</Button>
+              {quizSearchInput && (
+                <Button variant="ghost" onClick={handleQuizClear}>
+                  Limpar
+                </Button>
+              )}
             </div>
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
@@ -447,6 +473,51 @@ export default function ManagePresetExams() {
                             </FormItem>
                           )}
                         />
+
+                        <FormField
+                          control={form.control}
+                          name="subcategory"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Subcategoria</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  placeholder="Ex: TARO, TEOT, Simulados"
+                                  value={field.value || ''}
+                                  disabled={form.watch('category') === 'trilha'}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="displayOrder"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Ordem de exibição</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  placeholder="Número para ordenação (menor vem primeiro)"
+                                  value={field.value?.toString() || ''}
+                                  onChange={e => {
+                                    const value = e.target.value;
+                                    field.onChange(
+                                      value
+                                        ? Number.parseInt(value, 10)
+                                        : undefined,
+                                    );
+                                  }}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
                       </div>
 
                       <div className="space-y-4">
@@ -454,22 +525,39 @@ export default function ManagePresetExams() {
                           <Label htmlFor="searchQuestions">
                             Buscar Questões
                           </Label>
-                          <Input
-                            id="searchQuestions"
-                            type="text"
-                            placeholder="Buscar por código da questão..."
-                            value={searchInput}
-                            onChange={e => setSearchInput(e.target.value)}
-                          />
+                          <div className="flex gap-2">
+                            <Input
+                              id="searchQuestions"
+                              type="text"
+                              placeholder="Buscar por código da questão..."
+                              value={searchInput}
+                              onChange={e => setSearchInput(e.target.value)}
+                            />
+                            <Button onClick={handleQuestionSearch}>
+                              Buscar
+                            </Button>
+                            {searchInput && (
+                              <Button
+                                variant="ghost"
+                                onClick={handleQuestionClear}
+                              >
+                                Limpar
+                              </Button>
+                            )}
+                          </div>
+                          <p className="text-muted-foreground text-xs">
+                            Digite um código e clique em Buscar. Mostrando no
+                            máximo 10 resultados.
+                          </p>
                         </div>
 
                         <ScrollArea className="h-[400px] rounded-md border p-4">
                           {filteredQuestions.length === 0 ? (
                             <div className="flex h-full items-center justify-center">
                               <p className="text-muted-foreground text-sm">
-                                {searchInput.trim()
+                                {searchQuery.trim()
                                   ? 'Nenhuma questão encontrada com este código'
-                                  : 'Digite um código para pesquisar questões'}
+                                  : 'Digite um código e clique em Buscar para pesquisar questões'}
                               </p>
                             </div>
                           ) : (
@@ -524,7 +612,7 @@ export default function ManagePresetExams() {
           </div>
 
           <div className="grid gap-4">
-            {debouncedQuizSearchValue.trim() ? (
+            {quizSearchQuery.trim() ? (
               presetQuizzes.length === 0 ? (
                 <div className="text-muted-foreground py-8 text-center">
                   Nenhum teste encontrado com este nome
@@ -543,6 +631,8 @@ export default function ManagePresetExams() {
                             <TableHead>Nome</TableHead>
                             <TableHead>Descrição</TableHead>
                             <TableHead>Categoria</TableHead>
+                            <TableHead>Subcategoria</TableHead>
+                            <TableHead>Ordem</TableHead>
                             <TableHead>Questões</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -554,6 +644,10 @@ export default function ManagePresetExams() {
                               {quiz.category === 'trilha'
                                 ? 'Trilha'
                                 : 'Simulado'}
+                            </TableCell>
+                            <TableCell>{quiz.subcategory || '-'}</TableCell>
+                            <TableCell>
+                              {quiz.displayOrder?.toString() || '-'}
                             </TableCell>
                             <TableCell>
                               {quiz.questions.length} questões
@@ -571,6 +665,8 @@ export default function ManagePresetExams() {
                             name: quiz.name,
                             description: quiz.description,
                             category: quiz.category,
+                            subcategory: quiz.subcategory,
+                            displayOrder: quiz.displayOrder,
                           })
                         }
                       >
@@ -582,7 +678,7 @@ export default function ManagePresetExams() {
               )
             ) : (
               <div className="text-muted-foreground py-8 text-center">
-                Digite um nome para pesquisar testes
+                Digite um nome e clique em Buscar para pesquisar testes
               </div>
             )}
           </div>
@@ -598,6 +694,8 @@ export default function ManagePresetExams() {
             name: editingExam.name,
             description: editingExam.description,
             category: editingExam.category,
+            subcategory: editingExam.subcategory,
+            displayOrder: editingExam.displayOrder,
           }}
           presetQuizzes={[
             {
@@ -606,6 +704,8 @@ export default function ManagePresetExams() {
               description: editingQuizDetails.description,
               category: editingQuizDetails.category,
               questions: editingQuizDetails.questions,
+              subcategory: editingQuizDetails.subcategory,
+              displayOrder: editingQuizDetails.displayOrder,
             },
           ]}
           onUpdateQuiz={handleUpdateExam}
