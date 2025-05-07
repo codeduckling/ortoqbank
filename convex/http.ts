@@ -20,7 +20,7 @@ http.route({
       case 'user.updated': {
         try {
           await ctx.runMutation(internal.users.upsertFromClerk, {
-            data: event.data,
+            data: { ...event.data, termsAccepted: false },
           });
         } catch (error) {
           console.error('Error upserting user from Clerk', error);

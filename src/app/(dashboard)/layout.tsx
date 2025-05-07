@@ -1,5 +1,6 @@
 import AccessCheck from '@/components/AccessCheck';
 import { MobileBottomNav } from '@/components/nav/mobile-bottom-nav';
+import { TermsProvider } from '@/components/providers/TermsProvider';
 import { AppSidebar } from '@/components/sidebar/app-sidebar';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { checkRole } from '@/utils/roles'; // Adjust path if necessary
@@ -26,7 +27,9 @@ export default async function Layout({
         </div>
         {/* Add padding-bottom for mobile nav, remove for desktop */}
         <div className="mx-auto max-w-5xl px-4 pb-20 md:pb-0">
-          <AccessCheck>{children}</AccessCheck>
+          <AccessCheck>
+            <TermsProvider>{children}</TermsProvider>
+          </AccessCheck>
         </div>
       </main>
       {/* Mobile bottom nav visible only on screens smaller than md */}
