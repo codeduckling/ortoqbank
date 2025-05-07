@@ -78,6 +78,14 @@ const validateNoBlobs = (content: any[]) => {
   }
 };
 
+// Helper function to stringify content if it's an object
+function stringifyContent(content: any): string {
+  if (typeof content === 'string') {
+    return content; // Already a string
+  }
+  return JSON.stringify(content);
+}
+
 export const create = mutation({
   args: {
     questionText: v.object({ type: v.string(), content: v.array(v.any()) }),
@@ -102,9 +110,21 @@ export const create = mutation({
       .unique();
     if (!user) throw new Error('User not found');
 
+    // Convert content objects to strings
+    const stringifiedQuestionText = stringifyContent(args.questionText);
+    const stringifiedExplanationText = stringifyContent(args.explanationText);
+
     // Prepare data and call the internal helper
     const questionData = {
       ...args,
+      // Keep original objects for backward compatibility
+      questionText: args.questionText,
+      explanationText: args.explanationText,
+      // Add string versions in the new fields
+      questionTextString: stringifiedQuestionText,
+      explanationTextString: stringifiedExplanationText,
+      // Set migration flag
+      contentMigrated: true,
       normalizedTitle: args.title.trim().toLowerCase(),
       authorId: user._id,
       isPublic: false, // Default value
@@ -179,9 +199,21 @@ export const update = mutation({
 
     const { id, ...updateData } = args;
 
+    // Convert content objects to strings
+    const stringifiedQuestionText = stringifyContent(args.questionText);
+    const stringifiedExplanationText = stringifyContent(args.explanationText);
+
     // Prepare update data
     const updates = {
       ...updateData,
+      // Keep original objects for backward compatibility
+      questionText: args.questionText,
+      explanationText: args.explanationText,
+      // Add string versions in the new fields
+      questionTextString: stringifiedQuestionText,
+      explanationTextString: stringifiedExplanationText,
+      // Set migration flag
+      contentMigrated: true,
       normalizedTitle: args.title?.trim().toLowerCase(), // Handle optional title in updates
     };
 

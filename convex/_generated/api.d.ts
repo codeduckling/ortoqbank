@@ -12,6 +12,7 @@ import type * as bookmark from "../bookmark.js";
 import type * as customQuizzes from "../customQuizzes.js";
 import type * as groups from "../groups.js";
 import type * as http from "../http.js";
+import type * as migrateContentToString from "../migrateContentToString.js";
 import type * as presetQuizzes from "../presetQuizzes.js";
 import type * as questionCountByTheme from "../questionCountByTheme.js";
 import type * as questionStats from "../questionStats.js";
@@ -44,6 +45,7 @@ declare const fullApi: ApiFromModules<{
   customQuizzes: typeof customQuizzes;
   groups: typeof groups;
   http: typeof http;
+  migrateContentToString: typeof migrateContentToString;
   presetQuizzes: typeof presetQuizzes;
   questionCountByTheme: typeof questionCountByTheme;
   questionStats: typeof questionStats;

@@ -43,8 +43,20 @@ export default defineSchema({
     title: v.string(),
     normalizedTitle: v.string(),
     questionCode: v.optional(v.string()),
-    questionText: v.object({ type: v.string(), content: v.array(v.any()) }),
-    explanationText: v.object({ type: v.string(), content: v.array(v.any()) }),
+    // Support both object and string formats during migration
+    questionText: v.union(
+      v.string(),
+      v.object({ type: v.string(), content: v.array(v.any()) }),
+    ),
+    explanationText: v.union(
+      v.string(),
+      v.object({ type: v.string(), content: v.array(v.any()) }),
+    ),
+    // Add dedicated string fields for the final migration
+    questionTextString: v.optional(v.string()),
+    explanationTextString: v.optional(v.string()),
+    // Track migration status
+    contentMigrated: v.optional(v.boolean()),
     alternatives: v.array(v.string()),
     correctAlternativeIndex: v.number(),
     themeId: v.id('themes'),
@@ -95,7 +107,11 @@ export default defineSchema({
     answerFeedback: v.array(
       v.object({
         isCorrect: v.boolean(),
-        explanation: v.object({ type: v.string(), content: v.array(v.any()) }),
+        // Also update this nested explanation field
+        explanation: v.union(
+          v.string(),
+          v.object({ type: v.string(), content: v.array(v.any()) }),
+        ),
         correctAlternative: v.optional(v.number()),
       }),
     ),
