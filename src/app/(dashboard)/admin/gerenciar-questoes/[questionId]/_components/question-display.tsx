@@ -29,7 +29,7 @@ export function QuestionDisplay({
       <div className="space-y-4">
         <div className="rounded-lg border p-4">
           <h2 className="mb-2 font-semibold">Pergunta:</h2>
-          <QuestionContent content={question.questionText} />
+          <QuestionContent stringContent={question.questionTextString} />
         </div>
 
         <div className="rounded-lg border p-4">
@@ -55,7 +55,7 @@ export function QuestionDisplay({
 
         <div className="rounded-lg border p-4">
           <h2 className="mb-2 font-semibold">Explicação:</h2>
-          <QuestionContent content={question.explanationText} />
+          <QuestionContent stringContent={question.explanationTextString} />
         </div>
 
         <div className="rounded-lg border p-4">
@@ -63,6 +63,7 @@ export function QuestionDisplay({
           <p>Tema: {question.theme?.name}</p>
           {question.subtheme && <p>Subtema: {question.subtheme.name}</p>}
           <p>Status: {question.isPublic ? 'Publicada' : 'Rascunho'}</p>
+          <p>Migrado: {question.contentMigrated ? 'Sim' : 'Não'}</p>
         </div>
       </div>
     </div>

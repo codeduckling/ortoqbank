@@ -170,8 +170,12 @@ export default function UniversalQuizResultsPage() {
         </h3>
 
         <QuestionContent
-          content={question.questionText}
-          stringContent={question.questionTextString}
+          stringContent={
+            question.questionTextString ||
+            (question.questionText
+              ? JSON.stringify(question.questionText)
+              : undefined)
+          }
         />
 
         <div className="mt-4 space-y-2">
@@ -210,11 +214,10 @@ export default function UniversalQuizResultsPage() {
                 <div className="text-sm font-medium">Explicação:</div>
                 <div className="mt-1 text-sm">
                   <StructuredContentRenderer
-                    node={feedback.explanation}
                     stringContent={
                       typeof feedback.explanation === 'string'
                         ? feedback.explanation
-                        : undefined
+                        : JSON.stringify(feedback.explanation)
                     }
                   />
                 </div>

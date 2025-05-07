@@ -3,10 +3,20 @@ import StructuredContentRenderer, {
 } from '../common/StructuredContentRenderer';
 
 interface QuestionContentProps {
-  content: ContentNode | string | null | undefined; // Updated to accept string format as well
-  stringContent?: string | null | undefined; // Support for the new stringContent field
+  /**
+   * @deprecated Use stringContent instead. This is kept for backward compatibility.
+   */
+  content?: ContentNode | string | null | undefined;
+  /**
+   * The preferred way to pass content - as a JSON string
+   */
+  stringContent?: string | null | undefined;
 }
 
+/**
+ * Renders question content using either stringContent (preferred) or the legacy content object.
+ * Going forward, all new code should use the stringContent prop exclusively.
+ */
 export default function QuestionContent({
   content,
   stringContent,

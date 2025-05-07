@@ -10,6 +10,18 @@ import { Id } from '../../../../../../convex/_generated/dataModel';
 import { normalizeText } from '../../../../../../convex/utils';
 import { QuestionFormData } from '../_components/schema';
 
+/**
+ * Question Form Service
+ *
+ * CONTENT MIGRATION STATUS: UPDATED
+ *
+ * This service has been updated to only save TipTap content in string format:
+ * - We process editor content into TipTap JSON objects for validation
+ * - We convert these objects to strings using JSON.stringify()
+ * - We only send the string fields (questionTextString and explanationTextString) to the API
+ * - The legacy object fields (questionText and explanationText) are no longer sent
+ */
+
 interface SubmissionOptions {
   mode: 'create' | 'edit';
   defaultValues?: any;
@@ -86,20 +98,25 @@ export async function processAndSubmitQuestion(
     }
     // --- END VALIDATION STEP ---
 
+    // Create string versions of the processed content
+    const questionTextString = JSON.stringify(processedQuestionText);
+    const explanationTextString = JSON.stringify(processedExplanationText);
+
     // Include generated question code in submission
     const submissionData = {
       ...data,
       // Make one final pass with normalizeText to guarantee no special characters
       questionCode: normalizeText(generatedId).toUpperCase(),
-      questionText: processedQuestionText,
-      explanationText: processedExplanationText,
+      // Store processed content to use in validation, but don't send to API
+      _questionText: processedQuestionText,
+      _explanationText: processedExplanationText,
     };
 
     // This check might be redundant now with the stricter validation above,
     // but keeping it doesn't hurt.
     if (
-      hasBlobUrls(submissionData.questionText.content) ||
-      hasBlobUrls(submissionData.explanationText.content)
+      hasBlobUrls(submissionData._questionText.content) ||
+      hasBlobUrls(submissionData._explanationText.content)
     ) {
       toast({
         title: 'Erro ao salvar questão',
@@ -126,8 +143,9 @@ export async function processAndSubmitQuestion(
       // Explicitly list fields needed by mutations, using correct types
       title: submissionData.title,
       questionCode: submissionData.questionCode,
-      questionText: submissionData.questionText,
-      explanationText: submissionData.explanationText,
+      // Only include the string fields, not the legacy object fields
+      questionTextString,
+      explanationTextString,
       alternatives: submissionData.alternatives,
       correctAlternativeIndex: submissionData.correctAlternativeIndex,
       themeId: submissionData.themeId as Id<'themes'>, // Still need assertion here

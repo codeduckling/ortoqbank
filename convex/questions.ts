@@ -18,6 +18,27 @@ import {
   _updateQuestionStatsOnInsert,
 } from './questionStats';
 
+/**
+ * CONTENT MIGRATION STATUS: COMPLETED
+ *
+ * All TipTap editor content has been migrated from object format to string format.
+ * New questions now only store content in the string fields:
+ * - `questionTextString` (required)
+ * - `explanationTextString` (required)
+ *
+ * Legacy fields `questionText` and `explanationText` are now optional in the schema
+ * and are no longer stored for new questions. They are kept for backward compatibility
+ * with existing data.
+ *
+ * API MUTATION UPDATES:
+ * - The `create` and `update` mutations now accept string parameters directly:
+ *   - `questionTextString` instead of `questionText`
+ *   - `explanationTextString` instead of `explanationText`
+ * - This ensures all new content is stored only in string format
+ *
+ * All components should use the string fields when rendering content.
+ */
+
 // ---------- Helper Functions for Question CRUD + Aggregate Sync ----------
 
 // Use GenericMutationCtx with DataModel
@@ -88,10 +109,11 @@ function stringifyContent(content: any): string {
 
 export const create = mutation({
   args: {
-    questionText: v.object({ type: v.string(), content: v.array(v.any()) }),
+    // Accept string content directly instead of objects
+    questionTextString: v.string(),
+    explanationTextString: v.string(),
     questionCode: v.optional(v.string()),
     title: v.string(),
-    explanationText: v.object({ type: v.string(), content: v.array(v.any()) }),
     alternatives: v.array(v.string()),
     correctAlternativeIndex: v.number(),
     themeId: v.id('themes'),
@@ -99,8 +121,23 @@ export const create = mutation({
     groupId: v.optional(v.id('groups')),
   },
   handler: async (ctx, args) => {
-    validateNoBlobs(args.questionText.content);
-    validateNoBlobs(args.explanationText.content);
+    // Validate JSON structure of string content
+    try {
+      const questionTextObj = JSON.parse(args.questionTextString);
+      const explanationTextObj = JSON.parse(args.explanationTextString);
+
+      // Validate structure after parsing
+      if (questionTextObj.content) {
+        validateNoBlobs(questionTextObj.content);
+      }
+      if (explanationTextObj.content) {
+        validateNoBlobs(explanationTextObj.content);
+      }
+    } catch (error: any) {
+      throw new Error(
+        'Invalid content format: ' + (error.message || 'Unknown error'),
+      );
+    }
 
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error('Not authenticated');
@@ -110,19 +147,9 @@ export const create = mutation({
       .unique();
     if (!user) throw new Error('User not found');
 
-    // Convert content objects to strings
-    const stringifiedQuestionText = stringifyContent(args.questionText);
-    const stringifiedExplanationText = stringifyContent(args.explanationText);
-
     // Prepare data and call the internal helper
     const questionData = {
       ...args,
-      // Keep original objects for backward compatibility
-      questionText: args.questionText,
-      explanationText: args.explanationText,
-      // Add string versions in the new fields
-      questionTextString: stringifiedQuestionText,
-      explanationTextString: stringifiedExplanationText,
       // Set migration flag
       contentMigrated: true,
       normalizedTitle: args.title.trim().toLowerCase(),
@@ -173,17 +200,29 @@ export const getById = query({
       ? await context.db.get(question.subthemeId)
       : undefined;
 
-    return { ...question, theme, subtheme };
+    /**
+     * IMPORTANT: For all new code, use the string format fields:
+     * - `questionTextString` instead of `questionText`
+     * - `explanationTextString` instead of `explanationText`
+     *
+     * The object fields are kept for backward compatibility.
+     */
+    return {
+      ...question,
+      theme,
+      subtheme,
+    };
   },
 });
 
 export const update = mutation({
   args: {
     id: v.id('questions'),
-    questionText: v.object({ type: v.string(), content: v.array(v.any()) }),
+    // Accept string content directly
+    questionTextString: v.string(),
+    explanationTextString: v.string(),
     questionCode: v.optional(v.string()),
     title: v.string(),
-    explanationText: v.object({ type: v.string(), content: v.array(v.any()) }),
     alternatives: v.array(v.string()),
     correctAlternativeIndex: v.number(),
     themeId: v.id('themes'),
@@ -192,26 +231,34 @@ export const update = mutation({
     isPublic: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
+    // Validate JSON structure of string content
+    try {
+      const questionTextObj = JSON.parse(args.questionTextString);
+      const explanationTextObj = JSON.parse(args.explanationTextString);
+
+      // Validate structure after parsing
+      if (questionTextObj.content) {
+        validateNoBlobs(questionTextObj.content);
+      }
+      if (explanationTextObj.content) {
+        validateNoBlobs(explanationTextObj.content);
+      }
+    } catch (error: any) {
+      throw new Error(
+        'Invalid content format: ' + (error.message || 'Unknown error'),
+      );
+    }
+
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error('Not authenticated');
 
     // Don't need to check if question exists here, helper does it
 
-    const { id, ...updateData } = args;
-
-    // Convert content objects to strings
-    const stringifiedQuestionText = stringifyContent(args.questionText);
-    const stringifiedExplanationText = stringifyContent(args.explanationText);
+    const { id, ...otherFields } = args;
 
     // Prepare update data
     const updates = {
-      ...updateData,
-      // Keep original objects for backward compatibility
-      questionText: args.questionText,
-      explanationText: args.explanationText,
-      // Add string versions in the new fields
-      questionTextString: stringifiedQuestionText,
-      explanationTextString: stringifiedExplanationText,
+      ...otherFields,
       // Set migration flag
       contentMigrated: true,
       normalizedTitle: args.title?.trim().toLowerCase(), // Handle optional title in updates
