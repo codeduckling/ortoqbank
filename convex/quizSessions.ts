@@ -5,6 +5,19 @@ import { Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
 import { getCurrentUserOrThrow } from './users';
 
+/**
+ * Quiz Sessions
+ *
+ * CONTENT MIGRATION STATUS: UPDATED
+ *
+ * This file has been updated to use string format for TipTap content:
+ * - When saving quiz session feedback, we now use the explanationTextString field
+ * - When returning explanation data, we use the string format
+ *
+ * This ensures consistency with the rest of the application where string format
+ * is preferred over object format for TipTap content.
+ */
+
 //@deprecated('Use getActiveSession instead')
 export const getCurrentSession = query({
   args: { quizId: v.union(v.id('presetQuizzes'), v.id('customQuizzes')) },
@@ -126,14 +139,14 @@ export const submitAnswerAndProgress = mutation({
     const isAnswerCorrect =
       args.selectedAlternativeIndex === currentQuestion.correctAlternativeIndex;
 
-    // 4. Save answer and feedback for current question
+    // 4. Save answer and feedback for current question - use string format for explanation
     await ctx.db.patch(session._id, {
       answers: [...session.answers, args.selectedAlternativeIndex],
       answerFeedback: [
         ...session.answerFeedback,
         {
           isCorrect: isAnswerCorrect,
-          explanation: currentQuestion.explanationText,
+          explanation: currentQuestion.explanationTextString,
           correctAlternative: currentQuestion.correctAlternativeIndex,
         },
       ],
@@ -150,7 +163,7 @@ export const submitAnswerAndProgress = mutation({
     return {
       isAnswerCorrect,
       feedback: isAnswerCorrect ? 'Correct!' : 'Incorrect',
-      explanation: currentQuestion.explanationText,
+      explanation: currentQuestion.explanationTextString,
       correctAlternative: currentQuestion.correctAlternativeIndex,
       nextQuestionIndex: session.currentQuestionIndex + 1,
       isComplete: session.currentQuestionIndex + 1 >= quiz.questions.length,

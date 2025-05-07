@@ -43,18 +43,22 @@ export default defineSchema({
     title: v.string(),
     normalizedTitle: v.string(),
     questionCode: v.optional(v.string()),
-    // Support both object and string formats during migration
-    questionText: v.union(
-      v.string(),
-      v.object({ type: v.string(), content: v.array(v.any()) }),
+    // Legacy object fields now optional
+    questionText: v.optional(
+      v.union(
+        v.string(),
+        v.object({ type: v.string(), content: v.array(v.any()) }),
+      ),
     ),
-    explanationText: v.union(
-      v.string(),
-      v.object({ type: v.string(), content: v.array(v.any()) }),
+    explanationText: v.optional(
+      v.union(
+        v.string(),
+        v.object({ type: v.string(), content: v.array(v.any()) }),
+      ),
     ),
-    // Add dedicated string fields for the final migration
-    questionTextString: v.optional(v.string()),
-    explanationTextString: v.optional(v.string()),
+    // String fields now required
+    questionTextString: v.string(),
+    explanationTextString: v.string(),
     // Track migration status
     contentMigrated: v.optional(v.boolean()),
     alternatives: v.array(v.string()),
@@ -107,10 +111,10 @@ export default defineSchema({
     answerFeedback: v.array(
       v.object({
         isCorrect: v.boolean(),
-        // Also update this nested explanation field
+        // Update explanation field to prefer string format
         explanation: v.union(
-          v.string(),
-          v.object({ type: v.string(), content: v.array(v.any()) }),
+          v.string(), // String format (preferred)
+          v.object({ type: v.string(), content: v.array(v.any()) }), // Legacy object format
         ),
         correctAlternative: v.optional(v.number()),
       }),

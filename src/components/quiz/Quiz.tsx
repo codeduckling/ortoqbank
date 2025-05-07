@@ -274,7 +274,9 @@ function QuizStepper({
                 </div>
 
                 <div className="my-6">
-                  <QuestionContent content={step.questionText} />
+                  <QuestionContent
+                    stringContent={JSON.stringify(step.questionText)}
+                  />
 
                   <QuizAlternatives
                     alternatives={step.alternatives || []}

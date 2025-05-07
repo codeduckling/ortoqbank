@@ -33,28 +33,28 @@ describe('Quiz Functions', () => {
       const questionIds = await Promise.all([
         asTeacher.mutation(api.questions.create, {
           title: 'Test Question 1',
-          questionText: {
+          questionTextString: JSON.stringify({
             type: 'doc',
             content: [{ type: 'text', text: 'What is 1+1?' }],
-          },
-          explanationText: {
+          }),
+          explanationTextString: JSON.stringify({
             type: 'doc',
             content: [{ type: 'text', text: 'Basic math' }],
-          },
+          }),
           alternatives: ['2', '3', '4', '5'],
           correctAlternativeIndex: 0,
           themeId,
         }),
         asTeacher.mutation(api.questions.create, {
           title: 'Test Question 2',
-          questionText: {
+          questionTextString: JSON.stringify({
             type: 'doc',
             content: [{ type: 'text', text: 'What is 2+2?' }],
-          },
-          explanationText: {
+          }),
+          explanationTextString: JSON.stringify({
             type: 'doc',
             content: [{ type: 'text', text: 'Basic math' }],
-          },
+          }),
           alternatives: ['2', '3', '4', '5'],
           correctAlternativeIndex: 2,
           themeId,
@@ -116,14 +116,14 @@ describe('Quiz Functions', () => {
 
       const questionId = await asTeacher.mutation(api.questions.create, {
         title: 'Test Question',
-        questionText: {
+        questionTextString: JSON.stringify({
           type: 'doc',
           content: [{ type: 'text', text: 'What is 1+1?' }],
-        },
-        explanationText: {
+        }),
+        explanationTextString: JSON.stringify({
           type: 'doc',
           content: [{ type: 'text', text: 'Basic math' }],
-        },
+        }),
         alternatives: ['2', '3', '4', '5'],
         correctAlternativeIndex: 0,
         themeId,
@@ -195,14 +195,14 @@ describe('Quiz Functions', () => {
 
       const questionId = await asTeacher.mutation(api.questions.create, {
         title: 'Test Question',
-        questionText: {
+        questionTextString: JSON.stringify({
           type: 'doc',
           content: [{ type: 'text', text: 'What is 1+1?' }],
-        },
-        explanationText: {
+        }),
+        explanationTextString: JSON.stringify({
           type: 'doc',
           content: [{ type: 'text', text: 'Basic math' }],
-        },
+        }),
         alternatives: ['2', '3', '4', '5'],
         correctAlternativeIndex: 0,
         themeId,
