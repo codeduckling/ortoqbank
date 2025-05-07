@@ -6,8 +6,6 @@ import { useEffect, useState } from 'react';
 
 import BookmarkButton from '@/components/common/BookmarkButton';
 import { useQuiz } from '@/components/hooks/useQuiz';
-import { Button } from '@/components/ui/button';
-import { renderContent } from '@/lib/utils/render-content';
 
 import { Id } from '../../../convex/_generated/dataModel';
 import QuestionContent from './QuestionContent';
@@ -73,7 +71,6 @@ function QuizStepper({
   mode,
   completeQuiz,
   bookmarkStatuses,
-  toggleBookmark,
 }: {
   quizData: NonNullable<ReturnType<typeof useQuiz>['quizData']>;
   progress: NonNullable<ReturnType<typeof useQuiz>['progress']>;
@@ -253,24 +250,35 @@ function QuizStepper({
             step => (
               <>
                 <div className="mb-6 flex items-center justify-between">
-                  <QuizProgress
-                    currentIndex={currentStepIndex}
-                    totalQuestions={quizData.questions.length}
-                    mode={mode}
-                    answerFeedback={progress.answerFeedback}
-                    onNavigate={index => {
-                      if (mode === 'study') {
-                        stepper.goTo(`question-${index}`);
-                      }
-                    }}
-                  />
+                  <div>
+                    <QuizProgress
+                      currentIndex={currentStepIndex}
+                      totalQuestions={quizData.questions.length}
+                      mode={mode}
+                      answerFeedback={progress.answerFeedback}
+                      onNavigate={index => {
+                        if (mode === 'study') {
+                          stepper.goTo(`question-${index}`);
+                        }
+                      }}
+                    />
+                  </div>
 
-                  <BookmarkButton
-                    questionId={currentQuestion._id}
-                    isBookmarked={
-                      bookmarkStatuses[currentQuestion._id] || false
-                    }
-                  />
+                  <div className="flex flex-col items-center">
+                    <div className="flex items-center">
+                      <BookmarkButton
+                        questionId={currentQuestion._id}
+                        isBookmarked={
+                          bookmarkStatuses[currentQuestion._id] || false
+                        }
+                      />
+                    </div>
+                    {currentQuestion.questionCode && (
+                      <span className="text-muted-foreground text-xs opacity-70">
+                        Código: {currentQuestion.questionCode}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="my-6">
@@ -288,7 +296,7 @@ function QuizStepper({
                   />
                 </div>
 
-                {feedback && mode !== 'exam' && (
+                {feedback && (
                   <QuizFeedback
                     isCorrect={feedback.isCorrect}
                     message={feedback.message}

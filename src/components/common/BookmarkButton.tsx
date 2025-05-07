@@ -1,5 +1,9 @@
 import { useMutation } from 'convex/react';
-import { BookmarkCheckIcon, BookmarkIcon } from 'lucide-react';
+import {
+  BookmarkCheckIcon,
+  BookmarkIcon,
+  BookmarkPlusIcon,
+} from 'lucide-react';
 
 import { api } from '../../../convex/_generated/api';
 import { Id } from '../../../convex/_generated/dataModel';
@@ -33,7 +37,7 @@ export default function BookmarkButton({
       {isBookmarked ? (
         <BookmarkCheckIcon className="h-6 w-6 text-blue-500" />
       ) : (
-        <BookmarkIcon className="h-6 w-6 text-gray-400" />
+        <BookmarkPlusIcon className="h-6 w-6 text-gray-400" />
       )}
     </button>
   );

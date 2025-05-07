@@ -10,7 +10,6 @@ import {
   Tooltip,
 } from 'recharts';
 
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 
 import { api } from '../../../../convex/_generated/api';
@@ -19,7 +18,6 @@ import { StatCard } from './components/stat-card';
 
 export default function ProfilePage() {
   const stats = useQuery(api.userStats.getUserStatsFromTable);
-  const termsAccepted = useQuery(api.users.getTermsAccepted);
 
   const isLoading = stats === undefined;
 
@@ -68,18 +66,6 @@ export default function ProfilePage() {
       <h1 className="mb-8 text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
         Meu Perfil
       </h1>
-
-      {/* Terms of service status */}
-      <div className="mb-4 flex items-center">
-        <span className="mr-2 font-medium">Status dos Termos de Uso:</span>
-        {termsAccepted === undefined ? (
-          <Skeleton className="h-6 w-24" />
-        ) : termsAccepted ? (
-          <Badge variant="success">Aceito</Badge>
-        ) : (
-          <Badge variant="destructive">Não aceito</Badge>
-        )}
-      </div>
 
       {isLoading ? (
         // Loading state

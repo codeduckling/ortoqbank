@@ -672,6 +672,7 @@ export const insertIntoThemeAggregate = internalMutation({
 export const searchByCode = query({
   args: {
     code: v.string(),
+    limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     if (!args.code || args.code.trim() === '') {
@@ -681,6 +682,9 @@ export const searchByCode = query({
     // Normalize the search code
     const searchCode = args.code.trim();
 
+    // Use provided limit or default to 50
+    const limit = args.limit || 50;
+
     // Use the search index for efficient text search
     // This is much more efficient than using a regular index with manual filtering
     const matchingQuestions = await ctx.db
@@ -688,7 +692,7 @@ export const searchByCode = query({
       .withSearchIndex('search_by_code', q =>
         q.search('questionCode', searchCode),
       )
-      .take(50); // Limit to 50 results to reduce bandwidth
+      .take(limit); // Use the limit parameter
 
     // If we have questions, fetch their themes
     if (matchingQuestions.length > 0) {

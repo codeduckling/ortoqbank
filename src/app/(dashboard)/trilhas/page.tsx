@@ -53,10 +53,46 @@ export default function ThemesPage() {
   const { user } = useUser();
   const router = useRouter();
 
-  // Filter quizzes to only show those with category = "trilha"
+  // Sort themes by displayOrder (if available) or by name
+  const sortedThemes = [...themes].sort((a, b) => {
+    // If both have displayOrder, sort by that
+    if (a.displayOrder !== undefined && b.displayOrder !== undefined) {
+      return a.displayOrder - b.displayOrder;
+    }
+    // If only a has displayOrder, a comes first
+    if (a.displayOrder !== undefined) {
+      return -1;
+    }
+    // If only b has displayOrder, b comes first
+    if (b.displayOrder !== undefined) {
+      return 1;
+    }
+    // If neither has displayOrder, sort by name
+    return a.name.localeCompare(b.name);
+  });
+
+  // Filter quizzes to only show those with category = 'trilha'
   const trilhasQuizzes = presetQuizzes.filter(
     quiz => quiz.category === 'trilha',
   );
+
+  // Sort trilhasQuizzes by displayOrder (if available) or by name
+  const sortedTrilhasQuizzes = [...trilhasQuizzes].sort((a, b) => {
+    // If both have displayOrder, sort by that
+    if (a.displayOrder !== undefined && b.displayOrder !== undefined) {
+      return a.displayOrder - b.displayOrder;
+    }
+    // If only a has displayOrder, a comes first
+    if (a.displayOrder !== undefined) {
+      return -1;
+    }
+    // If only b has displayOrder, b comes first
+    if (b.displayOrder !== undefined) {
+      return 1;
+    }
+    // If neither has displayOrder, sort by name
+    return a.name.localeCompare(b.name);
+  });
 
   // Query to get incomplete sessions for the current user
   const incompleteSessions =
@@ -85,9 +121,9 @@ export default function ThemesPage() {
   );
 
   // Group trilhas by theme
-  const trilhasByTheme = themes.reduce(
+  const trilhasByTheme = sortedThemes.reduce(
     (accumulator, theme) => {
-      const themeTrilhas = trilhasQuizzes.filter(
+      const themeTrilhas = sortedTrilhasQuizzes.filter(
         quiz => quiz.themeId === theme._id,
       );
 
@@ -97,26 +133,26 @@ export default function ThemesPage() {
 
       return accumulator;
     },
-    {} as Record<string, typeof trilhasQuizzes>,
+    {} as Record<string, typeof sortedTrilhasQuizzes>,
   );
 
   const handleExamClick = async (quizId: Id<'presetQuizzes'>) => {
     // Check if there's an incomplete session for this quiz
     if (incompleteSessionMap[quizId]) {
       // Navigate to the tema quiz instead of preset-quiz
-      router.push(`/temas/${quizId}`);
+      router.push(`/trilhas/${quizId}`);
     } else {
       // Start a new session
       const { sessionId } = await startSession({
         quizId,
         mode: 'study',
       });
-      router.push(`/temas/${quizId}`);
+      router.push(`/trilhas/${quizId}`);
     }
   };
 
   if (!themes || !user) {
-    return <div>Carregando temas...</div>;
+    return <div>Carregando trilhas...</div>;
   }
 
   // If there are no trilhas for any theme
@@ -124,7 +160,7 @@ export default function ThemesPage() {
     return (
       <div className="container mx-auto p-6">
         <h1 className="mb-8 text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
-          Temas
+          Trilhas
         </h1>
         <div className="rounded-lg border p-8 text-center">
           <p className="text-muted-foreground">
@@ -138,7 +174,7 @@ export default function ThemesPage() {
   return (
     <div className="container mx-auto p-6">
       <h1 className="mb-8 text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
-        Temas
+        Trilhas
       </h1>
       <Accordion type="single" collapsible className="space-y-4">
         {Object.entries(trilhasByTheme).map(([themeId, trilhas]) => {

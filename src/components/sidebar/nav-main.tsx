@@ -22,7 +22,7 @@ interface MenuItem {
 
 const items: MenuItem[] = [
   { title: 'Meu Perfil', url: '/perfil', icon: UserCircleIcon },
-  { title: 'Trilhas', url: '/temas', icon: BookOpenIcon },
+  { title: 'Trilhas', url: '/trilhas', icon: BookOpenIcon },
   { title: 'Simulados', url: '/simulados', icon: FileTextIcon },
 ];
 

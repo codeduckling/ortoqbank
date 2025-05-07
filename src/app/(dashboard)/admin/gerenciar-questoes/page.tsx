@@ -2,7 +2,7 @@
 
 import { useQuery } from 'convex/react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,34 +18,26 @@ import {
 import { api } from '../../../../../convex/_generated/api';
 import { Id } from '../../../../../convex/_generated/dataModel';
 
-// Debounce helper function
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
-}
-
 export default function GerenciarQuestoes() {
   const router = useRouter();
   const [searchInput, setSearchInput] = useState('');
-  const debouncedSearchQuery = useDebounce(searchInput, 500); // 500ms debounce delay
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Use the searchByCode query when search is provided, otherwise show nothing
   const searchResults =
     useQuery(
       api.questions.searchByCode,
-      debouncedSearchQuery.trim() ? { code: debouncedSearchQuery } : 'skip',
+      searchQuery.trim() ? { code: searchQuery, limit: 10 } : 'skip',
     ) || [];
+
+  const handleSearch = () => {
+    setSearchQuery(searchInput.trim());
+  };
+
+  const handleClear = () => {
+    setSearchInput('');
+    setSearchQuery('');
+  };
 
   const handleView = (questionId: Id<'questions'>) => {
     router.push(`/admin/gerenciar-questoes/${questionId}`);
@@ -63,8 +55,9 @@ export default function GerenciarQuestoes() {
           onChange={e => setSearchInput(e.target.value)}
           className="max-w-md"
         />
+        <Button onClick={handleSearch}>Buscar</Button>
         {searchInput && (
-          <Button variant="ghost" onClick={() => setSearchInput('')}>
+          <Button variant="ghost" onClick={handleClear}>
             Limpar
           </Button>
         )}
@@ -72,8 +65,8 @@ export default function GerenciarQuestoes() {
 
       {/* Search Instructions */}
       <p className="text-muted-foreground text-sm">
-        Digite o código da questão para pesquisar. A busca será realizada após
-        uma breve pausa na digitação.
+        Digite o código da questão e clique em Buscar. Mostrando no máximo 10
+        resultados.
       </p>
 
       {/* Questions Table */}
@@ -88,7 +81,7 @@ export default function GerenciarQuestoes() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {debouncedSearchQuery.trim() ? (
+            {searchQuery.trim() ? (
               searchResults.length === 0 ? (
                 <TableRow>
                   <TableCell
@@ -128,7 +121,7 @@ export default function GerenciarQuestoes() {
                   colSpan={4}
                   className="text-muted-foreground py-6 text-center"
                 >
-                  Digite um código para pesquisar questões
+                  Digite um código e clique em Buscar para pesquisar questões
                 </TableCell>
               </TableRow>
             )}

@@ -23,6 +23,7 @@ export default defineSchema({
   themes: defineTable({
     name: v.string(),
     prefix: v.optional(v.string()),
+    displayOrder: v.optional(v.number()),
   }).index('by_name', ['name']),
 
   subthemes: defineTable({
@@ -80,10 +81,12 @@ export default defineSchema({
     description: v.string(),
     category: v.union(v.literal('trilha'), v.literal('simulado')),
     questions: v.array(v.id('questions')),
+    subcategory: v.optional(v.string()),
     themeId: v.optional(v.id('themes')),
     subthemeId: v.optional(v.id('subthemes')),
     groupId: v.optional(v.id('groups')),
     isPublic: v.boolean(),
+    displayOrder: v.optional(v.number()),
   }).searchIndex('search_by_name', { searchField: 'name' }),
 
   customQuizzes: defineTable({
