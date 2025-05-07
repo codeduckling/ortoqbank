@@ -169,7 +169,10 @@ export default function UniversalQuizResultsPage() {
           Questão {currentQuestionIndex + 1}
         </h3>
 
-        <QuestionContent content={question.questionText} />
+        <QuestionContent
+          content={question.questionText}
+          stringContent={question.questionTextString}
+        />
 
         <div className="mt-4 space-y-2">
           {question.alternatives.map((alternative, i) => {
@@ -206,7 +209,14 @@ export default function UniversalQuizResultsPage() {
               <div className="mt-2">
                 <div className="text-sm font-medium">Explicação:</div>
                 <div className="mt-1 text-sm">
-                  <StructuredContentRenderer node={feedback.explanation} />
+                  <StructuredContentRenderer
+                    node={feedback.explanation}
+                    stringContent={
+                      typeof feedback.explanation === 'string'
+                        ? feedback.explanation
+                        : undefined
+                    }
+                  />
                 </div>
               </div>
             )}
