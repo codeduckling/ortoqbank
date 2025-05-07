@@ -224,13 +224,13 @@ export function EditExamDialog({
           </div>
           <Input
             type="text"
-            placeholder="Buscar questões por código..."
+            placeholder="Buscar questões por código ou título..."
             value={searchInput}
             onChange={event => setSearchInput(event.target.value)}
           />
           <p className="text-muted-foreground text-xs">
-            Digite um código para pesquisar questões. A busca será realizada
-            após uma breve pausa na digitação.
+            Digite um código ou parte do título para pesquisar questões. A busca
+            será realizada após uma breve pausa na digitação.
           </p>
           <ScrollArea className="h-[400px] rounded-md border p-4">
             {debouncedSearchValue.trim() ? (

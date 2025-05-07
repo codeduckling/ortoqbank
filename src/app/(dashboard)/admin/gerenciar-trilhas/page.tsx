@@ -529,7 +529,7 @@ export default function ManagePresetExams() {
                             <Input
                               id="searchQuestions"
                               type="text"
-                              placeholder="Buscar por código da questão..."
+                              placeholder="Buscar por código ou título da questão..."
                               value={searchInput}
                               onChange={e => setSearchInput(e.target.value)}
                             />
@@ -546,8 +546,8 @@ export default function ManagePresetExams() {
                             )}
                           </div>
                           <p className="text-muted-foreground text-xs">
-                            Digite um código e clique em Buscar. Mostrando no
-                            máximo 10 resultados.
+                            Digite um código ou parte do título e clique em
+                            Buscar. Mostrando no máximo 10 resultados.
                           </p>
                         </div>
 
