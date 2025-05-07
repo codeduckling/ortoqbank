@@ -50,7 +50,7 @@ export default function GerenciarQuestoes() {
       {/* Search Input */}
       <div className="flex items-center gap-2">
         <Input
-          placeholder="Buscar por código da questão..."
+          placeholder="Buscar por código ou título da questão..."
           value={searchInput}
           onChange={e => setSearchInput(e.target.value)}
           className="max-w-md"
@@ -65,8 +65,8 @@ export default function GerenciarQuestoes() {
 
       {/* Search Instructions */}
       <p className="text-muted-foreground text-sm">
-        Digite o código da questão e clique em Buscar. Mostrando no máximo 10
-        resultados.
+        Digite o código ou parte do título da questão e clique em Buscar.
+        Mostrando no máximo 10 resultados.
       </p>
 
       {/* Questions Table */}
@@ -121,7 +121,8 @@ export default function GerenciarQuestoes() {
                   colSpan={4}
                   className="text-muted-foreground py-6 text-center"
                 >
-                  Digite um código e clique em Buscar para pesquisar questões
+                  Digite um código ou parte do título da questão e clique em
+                  Buscar para pesquisar questões
                 </TableCell>
               </TableRow>
             )}

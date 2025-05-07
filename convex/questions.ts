@@ -680,19 +680,88 @@ export const searchByCode = query({
     }
 
     // Normalize the search code
-    const searchCode = args.code.trim();
+    const searchTerm = args.code.trim();
+
+    // Use provided limit or default to 50
+    const limit = args.limit || 50;
+
+    // First search by code (since that's more specific)
+    const codeResults = await ctx.db
+      .query('questions')
+      .withSearchIndex('search_by_code', q =>
+        q.search('questionCode', searchTerm),
+      )
+      .take(limit); // Use the limit parameter
+
+    // If we have enough code results, just return those
+    if (codeResults.length >= limit) {
+      const themes = await Promise.all(
+        codeResults.map(question => ctx.db.get(question.themeId)),
+      );
+      return codeResults.map((question, index) => ({
+        _id: question._id,
+        title: question.title,
+        questionCode: question.questionCode,
+        themeId: question.themeId,
+        theme: themes[index],
+      }));
+    }
+
+    // If code search didn't return enough, search by title too
+    const titleResults = await ctx.db
+      .query('questions')
+      .withSearchIndex('search_by_title', q => q.search('title', searchTerm))
+      .take(limit - codeResults.length);
+
+    // Combine results, eliminating duplicates (code results take priority)
+    const seenIds = new Set(codeResults.map(q => q._id.toString()));
+    const combinedResults = [
+      ...codeResults,
+      ...titleResults.filter(q => !seenIds.has(q._id.toString())),
+    ];
+
+    // If we have questions, fetch their themes
+    if (combinedResults.length > 0) {
+      const themes = await Promise.all(
+        combinedResults.map(question => ctx.db.get(question.themeId)),
+      );
+
+      // Return minimal data to reduce bandwidth
+      return combinedResults.map((question, index) => ({
+        _id: question._id,
+        title: question.title,
+        questionCode: question.questionCode,
+        themeId: question.themeId,
+        theme: themes[index],
+      }));
+    }
+
+    return [];
+  },
+});
+
+// Add a standalone search by title function for specific title-only searches
+export const searchByTitle = query({
+  args: {
+    title: v.string(),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    if (!args.title || args.title.trim() === '') {
+      return [];
+    }
+
+    // Normalize the search term
+    const searchTerm = args.title.trim();
 
     // Use provided limit or default to 50
     const limit = args.limit || 50;
 
     // Use the search index for efficient text search
-    // This is much more efficient than using a regular index with manual filtering
     const matchingQuestions = await ctx.db
       .query('questions')
-      .withSearchIndex('search_by_code', q =>
-        q.search('questionCode', searchCode),
-      )
-      .take(limit); // Use the limit parameter
+      .withSearchIndex('search_by_title', q => q.search('title', searchTerm))
+      .take(limit);
 
     // If we have questions, fetch their themes
     if (matchingQuestions.length > 0) {
