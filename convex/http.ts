@@ -19,8 +19,19 @@ http.route({
       case 'user.created': // intentional fallthrough
       case 'user.updated': {
         try {
+          // Prepare the data for Convex by ensuring proper types
+          const userData = {
+            ...event.data,
+            termsAccepted: false, // Always set default value for termsAccepted on webhook events
+            public_metadata: {
+              ...event.data.public_metadata,
+              // Convert payment ID to string if it exists
+              paymentId: event.data.public_metadata?.paymentId?.toString(),
+            },
+          };
+
           await ctx.runMutation(internal.users.upsertFromClerk, {
-            data: { ...event.data, termsAccepted: false },
+            data: userData,
           });
         } catch (error) {
           console.error('Error upserting user from Clerk', error);
