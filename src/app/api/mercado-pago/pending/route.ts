@@ -9,10 +9,8 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   // Pegamos o ID do pagamento no Mercado Pago
   const paymentId = searchParams.get('payment_id');
-  // Pegamos o ID do pagamento do nosso sistema
-  const testeId = searchParams.get('external_reference');
 
-  if (!paymentId || !testeId) {
+  if (!paymentId) {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
 

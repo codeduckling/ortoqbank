@@ -24,7 +24,6 @@ export default function Pricing() {
   const handlePurchase = () => {
     if (email && email.includes('@')) {
       createMercadoPagoCheckout({
-        testeId: '123',
         userEmail: email,
       });
       setShowEmailModal(false);

@@ -52,7 +52,7 @@ export const upsertFromClerk = internalMutation({
         ? {
             paid: true,
             paymentId: publicMetadata.paymentId?.toString(),
-            testeId: publicMetadata.testeId,
+
             paymentDate: publicMetadata.paymentDate,
             paymentStatus: publicMetadata.paymentStatus,
           }
@@ -60,7 +60,6 @@ export const upsertFromClerk = internalMutation({
             // Keep existing payment data if it exists
             paid: existingUser.paid,
             paymentId: existingUser.paymentId,
-            testeId: existingUser.testeId,
             paymentDate: existingUser.paymentDate,
             paymentStatus: existingUser.paymentStatus,
           };
@@ -77,7 +76,7 @@ export const upsertFromClerk = internalMutation({
         ...userData,
         paid: true,
         paymentId: publicMetadata.paymentId?.toString(),
-        testeId: publicMetadata.testeId,
+
         paymentDate: publicMetadata.paymentDate,
         paymentStatus: publicMetadata.paymentStatus,
       });
@@ -167,7 +166,6 @@ export const getUserPaymentDetails = query({
     return {
       paid: user.paid,
       paymentId: user.paymentId,
-      testeId: user.testeId,
       paymentDate: user.paymentDate,
       paymentStatus: user.paymentStatus,
     };

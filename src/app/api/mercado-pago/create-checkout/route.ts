@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import mpClient from '@/lib/mercado-pago';
 
 export async function POST(req: NextRequest) {
-  const { testeId, userEmail } = await req.json();
+  const { userEmail } = await req.json();
 
   try {
     // Define the regular and PIX prices directly
@@ -16,9 +16,7 @@ export async function POST(req: NextRequest) {
 
     const createdPreference = await preference.create({
       body: {
-        external_reference: testeId,
         metadata: {
-          testeId,
           userEmail,
         },
         ...(userEmail && {
