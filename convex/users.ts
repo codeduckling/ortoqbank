@@ -42,7 +42,7 @@ export const upsertFromClerk = internalMutation({
       email: data.email_addresses?.[0]?.email_address,
       clerkUserId: data.id,
       imageUrl: data.image_url,
-      termsAccepted: data.terms_accepted,
+      termsAccepted: data.termsAccepted,
     };
 
     if (existingUser !== null) {
@@ -51,7 +51,7 @@ export const upsertFromClerk = internalMutation({
       const paymentData = isPaidFromClerk
         ? {
             paid: true,
-            paymentId: publicMetadata.paymentId,
+            paymentId: publicMetadata.paymentId?.toString(),
             testeId: publicMetadata.testeId,
             paymentDate: publicMetadata.paymentDate,
             paymentStatus: publicMetadata.paymentStatus,
@@ -76,7 +76,7 @@ export const upsertFromClerk = internalMutation({
       return await context.db.insert('users', {
         ...userData,
         paid: true,
-        paymentId: publicMetadata.paymentId,
+        paymentId: publicMetadata.paymentId?.toString(),
         testeId: publicMetadata.testeId,
         paymentDate: publicMetadata.paymentDate,
         paymentStatus: publicMetadata.paymentStatus,
