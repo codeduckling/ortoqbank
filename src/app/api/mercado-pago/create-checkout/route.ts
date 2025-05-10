@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
 
   try {
     // Define the regular and PIX prices directly
-    const REGULAR_PRICE = 1999.9;
+    const REGULAR_PRICE = 1;
     const PIX_PRICE = 1899;
     const DISCOUNT_AMOUNT = REGULAR_PRICE - PIX_PRICE;
 
