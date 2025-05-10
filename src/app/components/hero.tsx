@@ -4,32 +4,11 @@ import { CircleCheckIcon } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 
+import CheckoutEmailModal from '@/components/checkout-email-modal';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import useMercadoPago from '@/hooks/useMercadoPago';
 
 export default function HeroSection() {
   const [showEmailModal, setShowEmailModal] = useState(false);
-  const [email, setEmail] = useState('');
-  const { createMercadoPagoCheckout } = useMercadoPago();
-
-  const handlePurchase = () => {
-    if (email && email.includes('@')) {
-      createMercadoPagoCheckout({
-        userEmail: email,
-      });
-      setShowEmailModal(false);
-    }
-  };
 
   return (
     <section className="w-full bg-white py-12 md:py-18">
@@ -78,46 +57,10 @@ export default function HeroSection() {
         </div>
       </div>
 
-      <Dialog open={showEmailModal} onOpenChange={setShowEmailModal}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Informe seu email para continuar</DialogTitle>
-            <DialogDescription>
-              Após a confirmação do pagamento, enviaremos um link de acesso para
-              este email para que você possa completar seu cadastro e começar a
-              usar a plataforma.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="seu.email@exemplo.com"
-              />
-            </div>
-          </div>
-          <DialogFooter className="sm:justify-end">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setShowEmailModal(false)}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              onClick={handlePurchase}
-              disabled={!email || !email.includes('@')}
-            >
-              Continuar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CheckoutEmailModal
+        open={showEmailModal}
+        onOpenChange={setShowEmailModal}
+      />
     </section>
   );
 }
