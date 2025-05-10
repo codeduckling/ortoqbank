@@ -17,7 +17,6 @@ function isCompletedPayment(status: string | undefined): boolean {
 export async function handleMercadoPagoPayment(paymentData: PaymentResponse) {
   const metadata = paymentData.metadata;
   const userEmail = metadata.user_email; // Os metadados do Mercado Pago são convertidos para snake_case
-  const testeId = metadata.teste_id; // Os metadados do Mercado Pago são convertidos para snake_case
 
   if (!userEmail) {
     console.error('Missing user email in payment metadata');
@@ -48,7 +47,7 @@ export async function handleMercadoPagoPayment(paymentData: PaymentResponse) {
         publicMetadata: {
           paid: true,
           paymentId: paymentData.id,
-          testeId: testeId,
+
           paymentDate: new Date().toISOString(),
           paymentStatus: paymentData.status,
         },
@@ -63,7 +62,7 @@ export async function handleMercadoPagoPayment(paymentData: PaymentResponse) {
       publicMetadata: {
         paid: true,
         paymentId: paymentData.id,
-        testeId: testeId,
+
         paymentDate: new Date().toISOString(),
         paymentStatus: paymentData.status,
       },
