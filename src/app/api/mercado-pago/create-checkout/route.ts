@@ -4,7 +4,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import mpClient from '@/lib/mercado-pago';
 
 export async function POST(req: NextRequest) {
-  const { userEmail } = await req.json();
+  const {
+    testeId,
+    userEmail,
+    userName,
+    userLastName,
+    userAddress,
+    userIdentification,
+    userPhone,
+  } = await req.json();
 
   try {
     // Define the regular and PIX prices directly
@@ -16,12 +24,35 @@ export async function POST(req: NextRequest) {
 
     const createdPreference = await preference.create({
       body: {
+        external_reference: testeId,
         metadata: {
+          testeId,
           userEmail,
         },
         ...(userEmail && {
           payer: {
+            ...(userName && { first_name: userName }),
+            ...(userLastName && { last_name: userLastName }),
             email: userEmail,
+            ...(userIdentification && {
+              identification: {
+                type: userIdentification.type,
+                number: userIdentification.number,
+              },
+            }),
+            ...(userPhone && {
+              phone: {
+                area_code: userPhone.area_code,
+                number: userPhone.number,
+              },
+            }),
+            ...(userAddress && {
+              address: {
+                street_name: userAddress.street,
+                street_number: userAddress.number,
+                zip_code: userAddress.zipcode,
+              },
+            }),
           },
         }),
 
@@ -52,7 +83,7 @@ export async function POST(req: NextRequest) {
           ],
 
           installments: 12,
-        },
+        } as Record<string, any>,
 
         // Only use auto_return in production
         ...(process.env.NODE_ENV === 'production' && {
