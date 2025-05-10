@@ -148,7 +148,7 @@ export const getUserPaymentDetails = query({
   args: {},
   returns: v.object({
     paid: v.optional(v.boolean()),
-    paymentId: v.optional(v.string()),
+    paymentId: v.optional(v.union(v.string(), v.number())),
     testeId: v.optional(v.string()),
     paymentDate: v.optional(v.string()),
     paymentStatus: v.optional(v.string()),
