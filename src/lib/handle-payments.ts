@@ -60,9 +60,6 @@ export async function handleMercadoPagoPayment(paymentData: PaymentResponse) {
     // Send invitation to the user
     const invitation = await clerk.invitations.createInvitation({
       emailAddress: userEmail as string,
-      redirectUrl:
-        process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL ||
-        'https://ortoqbank.com/sign-in',
       publicMetadata: {
         paid: true,
         paymentId: paymentData.id,
