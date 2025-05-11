@@ -40,7 +40,7 @@ export default function Pricing() {
                 por R$1.899,90 no PIX
               </p>
               <p className="text-lg font-medium text-gray-700">
-                parcelado em até 6x
+                parcelado em até 12x
               </p>
             </div>
 
