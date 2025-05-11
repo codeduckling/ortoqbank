@@ -21,6 +21,7 @@ export async function POST(req: NextRequest) {
     const DISCOUNT_AMOUNT = REGULAR_PRICE - PIX_PRICE;
 
     const preference = new Preference(mpClient);
+    const origin = req.headers.get('origin') || 'https://ortoqbank.com.br';
 
     const createdPreference = await preference.create({
       body: {
@@ -31,8 +32,8 @@ export async function POST(req: NextRequest) {
         },
         ...(userEmail && {
           payer: {
-            ...(userName && { first_name: userName }),
-            ...(userLastName && { last_name: userLastName }),
+            first_name: userName || 'Cliente',
+            last_name: userLastName || 'Ortoqbank',
             email: userEmail,
             ...(userIdentification && {
               identification: {
@@ -85,15 +86,18 @@ export async function POST(req: NextRequest) {
           installments: 12,
         } as Record<string, any>,
 
+        // Add webhook notification URL
+        notification_url: `${origin}/api/mercado-pago/webhook`,
+
         // Only use auto_return in production
         ...(process.env.NODE_ENV === 'production' && {
           auto_return: 'approved',
         }),
 
         back_urls: {
-          success: `${req.headers.get('origin')}/?status=sucesso`,
-          failure: `${req.headers.get('origin')}/?status=falha`,
-          pending: `${req.headers.get('origin')}/api/mercado-pago/pending`,
+          success: `${origin}/?status=sucesso`,
+          failure: `${origin}/?status=falha`,
+          pending: `${origin}/api/mercado-pago/pending`,
         },
 
         statement_descriptor: 'ORTOQBANK',
