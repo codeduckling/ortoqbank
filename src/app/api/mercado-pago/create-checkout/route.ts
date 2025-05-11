@@ -16,8 +16,8 @@ export async function POST(req: NextRequest) {
 
   try {
     // Define the regular and PIX prices directly
-    const REGULAR_PRICE = 1;
-    const PIX_PRICE = 1899;
+    const REGULAR_PRICE = 1999.9;
+    const PIX_PRICE = 1899.9;
     const DISCOUNT_AMOUNT = REGULAR_PRICE - PIX_PRICE;
 
     const preference = new Preference(mpClient);
@@ -32,8 +32,8 @@ export async function POST(req: NextRequest) {
         },
         ...(userEmail && {
           payer: {
-            first_name: userName || 'Cliente',
-            last_name: userLastName || 'Ortoqbank',
+            name: userName || 'Cliente',
+            surname: userLastName || 'Ortoqbank',
             email: userEmail,
             ...(userIdentification && {
               identification: {
@@ -49,9 +49,9 @@ export async function POST(req: NextRequest) {
             }),
             ...(userAddress && {
               address: {
+                zip_code: userAddress.zipcode,
                 street_name: userAddress.street,
                 street_number: userAddress.number,
-                zip_code: userAddress.zipcode,
               },
             }),
           },
