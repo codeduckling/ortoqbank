@@ -326,6 +326,7 @@ export default function GerenciarTemas() {
     try {
       await removeTheme({ id: deleteThemeId as Id<'themes'> });
       setDeleteThemeId(undefined);
+      setEditThemeId(undefined);
 
       // If the deleted theme is the selected one, clear the selection
       if (deleteThemeId === selectedTheme) {
@@ -338,11 +339,16 @@ export default function GerenciarTemas() {
       });
     } catch (error) {
       console.error('Failed to delete theme:', error);
+      // Extract message from the error for better user experience
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       toast({
         title: 'Erro ao excluir tema',
-        description: String(error),
+        description: errorMessage,
         variant: 'destructive',
       });
+      // Close the delete confirmation without closing the entire edit dialog
+      setShowDeleteConfirmation(false);
     }
   };
 
@@ -351,6 +357,7 @@ export default function GerenciarTemas() {
     try {
       await removeSubtheme({ id: deleteSubthemeId as Id<'subthemes'> });
       setDeleteSubthemeId(undefined);
+      setEditSubthemeId(undefined);
 
       // If the deleted subtheme is the selected one, clear the selection
       if (deleteSubthemeId === selectedSubtheme) {
@@ -363,11 +370,16 @@ export default function GerenciarTemas() {
       });
     } catch (error) {
       console.error('Failed to delete subtheme:', error);
+      // Extract message from the error for better user experience
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       toast({
         title: 'Erro ao excluir subtema',
-        description: String(error),
+        description: errorMessage,
         variant: 'destructive',
       });
+      // Close the delete confirmation without closing the entire edit dialog
+      setShowDeleteConfirmation(false);
     }
   };
 
@@ -376,6 +388,7 @@ export default function GerenciarTemas() {
     try {
       await removeGroup({ id: deleteGroupId as Id<'groups'> });
       setDeleteGroupId(undefined);
+      setEditGroupId(undefined);
 
       // If the deleted group is the selected one, clear the selection
       if (deleteGroupId === selectedGroup) {
@@ -388,11 +401,16 @@ export default function GerenciarTemas() {
       });
     } catch (error) {
       console.error('Failed to delete group:', error);
+      // Extract message from the error for better user experience
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       toast({
         title: 'Erro ao excluir subgrupo',
-        description: String(error),
+        description: errorMessage,
         variant: 'destructive',
       });
+      // Close the delete confirmation without closing the entire edit dialog
+      setShowDeleteConfirmation(false);
     }
   };
 
@@ -865,7 +883,8 @@ export default function GerenciarTemas() {
                   irreversível.
                   <br />
                   <strong>Nota:</strong> Não é possível excluir um tema que
-                  possui subtemas.
+                  possui subtemas, está sendo usado por questões ou por quizzes
+                  pré-definidos.
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter>
@@ -878,10 +897,8 @@ export default function GerenciarTemas() {
                 <Button
                   variant="destructive"
                   onClick={() => {
-                    if (editThemeId) {
-                      handleConfirmDeleteTheme();
-                      setShowDeleteConfirmation(false);
-                    }
+                    handleConfirmDeleteTheme();
+                    setShowDeleteConfirmation(false);
                   }}
                 >
                   Excluir
@@ -917,7 +934,10 @@ export default function GerenciarTemas() {
                   <Button
                     variant="destructive"
                     size="sm"
-                    onClick={() => setShowDeleteConfirmation(true)}
+                    onClick={() => {
+                      setDeleteThemeId(editThemeId);
+                      setShowDeleteConfirmation(true);
+                    }}
                   >
                     <Trash2 className="mr-1 h-3.5 w-3.5" /> Excluir Tema
                   </Button>
@@ -957,7 +977,8 @@ export default function GerenciarTemas() {
                   irreversível.
                   <br />
                   <strong>Nota:</strong> Não é possível excluir um subtema que
-                  possui grupos.
+                  possui grupos, está sendo usado por questões ou por quizzes
+                  pré-definidos.
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter>
@@ -970,10 +991,8 @@ export default function GerenciarTemas() {
                 <Button
                   variant="destructive"
                   onClick={() => {
-                    if (editSubthemeId) {
-                      handleConfirmDeleteSubtheme();
-                      setShowDeleteConfirmation(false);
-                    }
+                    handleConfirmDeleteSubtheme();
+                    setShowDeleteConfirmation(false);
                   }}
                 >
                   Excluir
@@ -1009,7 +1028,10 @@ export default function GerenciarTemas() {
                   <Button
                     variant="destructive"
                     size="sm"
-                    onClick={() => setShowDeleteConfirmation(true)}
+                    onClick={() => {
+                      setDeleteSubthemeId(editSubthemeId);
+                      setShowDeleteConfirmation(true);
+                    }}
                   >
                     <Trash2 className="mr-1 h-3.5 w-3.5" /> Excluir Subtema
                   </Button>
@@ -1047,6 +1069,9 @@ export default function GerenciarTemas() {
                 <DialogDescription>
                   Tem certeza que deseja excluir este subgrupo? Esta ação é
                   irreversível.
+                  <br />
+                  <strong>Nota:</strong> Não é possível excluir um subgrupo que
+                  está sendo usado por questões ou por quizzes pré-definidos.
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter>
@@ -1059,10 +1084,8 @@ export default function GerenciarTemas() {
                 <Button
                   variant="destructive"
                   onClick={() => {
-                    if (editGroupId) {
-                      handleConfirmDeleteGroup();
-                      setShowDeleteConfirmation(false);
-                    }
+                    handleConfirmDeleteGroup();
+                    setShowDeleteConfirmation(false);
                   }}
                 >
                   Excluir
@@ -1098,7 +1121,10 @@ export default function GerenciarTemas() {
                   <Button
                     variant="destructive"
                     size="sm"
-                    onClick={() => setShowDeleteConfirmation(true)}
+                    onClick={() => {
+                      setDeleteGroupId(editGroupId);
+                      setShowDeleteConfirmation(true);
+                    }}
                   >
                     <Trash2 className="mr-1 h-3.5 w-3.5" /> Excluir Subgrupo
                   </Button>

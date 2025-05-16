@@ -2,7 +2,7 @@ import { v } from 'convex/values';
 
 import { Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
-import { generateDefaultPrefix, normalizeText } from './utils';
+import { canSafelyDelete, generateDefaultPrefix, normalizeText } from './utils';
 
 // Queries
 export const list = query({
@@ -92,22 +92,32 @@ export const update = mutation({
 export const remove = mutation({
   args: { id: v.id('subthemes') },
   handler: async (context, { id }) => {
-    // Check if subtheme exists
-    const existing = await context.db.get(id);
-    if (!existing) {
-      throw new Error('Subtheme not found');
-    }
+    // Define dependencies to check
+    const dependencies = [
+      {
+        table: 'groups',
+        indexName: 'by_subtheme',
+        fieldName: 'subthemeId',
+        errorMessage: 'Cannot delete subtheme that has groups',
+      },
+      {
+        table: 'questions',
+        indexName: 'by_subtheme',
+        fieldName: 'subthemeId',
+        errorMessage: 'Cannot delete subtheme that is used by questions',
+      },
+      {
+        table: 'presetQuizzes',
+        indexName: 'by_subtheme',
+        fieldName: 'subthemeId',
+        errorMessage: 'Cannot delete subtheme that is used by preset quizzes',
+      },
+    ];
 
-    // Check if there are any groups using this subtheme
-    const groups = await context.db
-      .query('groups')
-      .withIndex('by_subtheme', q => q.eq('subthemeId', id))
-      .collect();
+    // Check if subtheme can be safely deleted
+    await canSafelyDelete(context, id, 'subthemes', dependencies);
 
-    if (groups.length > 0) {
-      throw new Error('Cannot delete subtheme that has groups');
-    }
-
+    // If we get here, it means the subtheme can be safely deleted
     await context.db.delete(id);
   },
 });

@@ -73,6 +73,8 @@ export default defineSchema({
   })
     .index('by_title', ['normalizedTitle'])
     .index('by_theme', ['themeId'])
+    .index('by_subtheme', ['subthemeId'])
+    .index('by_group', ['groupId'])
     .searchIndex('search_by_title', { searchField: 'title' })
     .searchIndex('search_by_code', { searchField: 'questionCode' }),
 
@@ -87,7 +89,11 @@ export default defineSchema({
     groupId: v.optional(v.id('groups')),
     isPublic: v.boolean(),
     displayOrder: v.optional(v.number()),
-  }).searchIndex('search_by_name', { searchField: 'name' }),
+  })
+    .index('by_theme', ['themeId'])
+    .index('by_subtheme', ['subthemeId'])
+    .index('by_group', ['groupId'])
+    .searchIndex('search_by_name', { searchField: 'name' }),
 
   customQuizzes: defineTable({
     name: v.string(),

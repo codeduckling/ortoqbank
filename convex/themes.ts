@@ -1,7 +1,7 @@
 import { v } from 'convex/values';
 
 import { mutation, query } from './_generated/server';
-import { generateDefaultPrefix, normalizeText } from './utils';
+import { canSafelyDelete, generateDefaultPrefix, normalizeText } from './utils';
 
 // Queries
 export const list = query({
@@ -100,22 +100,32 @@ export const update = mutation({
 export const remove = mutation({
   args: { id: v.id('themes') },
   handler: async (context, { id }) => {
-    // Check if theme exists
-    const existing = await context.db.get(id);
-    if (!existing) {
-      throw new Error('Theme not found');
-    }
+    // Define dependencies to check
+    const dependencies = [
+      {
+        table: 'subthemes',
+        indexName: 'by_theme',
+        fieldName: 'themeId',
+        errorMessage: 'Cannot delete theme that has subthemes',
+      },
+      {
+        table: 'questions',
+        indexName: 'by_theme',
+        fieldName: 'themeId',
+        errorMessage: 'Cannot delete theme that is used by questions',
+      },
+      {
+        table: 'presetQuizzes',
+        indexName: 'by_theme',
+        fieldName: 'themeId',
+        errorMessage: 'Cannot delete theme that is used by preset quizzes',
+      },
+    ];
 
-    // Check if there are any subthemes using this theme
-    const subthemes = await context.db
-      .query('subthemes')
-      .withIndex('by_theme', q => q.eq('themeId', id))
-      .collect();
+    // Check if theme can be safely deleted
+    await canSafelyDelete(context, id, 'themes', dependencies);
 
-    if (subthemes.length > 0) {
-      throw new Error('Cannot delete theme that has subthemes');
-    }
-
+    // If we get here, it means the theme can be safely deleted
     await context.db.delete(id);
   },
 });
