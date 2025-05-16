@@ -16,6 +16,7 @@ export default function ConvexClientProvider({
     <ClerkProvider
       publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!}
       localization={ptBR}
+      afterSignOutUrl={process.env.NEXT_PUBLIC_CLERK_REDIRECT_URL!}
     >
       <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
         {children}

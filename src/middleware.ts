@@ -17,10 +17,7 @@ const isProtectedRoute = createRouteMatcher([
 const isAdminRoute = createRouteMatcher(['/admin(.*)']);
 
 // Define webhook routes that should bypass authentication
-const isWebhookRoute = createRouteMatcher([
-  '/api/mercado-pago/webhook(.*)',
-  '/api/webhooks/clerk(.*)',
-]);
+const isWebhookRoute = createRouteMatcher(['/api/mercado-pago/webhook(.*)']);
 
 export default clerkMiddleware(async (auth, request) => {
   // Skip authentication for webhook routes

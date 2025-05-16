@@ -374,7 +374,7 @@ export const countAvailableQuestionsEfficient = query({
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
-      throw new Error('Not authenticated');
+      return;
     }
 
     const user = await ctx.db
