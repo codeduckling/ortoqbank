@@ -43,10 +43,19 @@ export function QuestionCountSelector({
             type="number"
             min={1}
             max={120}
-            value={value}
+            value={value || ''}
             onChange={e => {
-              const newValue = Number.parseInt(e.target.value);
+              const inputValue = e.target.value;
+
+              // Allow empty value (user cleared the field)
+              if (inputValue === '') {
+                onChange(0); // or use null/undefined based on your type system
+                return;
+              }
+
+              const newValue = Number.parseInt(inputValue);
               if (!Number.isNaN(newValue)) {
+                // Clamp the value between 1 and 120 for valid numbers
                 onChange(Math.min(Math.max(newValue, 1), 120));
               }
             }}

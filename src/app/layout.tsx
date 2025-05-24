@@ -1,5 +1,6 @@
 import './globals.css';
 
+import { Analytics } from '@vercel/analytics/next';
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import localFont from 'next/font/local';
@@ -42,6 +43,8 @@ export default function RootLayout({
         <ConvexClientProvider>
           <NextTopLoader />
           {children}
+          <Analytics />
+
           <Toaster />
         </ConvexClientProvider>
       </body>

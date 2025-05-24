@@ -7,7 +7,7 @@ export const testFormSchema = z.object({
     .default('Personalizado'),
   testMode: z.enum(['study', 'exam']),
   questionMode: z.enum(['unused', 'incorrect', 'marked', 'all']),
-  numQuestions: z.number().min(1).max(120).default(30),
+  numQuestions: z.number().min(0).max(120).default(30),
   selectedThemes: z.array(z.string()),
   selectedSubthemes: z.array(z.string()),
   selectedGroups: z.array(z.string()),

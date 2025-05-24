@@ -35,16 +35,16 @@ export function useQuestionForm({
     resolver: zodResolver(questionSchema),
     defaultValues: defaultValues || {
       title: '',
-      questionText: {
-        type: 'paragraph',
-        content: [{ type: 'text', text: '' }],
-      },
+      questionTextString: JSON.stringify({
+        type: 'doc',
+        content: [{ type: 'paragraph', content: [{ type: 'text', text: '' }] }],
+      }),
       alternatives: Array.from({ length: NUMBER_OF_ALTERNATIVES }).fill(''),
       correctAlternativeIndex: 0,
-      explanationText: {
-        type: 'paragraph',
-        content: [{ type: 'text', text: '' }],
-      },
+      explanationTextString: JSON.stringify({
+        type: 'doc',
+        content: [{ type: 'paragraph', content: [{ type: 'text', text: '' }] }],
+      }),
       themeId: '',
       subthemeId: undefined,
       groupId: undefined,

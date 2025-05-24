@@ -48,7 +48,11 @@ export function Explanation({
           <FormLabel>Explicação</FormLabel>
           <FormControl>
             <RichTextEditor
-              onChange={field.onChange}
+              onChange={content => {
+                // Stringify the TipTap content before setting it in the form
+                const stringifiedContent = JSON.stringify(content);
+                field.onChange(stringifiedContent);
+              }}
               initialContent={parsedInitialContent}
               onEditorReady={onEditorReady}
             />
