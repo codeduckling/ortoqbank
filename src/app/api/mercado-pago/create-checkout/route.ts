@@ -9,7 +9,7 @@ const COUPON_CONFIG = {
   REGULAR_PRICE: 1999.9,
   PIX_PRICE: 1899.9,
 
-  // Coupon discounts (percentage or fixed amount)
+  // Coupon discounts (percentage, fixed amount, or fixed price)
   coupons: {
     DESCONTO10: {
       type: 'percentage',
@@ -29,13 +29,17 @@ const COUPON_CONFIG = {
     },
     PROMO100: { type: 'fixed', value: 100, description: 'R$ 100 de desconto' },
     GRUPO25: {
-      type: 'fixed',
+      type: 'fixed_price',
       value: 1500,
-      description: 'R$ 1500 desconto grupo',
+      description: 'Preço especial grupo R$ 1500',
     },
   } as Record<
     string,
-    { type: 'percentage' | 'fixed'; value: number; description: string }
+    {
+      type: 'percentage' | 'fixed' | 'fixed_price';
+      value: number;
+      description: string;
+    }
   >,
 };
 
@@ -56,14 +60,26 @@ function calculateDiscountedPrice(
   }
 
   const coupon = COUPON_CONFIG.coupons[couponCode.toUpperCase()];
-  let discountAmount = 0;
+  let finalPrice: number;
+  let discountAmount: number;
 
-  discountAmount =
-    coupon.type === 'percentage'
-      ? (originalPrice * coupon.value) / 100
-      : coupon.value;
+  if (coupon.type === 'fixed_price') {
+    // Set the final price to the fixed value
+    finalPrice = coupon.value;
+    discountAmount = originalPrice - coupon.value;
+  } else if (coupon.type === 'percentage') {
+    discountAmount = (originalPrice * coupon.value) / 100;
+    finalPrice = originalPrice - discountAmount;
+  } else {
+    // fixed discount
+    discountAmount = coupon.value;
+    finalPrice = originalPrice - discountAmount;
+  }
 
-  const finalPrice = Math.max(originalPrice - discountAmount, 0);
+  // Ensure final price is not negative
+  finalPrice = Math.max(finalPrice, 0);
+  // Ensure discount amount is not greater than original price
+  discountAmount = Math.min(discountAmount, originalPrice);
 
   return {
     finalPrice: Math.round(finalPrice * 100) / 100, // Round to 2 decimal places
