@@ -80,6 +80,7 @@
     "lucide-react": "^0.487.0",
     "mercadopago": "^2.4.0",
     "next": "15.3.0",
+    "nextjs-toploader": "^3.8.16",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-email": "^4.0.7",
