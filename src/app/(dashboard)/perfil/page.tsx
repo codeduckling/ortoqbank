@@ -1,7 +1,7 @@
 'use client';
 
-import { useQuery } from 'convex/react';
-import { useEffect, useState } from 'react';
+import { useQuery } from 'convex-helpers/react/cache/hooks';
+import { useState } from 'react';
 import {
   Cell,
   Legend,
