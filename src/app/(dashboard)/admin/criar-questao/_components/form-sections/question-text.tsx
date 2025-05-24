@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { type UseFormReturn } from 'react-hook-form';
 
 import RichTextEditor from '@/components/rich-text-editor/rich-text-editor';
@@ -24,17 +25,31 @@ export function QuestionText({
   initialContent,
   onEditorReady,
 }: QuestionTextProps) {
+  // Parse JSON string if needed for TipTap editor
+  const parsedInitialContent = React.useMemo(() => {
+    if (!initialContent) return;
+    if (typeof initialContent === 'string') {
+      try {
+        return JSON.parse(initialContent);
+      } catch (error) {
+        console.error('Failed to parse initial question text content:', error);
+        return;
+      }
+    }
+    return initialContent;
+  }, [initialContent]);
+
   return (
     <FormField
       control={form.control}
-      name="questionText"
+      name="questionTextString"
       render={({ field }) => (
         <FormItem>
           <FormLabel>Texto da Questão</FormLabel>
           <FormControl>
             <RichTextEditor
               onChange={field.onChange}
-              initialContent={initialContent}
+              initialContent={parsedInitialContent}
               onEditorReady={onEditorReady}
             />
           </FormControl>

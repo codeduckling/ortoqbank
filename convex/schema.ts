@@ -45,23 +45,10 @@ export default defineSchema({
     title: v.string(),
     normalizedTitle: v.string(),
     questionCode: v.optional(v.string()),
-    // Legacy object fields now optional
-    questionText: v.optional(
-      v.union(
-        v.string(),
-        v.object({ type: v.string(), content: v.array(v.any()) }),
-      ),
-    ),
-    explanationText: v.optional(
-      v.union(
-        v.string(),
-        v.object({ type: v.string(), content: v.array(v.any()) }),
-      ),
-    ),
-    // String fields now required
+    questionText: v.optional(v.string()),
+    explanationText: v.optional(v.string()),
     questionTextString: v.string(),
     explanationTextString: v.string(),
-    // Track migration status
     contentMigrated: v.optional(v.boolean()),
     alternatives: v.array(v.string()),
     correctAlternativeIndex: v.number(),

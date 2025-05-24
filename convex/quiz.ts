@@ -46,7 +46,7 @@ export type SafeQuestion = {
   _id: Doc<'questions'>['_id'];
   _creationTime: Doc<'questions'>['_creationTime'];
   title: Doc<'questions'>['title'];
-  questionText: Doc<'questions'>['questionText'];
+  questionTextString: Doc<'questions'>['questionTextString'];
   alternatives: Doc<'questions'>['alternatives'];
   questionCode?: Doc<'questions'>['questionCode'];
 };
@@ -57,7 +57,7 @@ function sanitizeQuestionForClient(question: Doc<'questions'>): SafeQuestion {
     _id: question._id,
     _creationTime: question._creationTime,
     title: question.title,
-    questionText: question.questionText,
+    questionTextString: question.questionTextString,
     alternatives: question.alternatives,
     questionCode: question.questionCode,
   };

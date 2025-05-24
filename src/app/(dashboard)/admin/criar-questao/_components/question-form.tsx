@@ -1,7 +1,5 @@
 'use client';
 
-import { useFieldArray } from 'react-hook-form';
-
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -43,16 +41,6 @@ export function QuestionForm({
     NUMBER_OF_ALTERNATIVES,
   } = useQuestionForm({ mode, defaultValues, onSuccess });
 
-  // Initialize field array for alternatives
-  const { fields } = useFieldArray({
-    name: 'alternatives',
-    control: form.control,
-    rules: {
-      minLength: NUMBER_OF_ALTERNATIVES,
-      maxLength: NUMBER_OF_ALTERNATIVES,
-    },
-  });
-
   return (
     <Form {...form}>
       <form onSubmit={onSubmit} className="space-y-6">
@@ -74,7 +62,7 @@ export function QuestionForm({
         {/* Question Text with Rich Text Editor */}
         <QuestionText
           form={form}
-          initialContent={defaultValues?.questionText}
+          initialContent={defaultValues?.questionTextString}
           onEditorReady={setQuestionEditor}
         />
 
@@ -87,7 +75,7 @@ export function QuestionForm({
         {/* Explanation with Rich Text Editor */}
         <Explanation
           form={form}
-          initialContent={defaultValues?.explanationText}
+          initialContent={defaultValues?.explanationTextString}
           onEditorReady={setExplanationEditor}
         />
 

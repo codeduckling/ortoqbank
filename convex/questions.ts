@@ -16,27 +16,6 @@ import {
   _updateQuestionStatsOnInsert,
 } from './questionStats';
 
-/**
- * CONTENT MIGRATION STATUS: COMPLETED
- *
- * All TipTap editor content has been migrated from object format to string format.
- * New questions now only store content in the string fields:
- * - `questionTextString` (required)
- * - `explanationTextString` (required)
- *
- * Legacy fields `questionText` and `explanationText` are now optional in the schema
- * and are no longer stored for new questions. They are kept for backward compatibility
- * with existing data.
- *
- * API MUTATION UPDATES:
- * - The `create` and `update` mutations now accept string parameters directly:
- *   - `questionTextString` instead of `questionText`
- *   - `explanationTextString` instead of `explanationText`
- * - This ensures all new content is stored only in string format
- *
- * All components should use the string fields when rendering content.
- */
-
 // ---------- Helper Functions for Question CRUD + Aggregate Sync ----------
 
 // Use GenericMutationCtx with DataModel
@@ -198,13 +177,6 @@ export const getById = query({
       ? await context.db.get(question.subthemeId)
       : undefined;
 
-    /**
-     * IMPORTANT: For all new code, use the string format fields:
-     * - `questionTextString` instead of `questionText`
-     * - `explanationTextString` instead of `explanationText`
-     *
-     * The object fields are kept for backward compatibility.
-     */
     return {
       ...question,
       theme,
