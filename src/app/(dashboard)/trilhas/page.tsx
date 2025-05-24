@@ -159,7 +159,7 @@ export default function ThemesPage() {
   // If there are no trilhas for any theme
   if (Object.keys(trilhasByTheme).length === 0) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="container mx-auto p-0 md:p-6">
         <h1 className="mb-8 text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
           Trilhas
         </h1>
@@ -173,7 +173,7 @@ export default function ThemesPage() {
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto pt-4 md:p-6">
       <h1 className="mb-8 text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
         Trilhas
       </h1>
