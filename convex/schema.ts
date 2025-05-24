@@ -45,23 +45,10 @@ export default defineSchema({
     title: v.string(),
     normalizedTitle: v.string(),
     questionCode: v.optional(v.string()),
-    // Legacy object fields now optional
-    questionText: v.optional(
-      v.union(
-        v.string(),
-        v.object({ type: v.string(), content: v.array(v.any()) }),
-      ),
-    ),
-    explanationText: v.optional(
-      v.union(
-        v.string(),
-        v.object({ type: v.string(), content: v.array(v.any()) }),
-      ),
-    ),
-    // String fields now required
+    questionText: v.optional(v.string()),
+    explanationText: v.optional(v.string()),
     questionTextString: v.string(),
     explanationTextString: v.string(),
-    // Track migration status
     contentMigrated: v.optional(v.boolean()),
     alternatives: v.array(v.string()),
     correctAlternativeIndex: v.number(),
@@ -73,6 +60,8 @@ export default defineSchema({
   })
     .index('by_title', ['normalizedTitle'])
     .index('by_theme', ['themeId'])
+    .index('by_subtheme', ['subthemeId'])
+    .index('by_group', ['groupId'])
     .searchIndex('search_by_title', { searchField: 'title' })
     .searchIndex('search_by_code', { searchField: 'questionCode' }),
 
@@ -87,7 +76,11 @@ export default defineSchema({
     groupId: v.optional(v.id('groups')),
     isPublic: v.boolean(),
     displayOrder: v.optional(v.number()),
-  }).searchIndex('search_by_name', { searchField: 'name' }),
+  })
+    .index('by_theme', ['themeId'])
+    .index('by_subtheme', ['subthemeId'])
+    .index('by_group', ['groupId'])
+    .searchIndex('search_by_name', { searchField: 'name' }),
 
   customQuizzes: defineTable({
     name: v.string(),

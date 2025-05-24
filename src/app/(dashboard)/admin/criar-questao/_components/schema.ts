@@ -5,13 +5,13 @@ import { Id } from '../../../../../../convex/_generated/dataModel';
 export const questionSchema = z.object({
   title: z.string().min(1, 'O título é obrigatório'),
   questionCode: z.string().optional(),
-  questionText: z.any(),
+  questionTextString: z.string(),
   alternatives: z
     .array(z.string())
     .length(4, 'Deve haver exatamente 4 alternativas'),
 
   correctAlternativeIndex: z.number().min(0).max(3),
-  explanationText: z.any(),
+  explanationTextString: z.string(),
   themeId: z.string().min(1, 'O tema é obrigatório'),
   subthemeId: z.string().optional(),
   groupId: z.string().optional(),

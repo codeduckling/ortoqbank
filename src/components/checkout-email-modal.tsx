@@ -1,6 +1,8 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { CheckIcon, TagIcon } from 'lucide-react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
@@ -88,6 +90,7 @@ const formSchema = z
       .regex(/^\d{5}-?\d{3}$/, 'CEP inválido'),
     city: z.string().min(2, 'Cidade deve ter pelo menos 2 caracteres'),
     state: z.string().length(2, 'Estado deve ter 2 caracteres'),
+    couponCode: z.string().optional(),
   })
   .refine(data => data.email === data.confirmEmail, {
     message: 'Os emails não coincidem',
@@ -105,24 +108,54 @@ export default function CheckoutEmailModal({
   open,
   onOpenChange,
 }: CheckoutEmailModalProps) {
-  const { createMercadoPagoCheckout } = useMercadoPago();
+  const { createMercadoPagoCheckout, validateCoupon } = useMercadoPago();
+  const [couponValidation, setCouponValidation] = useState<
+    | {
+        valid: boolean;
+        coupon?: {
+          code: string;
+          description: string;
+          type: string;
+          value: number;
+        };
+        pricing?: any;
+      }
+    | undefined
+  >();
+  const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      firstName: '',
-      lastName: '',
-      email: '',
-      confirmEmail: '',
-      cpf: '',
-      phone: '',
-      street: '',
-      number: '',
-      zipcode: '',
-      city: '',
-      state: '',
+      firstName: 'Rodrigo',
+      lastName: 'Gomes',
+      email: 'rodrigogomes@gmail.com',
+      confirmEmail: 'rodrigogomes@gmail.com',
+      cpf: '43042990850',
+      phone: '11999999999',
+      street: 'Rua das Flores',
+      number: '123',
+      zipcode: '02336030',
+      city: 'São Paulo',
+      state: 'SP',
+      couponCode: '',
     },
   });
+
+  const handleValidateCoupon = async () => {
+    const couponCode = form.getValues('couponCode');
+    if (!couponCode?.trim()) return;
+
+    setIsValidatingCoupon(true);
+    try {
+      const validation = await validateCoupon(couponCode);
+      setCouponValidation(validation);
+    } catch (error) {
+      console.error('Error validating coupon:', error);
+    } finally {
+      setIsValidatingCoupon(false);
+    }
+  };
 
   const handlePurchase = (values: FormValues) => {
     // Generate a unique ID for this purchase
@@ -153,285 +186,300 @@ export default function CheckoutEmailModal({
         area_code: areaCode,
         number: phoneNumber,
       },
+      couponCode: values.couponCode || undefined,
     });
 
     onOpenChange(false);
     form.reset();
+    setCouponValidation(undefined);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Informe seus dados para continuar</DialogTitle>
+          <DialogTitle>Finalizar Compra</DialogTitle>
           <DialogDescription>
-            Após a confirmação do pagamento, enviaremos um link de acesso para o
-            email informado para que você possa completar seu cadastro e começar
-            a usar a plataforma.
+            Preencha seus dados para acessar o OrtoQBank 2025
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(handlePurchase)}
-            className="space-y-4 py-4"
+            className="space-y-6"
           >
-            <h3 className="text-base font-semibold">Dados pessoais</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="firstName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Seu nome"
-                        autoComplete="given-name"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+            {/* Coupon Section */}
+            <div className="rounded-lg border bg-blue-50 p-4">
+              <div className="mb-3 flex items-center gap-2">
+                <TagIcon className="h-5 w-5 text-blue-600" />
+                <h3 className="font-medium text-blue-900">Cupom de Desconto</h3>
+              </div>
+              <div className="flex gap-2">
+                <FormField
+                  control={form.control}
+                  name="couponCode"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormControl>
+                        <Input
+                          placeholder="Digite seu cupom (opcional)"
+                          {...field}
+                          onChange={e => {
+                            field.onChange(e.target.value.toUpperCase());
+                            setCouponValidation(undefined); // Reset validation when typing
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleValidateCoupon}
+                  disabled={
+                    isValidatingCoupon || !form.watch('couponCode')?.trim()
+                  }
+                >
+                  {isValidatingCoupon ? 'Validando...' : 'Aplicar'}
+                </Button>
+              </div>
+              {/* Coupon Validation Result */}{' '}
+              {couponValidation &&
+                couponValidation.valid &&
+                couponValidation.coupon && (
+                  <div className="mt-3 rounded border border-green-300 bg-green-100 p-3">
+                    {' '}
+                    <div className="flex items-center gap-2 text-green-800">
+                      {' '}
+                      <CheckIcon className="h-4 w-4" />{' '}
+                      <span className="font-medium">
+                        {' '}
+                        Cupom válido: {couponValidation.coupon.description}{' '}
+                      </span>{' '}
+                    </div>{' '}
+                    <p className="mt-1 text-sm text-green-700">
+                      {' '}
+                      Desconto será aplicado automaticamente no checkout{' '}
+                    </p>{' '}
+                  </div>
                 )}
-              />
-
-              <FormField
-                control={form.control}
-                name="lastName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Sobrenome</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Seu sobrenome"
-                        autoComplete="family-name"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="cpf"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>CPF</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="000.000.000-00"
-                        {...field}
-                        onChange={e => {
-                          // Auto-format CPF as user types
-                          let value = e.target.value.replaceAll(/\D/g, '');
-                          if (value.length > 3) {
-                            value = value.replace(/^(\d{3})/, '$1.');
-                          }
-                          if (value.length > 7) {
-                            value = value.replace(
-                              /^(\d{3})\.(\d{3})/,
-                              '$1.$2.',
-                            );
-                          }
-                          if (value.length > 11) {
-                            value = value.replace(
-                              /^(\d{3})\.(\d{3})\.(\d{3})/,
-                              '$1.$2.$3-',
-                            );
-                          }
-                          field.onChange(value);
-                        }}
-                        maxLength={14}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            {/* Personal Information */}
+            <div className="space-y-4">
+              <h3 className="font-medium">Informações Pessoais</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome</FormLabel>
+                      <FormControl>
+                        <Input placeholder="João" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Telefone</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="(00) 00000-0000"
-                        {...field}
-                        onChange={e => {
-                          // Auto-format phone as user types
-                          let value = e.target.value.replaceAll(/\D/g, '');
-                          if (value.length > 2) {
-                            value =
-                              '(' + value.slice(0, 2) + ') ' + value.slice(2);
-                          }
-                          if (value.length > 10) {
-                            value = value.slice(0, 10) + '-' + value.slice(10);
-                          }
-                          field.onChange(value);
-                        }}
-                        maxLength={15}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Sobrenome</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Silva" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input placeholder="joao@email.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="confirmEmail"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirmar Email</FormLabel>
+                      <FormControl>
+                        <Input placeholder="joao@email.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="cpf"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>CPF</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="000.000.000-00"
+                          {...field}
+                          onChange={e => {
+                            // Auto-format CPF as user types
+                            let value = e.target.value.replaceAll(/\D/g, '');
+                            if (value.length > 3) {
+                              value = value.replace(/^(\d{3})/, '$1.');
+                            }
+                            if (value.length > 7) {
+                              value = value.replace(
+                                /^(\d{3})\.(\d{3})/,
+                                '$1.$2.',
+                              );
+                            }
+                            if (value.length > 11) {
+                              value = value.replace(
+                                /^(\d{3})\.(\d{3})\.(\d{3})/,
+                                '$1.$2.$3-',
+                              );
+                            }
+                            field.onChange(value);
+                          }}
+                          maxLength={14}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Telefone</FormLabel>
+                      <FormControl>
+                        <Input placeholder="(11) 99999-9999" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
 
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="seu.email@exemplo.com"
-                      type="email"
-                      autoComplete="email"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="confirmEmail"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Confirme seu email</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="seu.email@exemplo.com"
-                      type="email"
-                      autoComplete="email"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <h3 className="pt-2 text-base font-semibold">Endereço</h3>
-            <FormField
-              control={form.control}
-              name="street"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Rua</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Nome da rua"
-                      autoComplete="street-address"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-3 gap-4">
+            {/* Address Information */}
+            <div className="space-y-4">
+              <h3 className="font-medium">Endereço</h3>
               <FormField
                 control={form.control}
-                name="number"
+                name="street"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Número</FormLabel>
+                    <FormLabel>Endereço</FormLabel>
                     <FormControl>
-                      <Input placeholder="123" {...field} />
+                      <Input placeholder="Rua das Flores" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="zipcode"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>CEP</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="00000-000"
-                        {...field}
-                        onChange={e => {
-                          // Auto-format CEP as user types
-                          let value = e.target.value.replaceAll(/\D/g, '');
-                          if (value.length > 5) {
-                            value = value.slice(0, 5) + '-' + value.slice(5);
-                          }
-                          field.onChange(value);
-                        }}
-                        maxLength={9}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="number"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Número</FormLabel>
+                      <FormControl>
+                        <Input placeholder="123" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="zipcode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>CEP</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="00000-000"
+                          {...field}
+                          onChange={e => {
+                            // Auto-format CEP as user types
+                            let value = e.target.value.replaceAll(/\D/g, '');
+                            if (value.length > 5) {
+                              value = value.slice(0, 5) + '-' + value.slice(5);
+                            }
+                            field.onChange(value);
+                          }}
+                          maxLength={9}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="city"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cidade</FormLabel>
+                      <FormControl>
+                        <Input placeholder="São Paulo" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="state"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Estado</FormLabel>
+                      <FormControl>
+                        <Input placeholder="SP" {...field} maxLength={2} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="city"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Cidade</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Sua cidade" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="state"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Estado (UF)</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="SP"
-                        {...field}
-                        onChange={e => {
-                          field.onChange(
-                            e.target.value.toUpperCase().slice(0, 2),
-                          );
-                        }}
-                        maxLength={2}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <DialogFooter className="pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
-                Cancelar
+            <DialogFooter>
+              <Button type="submit" className="w-full">
+                Finalizar Compra
               </Button>
-              <Button type="submit">Continuar</Button>
             </DialogFooter>
           </form>
         </Form>

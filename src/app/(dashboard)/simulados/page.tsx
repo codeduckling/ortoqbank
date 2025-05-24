@@ -1,7 +1,8 @@
 'use client';
 
 import { useUser } from '@clerk/nextjs';
-import { useMutation, useQuery } from 'convex/react';
+import { useMutation } from 'convex/react';
+import { useQuery } from 'convex-helpers/react/cache/hooks';
 import {
   Baby,
   Bone,

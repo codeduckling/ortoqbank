@@ -16,6 +16,8 @@ export default async function Layout({
 
   return (
     <SidebarProvider>
+      {/* Session monitoring to detect revoked sessions */}
+
       {/* Sidebar visible only on md and larger screens */}
       <div className="hidden md:block">
         <AppSidebar />

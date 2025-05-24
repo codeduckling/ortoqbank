@@ -1,4 +1,7 @@
+import { v } from 'convex/values';
+
 import { mutation, query } from './_generated/server';
+import * as aggregateHelpers from './aggregateHelpers';
 
 /*
  * This file contains functions for efficiently calculating statistics about questions
@@ -7,44 +10,119 @@ import { mutation, query } from './_generated/server';
 
 /**
  * Count the total number of questions in the database.
- *
- * This uses a direct query to the questions table, which is efficient for moderate-sized databases.
- * For very large question banks, we could implement the Convex aggregate component for O(log n) performance.
+ * Uses the aggregate for efficient O(log n) counting.
  */
 export const getTotalQuestionCount = query({
   args: {},
   handler: async ctx => {
-    const questions = await ctx.db.query('questions').collect();
-    return questions.length;
+    // Using aggregate for efficient counting
+    return await aggregateHelpers.getTotalQuestionCount(ctx);
+  },
+});
+
+/**
+ * Count questions by theme.
+ */
+export const getThemeQuestionCount = query({
+  args: {
+    themeId: v.id('themes'),
+  },
+  handler: async (ctx, args) => {
+    return await aggregateHelpers.getThemeQuestionCount(ctx, args.themeId);
+  },
+});
+
+/**
+ * Get a user's answered question count
+ */
+export const getUserAnsweredCount = query({
+  args: {
+    userId: v.optional(v.id('users')),
+  },
+  handler: async (ctx, args) => {
+    // If userId not provided, use the current user
+    let userId;
+    if (args.userId) {
+      userId = args.userId;
+    } else {
+      // Get current user - normally this would use your getCurrentUserOrThrow function
+      // For now we'll just throw if userId not provided
+      throw new Error('User ID required');
+    }
+
+    return await aggregateHelpers.getUserAnsweredCount(ctx, userId);
+  },
+});
+
+/**
+ * Get a user's incorrect answer count
+ */
+export const getUserIncorrectCount = query({
+  args: {
+    userId: v.optional(v.id('users')),
+  },
+  handler: async (ctx, args) => {
+    // If userId not provided, use the current user
+    let userId;
+    if (args.userId) {
+      userId = args.userId;
+    } else {
+      // Get current user - normally this would use your getCurrentUserOrThrow function
+      // For now we'll just throw if userId not provided
+      throw new Error('User ID required');
+    }
+
+    return await aggregateHelpers.getUserIncorrectCount(ctx, userId);
+  },
+});
+
+/**
+ * Get a user's bookmarks count
+ */
+export const getUserBookmarksCount = query({
+  args: {
+    userId: v.optional(v.id('users')),
+  },
+  handler: async (ctx, args) => {
+    // If userId not provided, use the current user
+    let userId;
+    if (args.userId) {
+      userId = args.userId;
+    } else {
+      // Get current user - normally this would use your getCurrentUserOrThrow function
+      // For now we'll just throw if userId not provided
+      throw new Error('User ID required');
+    }
+
+    return await aggregateHelpers.getUserBookmarksCount(ctx, userId);
   },
 });
 
 /**
  * This function can be called when a question is inserted to update statistics.
- * Currently a no-op, but could be extended for more complex statistics tracking.
+ * Currently a no-op as we're using the triggers system instead.
  */
 export async function _updateQuestionStatsOnInsert(ctx: any, questionDoc: any) {
-  // Currently not needed, but keeping the function for future extensibility
+  // Not needed - using triggers
   return;
 }
 
 /**
  * This function can be called when a question is deleted to update statistics.
- * Currently a no-op, but could be extended for more complex statistics tracking.
+ * Currently a no-op as we're using the triggers system instead.
  */
 export async function _updateQuestionStatsOnDelete(ctx: any, questionDoc: any) {
-  // Currently not needed, but keeping the function for future extensibility
+  // Not needed - using triggers
   return;
 }
 
 /**
  * Utility function to recalculate question statistics.
- * Currently a placeholder, but could be used for future aggregate implementations.
  */
 export const recalculateQuestionStats = mutation({
   args: {},
   handler: async ctx => {
-    // Currently not needed, but keeping the function for future extensibility
+    // Not needed to implement here - using triggers.initializeAggregates instead
     return { success: true };
   },
 });

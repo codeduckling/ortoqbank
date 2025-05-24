@@ -59,12 +59,16 @@ export async function processAndSubmitQuestion(
       return false;
     }
 
-    // Process both questionText and explanationText using the imported function
+    // Process both questionTextString and explanationTextString
+    // Parse the strings back to TipTap objects for processing
+    const questionTextObject = JSON.parse(data.questionTextString);
+    const explanationTextObject = JSON.parse(data.explanationTextString);
+
     const processedQuestionContent = await processEditorContent(
-      (data.questionText.content as TiptapNode[]) || [],
+      (questionTextObject.content as TiptapNode[]) || [],
     );
     const processedExplanationContent = await processEditorContent(
-      (data.explanationText.content as TiptapNode[]) || [],
+      (explanationTextObject.content as TiptapNode[]) || [],
     );
 
     const processedQuestionText = {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery } from 'convex/react';
+import { useQuery } from 'convex-helpers/react/cache/hooks';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';

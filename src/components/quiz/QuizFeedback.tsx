@@ -4,7 +4,7 @@ import StructuredContentRenderer, {
 
 interface QuizFeedbackProps {
   isCorrect: boolean;
-  explanation: ContentNode | null | undefined;
+  explanation: string | undefined;
   message?: string;
 }
 
@@ -25,7 +25,8 @@ export default function QuizFeedback({
         {message || (isCorrect ? 'Correto! ✓' : 'Incorreto! ✗')}
       </p>
       <div className="prose mt-2 max-w-none">
-        <StructuredContentRenderer node={explanation} />
+        {' '}
+        <StructuredContentRenderer stringContent={explanation} />{' '}
       </div>
     </div>
   );

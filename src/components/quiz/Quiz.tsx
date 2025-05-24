@@ -99,7 +99,7 @@ function QuizStepper({
   const { useStepper } = defineStepper(
     ...quizData.questions.map((q, index) => ({
       id: `question-${index}`,
-      questionText: q.questionText,
+      questionText: q.questionTextString,
       alternatives: q.alternatives || [],
     })),
   );
@@ -141,7 +141,10 @@ function QuizStepper({
       setFeedback({
         isCorrect: historicalFeedback.isCorrect,
         message: historicalFeedback.isCorrect ? 'Correto!' : 'Incorreto',
-        explanation: JSON.stringify(historicalFeedback.explanation),
+        explanation:
+          typeof historicalFeedback.explanation === 'string'
+            ? historicalFeedback.explanation
+            : JSON.stringify(historicalFeedback.explanation),
         answered: true,
         correctAlternative:
           historicalFeedback.correctAlternative as AlternativeIndex,
@@ -282,10 +285,8 @@ function QuizStepper({
                 </div>
 
                 <div className="my-6">
-                  <QuestionContent
-                    stringContent={JSON.stringify(step.questionText)}
-                  />
-
+                  {' '}
+                  <QuestionContent stringContent={step.questionText} />
                   <QuizAlternatives
                     alternatives={step.alternatives || []}
                     selectedAlternative={selectedAlternative}
@@ -300,11 +301,7 @@ function QuizStepper({
                   <QuizFeedback
                     isCorrect={feedback.isCorrect}
                     message={feedback.message}
-                    explanation={
-                      feedback.explanation
-                        ? JSON.parse(feedback.explanation)
-                        : undefined
-                    }
+                    explanation={feedback.explanation}
                   />
                 )}
 

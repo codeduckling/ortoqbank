@@ -3,6 +3,75 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import mpClient from '@/lib/mercado-pago';
 
+// Define coupon configurations with direct discount calculations
+const COUPON_CONFIG = {
+  // Base prices
+  REGULAR_PRICE: 1999.9,
+  PIX_PRICE: 1899.9,
+
+  // Coupon discounts (percentage or fixed amount)
+  coupons: {
+    DESCONTO10: {
+      type: 'percentage',
+      value: 10,
+      description: '10% de desconto',
+    },
+    DESCONTO20: {
+      type: 'percentage',
+      value: 20,
+      description: '20% de desconto',
+    },
+    SAVE50: { type: 'fixed', value: 50, description: 'R$ 50 de desconto' },
+    ESTUDANTE: {
+      type: 'percentage',
+      value: 15,
+      description: '15% desconto estudante',
+    },
+    PROMO100: { type: 'fixed', value: 100, description: 'R$ 100 de desconto' },
+    GRUPO25: {
+      type: 'fixed',
+      value: 1500,
+      description: 'R$ 1500 desconto grupo',
+    },
+  } as Record<
+    string,
+    { type: 'percentage' | 'fixed'; value: number; description: string }
+  >,
+};
+
+function calculateDiscountedPrice(
+  originalPrice: number,
+  couponCode?: string,
+): {
+  finalPrice: number;
+  discountAmount: number;
+  discountDescription: string;
+} {
+  if (!couponCode || !COUPON_CONFIG.coupons[couponCode.toUpperCase()]) {
+    return {
+      finalPrice: originalPrice,
+      discountAmount: 0,
+      discountDescription: '',
+    };
+  }
+
+  const coupon = COUPON_CONFIG.coupons[couponCode.toUpperCase()];
+  let discountAmount = 0;
+
+  discountAmount =
+    coupon.type === 'percentage'
+      ? (originalPrice * coupon.value) / 100
+      : coupon.value;
+
+  const finalPrice = Math.max(originalPrice - discountAmount, 0);
+
+  return {
+    finalPrice: Math.round(finalPrice * 100) / 100, // Round to 2 decimal places
+    discountAmount: Math.round(discountAmount * 100) / 100,
+    discountDescription: coupon.description,
+  };
+}
+
 export async function POST(req: NextRequest) {
   const {
     testeId,
@@ -12,16 +81,28 @@ export async function POST(req: NextRequest) {
     userAddress,
     userIdentification,
     userPhone,
+    couponCode,
   } = await req.json();
 
   try {
-    // Define the regular and PIX prices directly
-    const REGULAR_PRICE = 1999.9;
-    const PIX_PRICE = 1899.9;
-    const DISCOUNT_AMOUNT = REGULAR_PRICE - PIX_PRICE;
+    const REGULAR_PRICE = COUPON_CONFIG.REGULAR_PRICE;
+    const PIX_PRICE = COUPON_CONFIG.PIX_PRICE;
+
+    // Calculate prices with coupon discount
+    const regularPricing = calculateDiscountedPrice(REGULAR_PRICE, couponCode);
+    const pixPricing = calculateDiscountedPrice(PIX_PRICE, couponCode);
 
     const preference = new Preference(mpClient);
     const origin = req.headers.get('origin') || 'https://ortoqbank.com.br';
+
+    // Create item title with coupon info if applicable
+    let itemTitle = 'Ortoqbank 2025';
+    let itemDescription = 'Acesso ao ortoqbank 2025';
+
+    if (couponCode && regularPricing.discountAmount > 0) {
+      itemTitle += ` (${regularPricing.discountDescription})`;
+      itemDescription += ` - Cupom: ${couponCode.toUpperCase()}`;
+    }
 
     const createdPreference = await preference.create({
       body: {
@@ -29,6 +110,10 @@ export async function POST(req: NextRequest) {
         metadata: {
           testeId,
           userEmail,
+          couponCode: couponCode?.toUpperCase() || undefined,
+          originalPrice: REGULAR_PRICE,
+          discountAmount: regularPricing.discountAmount,
+          finalPrice: regularPricing.finalPrice,
         },
         ...(userEmail && {
           payer: {
@@ -57,32 +142,29 @@ export async function POST(req: NextRequest) {
           },
         }),
 
-        // Original items implementation
+        // Items with coupon-adjusted price
         items: [
           {
             id: '4042011329',
-            description: 'Acesso ao ortoqbank 2025',
-            title: 'Ortoqbank 2025',
+            description: itemDescription,
+            title: itemTitle,
             quantity: 1,
-            unit_price: REGULAR_PRICE,
+            unit_price: regularPricing.finalPrice, // Use the discounted price
             currency_id: 'BRL',
             category_id: 'education',
           },
         ],
 
-        // Payment method configuration with PIX discount
+        // Payment method configuration with PIX discount on top of coupon
         payment_methods: {
-          // Set PIX as the default payment method
-
-          // Configure discounts for payment methods
+          // PIX discount is calculated on the already discounted price
           discounts: [
             {
               payment_method_id: 'pix',
               type: 'fixed',
-              value: DISCOUNT_AMOUNT,
+              value: regularPricing.finalPrice - pixPricing.finalPrice,
             },
           ],
-
           installments: 12,
         } as Record<string, any>,
 
@@ -111,8 +193,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       preferenceId: createdPreference.id,
       initPoint: createdPreference.init_point,
-      regularPrice: REGULAR_PRICE,
-      pixPrice: PIX_PRICE,
+      originalPrice: REGULAR_PRICE,
+      regularPrice: regularPricing.finalPrice,
+      pixPrice: pixPricing.finalPrice,
+      couponApplied: couponCode?.toUpperCase() || undefined,
+      discountAmount: regularPricing.discountAmount,
+      discountDescription: regularPricing.discountDescription,
     });
   } catch (error) {
     console.error('Error creating Mercado Pago preference:', error);
@@ -121,4 +207,49 @@ export async function POST(req: NextRequest) {
       { status: 500 },
     );
   }
+}
+
+// Endpoint to validate coupon codes
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const couponCode = searchParams.get('coupon');
+
+  if (!couponCode) {
+    return NextResponse.json(
+      { error: 'Coupon code is required' },
+      { status: 400 },
+    );
+  }
+
+  const coupon = COUPON_CONFIG.coupons[couponCode.toUpperCase()];
+
+  if (!coupon) {
+    return NextResponse.json({ valid: false, message: 'Cupom inválido' });
+  }
+
+  const regularPricing = calculateDiscountedPrice(
+    COUPON_CONFIG.REGULAR_PRICE,
+    couponCode,
+  );
+  const pixPricing = calculateDiscountedPrice(
+    COUPON_CONFIG.PIX_PRICE,
+    couponCode,
+  );
+
+  return NextResponse.json({
+    valid: true,
+    coupon: {
+      code: couponCode.toUpperCase(),
+      description: coupon.description,
+      type: coupon.type,
+      value: coupon.value,
+    },
+    pricing: {
+      originalPrice: COUPON_CONFIG.REGULAR_PRICE,
+      originalPixPrice: COUPON_CONFIG.PIX_PRICE,
+      discountAmount: regularPricing.discountAmount,
+      finalRegularPrice: regularPricing.finalPrice,
+      finalPixPrice: pixPricing.finalPrice,
+    },
+  });
 }

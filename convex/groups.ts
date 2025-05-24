@@ -1,7 +1,7 @@
 import { v } from 'convex/values';
 
 import { mutation, query } from './_generated/server';
-import { generateDefaultPrefix, normalizeText } from './utils';
+import { canSafelyDelete, generateDefaultPrefix, normalizeText } from './utils';
 
 // Queries
 export const list = query({
@@ -85,12 +85,26 @@ export const update = mutation({
 export const remove = mutation({
   args: { id: v.id('groups') },
   handler: async (context, { id }) => {
-    // Check if group exists
-    const existing = await context.db.get(id);
-    if (!existing) {
-      throw new Error('Group not found');
-    }
+    // Define dependencies to check
+    const dependencies = [
+      {
+        table: 'questions',
+        indexName: 'by_group',
+        fieldName: 'groupId',
+        errorMessage: 'Cannot delete group that is used by questions',
+      },
+      {
+        table: 'presetQuizzes',
+        indexName: 'by_group',
+        fieldName: 'groupId',
+        errorMessage: 'Cannot delete group that is used by preset quizzes',
+      },
+    ];
 
+    // Check if group can be safely deleted
+    await canSafelyDelete(context, id, 'groups', dependencies);
+
+    // If we get here, it means the group can be safely deleted
     await context.db.delete(id);
   },
 });

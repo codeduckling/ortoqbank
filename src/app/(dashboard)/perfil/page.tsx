@@ -1,7 +1,7 @@
 'use client';
 
-import { useQuery } from 'convex/react';
-import { useEffect, useState } from 'react';
+import { useQuery } from 'convex-helpers/react/cache/hooks';
+import { useState } from 'react';
 import {
   Cell,
   Legend,
@@ -18,9 +18,42 @@ import { api } from '../../../../convex/_generated/api';
 import { ThemeBarChart } from './charts/theme-bar-chart';
 import { StatCard } from './components/stat-card';
 
+// Helper function to safely extract values regardless of stats type
+function getStatsValues(stats: any) {
+  if (!stats) return;
+
+  // Check if we have the new flat structure (UserStatsSummary)
+  if ('totalAnswered' in stats) {
+    return {
+      totalAnswered: stats.totalAnswered,
+      totalCorrect: stats.totalCorrect,
+      totalIncorrect: stats.totalIncorrect,
+      totalBookmarked: stats.totalBookmarked,
+      correctPercentage: stats.correctPercentage,
+      totalQuestions: stats.totalQuestions,
+    };
+  }
+
+  // Otherwise we have the nested structure (UserStats)
+  if (stats.overall) {
+    return {
+      totalAnswered: stats.overall.totalAnswered,
+      totalCorrect: stats.overall.totalCorrect,
+      totalIncorrect: stats.overall.totalIncorrect,
+      totalBookmarked: stats.overall.totalBookmarked,
+      correctPercentage: stats.overall.correctPercentage,
+      totalQuestions: stats.totalQuestions,
+    };
+  }
+
+  return;
+}
+
 export default function ProfilePage() {
-  // Use the lightweight summary stats function for initial load
-  const statsSummary = useQuery(api.userStats.getUserStatsSummary);
+  // Use the lightweight summary stats function with aggregates for initial load
+  const statsSummary = useQuery(
+    api.userStats.getUserStatsSummaryWithAggregates,
+  );
   const [showThemeStats, setShowThemeStats] = useState(false);
 
   // Only fetch full stats with theme data when requested
@@ -42,39 +75,50 @@ export default function ProfilePage() {
   // Use the appropriate stats object for calculations
   const stats = showThemeStats && fullStats ? fullStats : statsSummary;
 
+  // Extract the values safely
+  const values = getStatsValues(stats);
+
+  // Use extracted values or defaults
+  const totalAnswered = values?.totalAnswered || 0;
+  const totalCorrect = values?.totalCorrect || 0;
+  const totalIncorrect = values?.totalIncorrect || 0;
+  const totalBookmarked = values?.totalBookmarked || 0;
+  const correctPercentage = values?.correctPercentage || 0;
+  const totalQuestions = values?.totalQuestions || 0;
+
   // Calculate completion percentage
   const completionPercentage =
-    !stats || stats.totalQuestions === 0
+    !values || totalQuestions === 0
       ? 0
-      : Math.round((stats.overall.totalAnswered / stats.totalQuestions) * 100);
+      : Math.round((totalAnswered / totalQuestions) * 100);
 
   // Prepare data for the progress pie chart
-  const progressData = stats
+  const progressData = values
     ? [
         {
           name: 'Respondidas',
-          value: stats.overall.totalAnswered,
+          value: totalAnswered,
           color: '#3b82f6', // blue
         },
         {
           name: 'Não Respondidas',
-          value: stats.totalQuestions - stats.overall.totalAnswered,
+          value: totalQuestions - totalAnswered,
           color: '#f97316', // orange
         },
       ]
     : [];
 
   // Prepare data for the correctness pie chart
-  const correctnessData = stats
+  const correctnessData = values
     ? [
         {
           name: 'Corretas',
-          value: stats.overall.totalCorrect,
+          value: totalCorrect,
           color: '#3b82f6', // blue
         },
         {
           name: 'Incorretas',
-          value: stats.overall.totalIncorrect,
+          value: totalIncorrect,
           color: '#f97316', // orange
         },
       ]
@@ -93,25 +137,25 @@ export default function ProfilePage() {
             <Skeleton key={i} className="h-28 w-full rounded-lg" />
           ))}
         </div>
-      ) : stats ? (
+      ) : values ? (
         // Stats cards - only render if stats are available
         <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
           <StatCard
             title="Questões Respondidas"
-            value={stats.overall.totalAnswered}
-            description={`${completionPercentage}% do banco de questões (${stats.totalQuestions} total)`}
+            value={totalAnswered}
+            description={`${completionPercentage}% do banco de questões (${totalQuestions} total)`}
             color="white"
           />
           <StatCard
             title="Taxa de Acerto"
-            value={`${stats.overall.correctPercentage}%`}
-            description={`${stats.overall.totalCorrect} respostas corretas`}
+            value={`${correctPercentage}%`}
+            description={`${totalCorrect} respostas corretas`}
             color="white"
           />
 
           <StatCard
             title="Questões Salvas"
-            value={stats.overall.totalBookmarked}
+            value={totalBookmarked}
             description="Questões marcadas para revisão"
             color="white"
           />
@@ -126,14 +170,14 @@ export default function ProfilePage() {
             <Skeleton className="h-60 w-full rounded-lg" />
             <Skeleton className="h-60 w-full rounded-lg" />
           </>
-        ) : stats ? (
+        ) : values ? (
           <>
             {/* Progress Pie Chart */}
             <div className="bg-card text-card-foreground rounded-lg border p-4 shadow-sm">
               <div className="mb-2">
                 <h3 className="text-md font-semibold">Progresso Geral</h3>
                 <p className="text-muted-foreground text-xs">
-                  Questões respondidas de {stats.totalQuestions} no total
+                  Questões respondidas de {totalQuestions} no total
                 </p>
               </div>
               <div className="h-[220px]">
@@ -198,7 +242,7 @@ export default function ProfilePage() {
       </div>
 
       {/* Theme stats - only show after user requests them */}
-      {!isLoadingSummary && !showThemeStats && stats && (
+      {!isLoadingSummary && !showThemeStats && values && (
         <div className="mt-6 flex justify-center">
           <Button onClick={() => setShowThemeStats(true)} variant="outline">
             Carregar estatísticas por tema

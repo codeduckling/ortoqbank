@@ -2,6 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from 'convex/react';
+import { GenericQueryCtx } from 'convex/server';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
@@ -59,7 +60,7 @@ export function useTestFormState() {
 
   // Query the count of available questions based on current selection
   const countQuestions = useQuery(
-    api.questions.countAvailableQuestionsEfficient,
+    api.questionAnalytics.countSelectedQuestions,
     {
       questionMode: mapQuestionMode(questionMode || 'all'),
       selectedThemes: selectedThemes as Id<'themes'>[],

@@ -227,11 +227,7 @@ describe('Quiz Functions', () => {
         questions: [
           {
             title: 'Test Question',
-            questionText: {
-              type: 'doc',
-              content: [{ type: 'text', text: 'What is 1+1?' }],
-            },
-            alternatives: ['2', '3', '4', '5'],
+            questionTextString: `{"type":"doc","content":[{"type":"text","text":"What is 1+1?"}]}`,
           },
         ],
         themeId,

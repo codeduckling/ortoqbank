@@ -112,3 +112,67 @@ export const normalizeText = (text: string): string => {
 export const generateDefaultPrefix = (name: string, length: number): string => {
   return normalizeText(name).slice(0, length).toUpperCase();
 };
+
+/**
+ * Reference configuration type for checking dependencies
+ */
+export type ReferenceConfig = {
+  table: string;
+  indexName: string;
+  fieldName: string;
+  errorMessage: string;
+};
+
+// Type for Convex query object
+type QueryBuilder = {
+  eq: (field: string, value: any) => any;
+  field: (fieldName: string) => string;
+};
+
+/**
+ * Checks if an entity can be safely deleted by examining dependencies across tables
+ * @param ctx The Convex context
+ * @param entityId The ID of the entity to check
+ * @param entityTable The table name of the entity
+ * @param dependencies Array of reference configurations to check
+ * @returns true if entity can be deleted, throws an error with message if not
+ */
+export async function canSafelyDelete(
+  ctx: any,
+  entityId: any,
+  entityTable: string,
+  dependencies: ReferenceConfig[],
+): Promise<boolean> {
+  // First check if the entity exists
+  const entity = await ctx.db.get(entityId);
+  if (!entity) {
+    throw new Error(
+      `${entityTable.charAt(0).toUpperCase() + entityTable.slice(1, -1)} not found`,
+    );
+  }
+
+  // Check each dependency
+  for (const dependency of dependencies) {
+    let query = ctx.db.query(dependency.table);
+
+    // Use index if provided, otherwise use filter
+    query = dependency.indexName
+      ? query.withIndex(dependency.indexName, (q: QueryBuilder) =>
+          q.eq(dependency.fieldName, entityId),
+        )
+      : query.filter((q: QueryBuilder) =>
+          q.eq(q.field(dependency.fieldName), entityId),
+        );
+
+    // Execute query
+    const referencingDocs = await query.collect();
+
+    // Check if there are any referencing documents
+    if (referencingDocs.length > 0) {
+      throw new Error(dependency.errorMessage);
+    }
+  }
+
+  // If we get here, it means no dependencies were found
+  return true;
+}

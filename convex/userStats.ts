@@ -3,6 +3,7 @@ import { v } from 'convex/values';
 import { api } from './_generated/api';
 import { Doc, Id } from './_generated/dataModel';
 import { internalMutation, query } from './_generated/server';
+import * as aggregateHelpers from './aggregateHelpers';
 import { getCurrentUserOrThrow } from './users';
 
 type UserStats = {
@@ -151,54 +152,34 @@ export const getUserStatsFromTable = query({
   },
 });
 
-// Create a more efficient version that only returns the summary stats
-// This can be used for dashboard displays where theme breakdown isn't needed
-export const getUserStatsSummary = query({
+/**
+ * Get user statistics summary using aggregates for faster performance
+ */
+export const getUserStatsSummaryWithAggregates = query({
   args: {},
-  handler: async (ctx): Promise<UserStats> => {
+  handler: async (ctx): Promise<UserStatsSummary> => {
     const userId = await getCurrentUserOrThrow(ctx);
 
-    // Get user stats efficiently with a single query
-    const userStatsSummary = await ctx.db
-      .query('userQuestionStats')
-      .withIndex('by_user', q => q.eq('userId', userId._id))
-      .collect();
+    // Using our aggregate helpers for efficient counting
+    const [totalQuestions, totalAnswered, totalIncorrect, totalBookmarked] =
+      await Promise.all([
+        aggregateHelpers.getTotalQuestionCount(ctx),
+        aggregateHelpers.getUserAnsweredCount(ctx, userId._id),
+        aggregateHelpers.getUserIncorrectCount(ctx, userId._id),
+        aggregateHelpers.getUserBookmarksCount(ctx, userId._id),
+      ]);
 
-    // Count the totals from the summary
-    const totalAnswered = userStatsSummary.filter(
-      stat => stat.hasAnswered,
-    ).length;
-    const totalIncorrect = userStatsSummary.filter(
-      stat => stat.isIncorrect,
-    ).length;
+    // Calculate derived values
     const totalCorrect = totalAnswered - totalIncorrect;
+    const correctPercentage =
+      totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
 
-    // Get bookmarks count
-    const bookmarks = await ctx.db
-      .query('userBookmarks')
-      .withIndex('by_user', q => q.eq('userId', userId._id))
-      .collect();
-    const totalBookmarked = bookmarks.length;
-
-    // Get total questions count using aggregate
-    const totalQuestions = await ctx.runQuery(
-      api.questionStats.getTotalQuestionCount,
-      {},
-    );
-
-    // Return in the same format as getUserStatsFromTable but with empty theme data
     return {
-      overall: {
-        totalAnswered,
-        totalCorrect,
-        totalIncorrect,
-        totalBookmarked,
-        correctPercentage:
-          totalAnswered > 0
-            ? Math.round((totalCorrect / totalAnswered) * 100)
-            : 0,
-      },
-      byTheme: [], // Return empty array for themes to maintain compatible interface
+      totalAnswered,
+      totalCorrect,
+      totalIncorrect,
+      totalBookmarked,
+      correctPercentage,
       totalQuestions,
     };
   },
