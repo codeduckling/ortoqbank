@@ -86,7 +86,7 @@ function stringifyContent(content: any): string {
 
 export const create = mutation({
   args: {
-    // Accept string content directly instead of objects
+    // Accept stringified content from frontend
     questionTextString: v.string(),
     explanationTextString: v.string(),
     questionCode: v.optional(v.string()),
@@ -128,7 +128,6 @@ export const create = mutation({
     const questionData = {
       ...args,
       // Set migration flag
-      contentMigrated: true,
       normalizedTitle: args.title.trim().toLowerCase(),
       authorId: user._id,
       isPublic: false, // Default value
@@ -188,7 +187,7 @@ export const getById = query({
 export const update = mutation({
   args: {
     id: v.id('questions'),
-    // Accept string content directly
+    // Accept stringified content from frontend
     questionTextString: v.string(),
     explanationTextString: v.string(),
     questionCode: v.optional(v.string()),
@@ -229,8 +228,7 @@ export const update = mutation({
     // Prepare update data
     const updates = {
       ...otherFields,
-      // Set migration flag
-      contentMigrated: true,
+
       normalizedTitle: args.title?.trim().toLowerCase(), // Handle optional title in updates
     };
 
