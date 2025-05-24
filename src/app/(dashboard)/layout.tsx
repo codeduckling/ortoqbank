@@ -12,7 +12,7 @@ export default async function Layout({
 }) {
   const isAdmin = await checkRole('admin');
 
-  const mainClassName = `w-full ${isAdmin ? '' : 'select-none'}`;
+  const mainClassName = `w-full bg-gradient-to-b from-slate-50 via-blue-50 to-indigo-100 min-h-screen ${isAdmin ? '' : 'select-none'}`;
 
   return (
     <SidebarProvider>
@@ -28,7 +28,7 @@ export default async function Layout({
           <SidebarTrigger />
         </div>
         {/* Add padding-bottom for mobile nav, remove for desktop */}
-        <div className="mx-auto max-w-5xl px-4 pb-20 md:pb-0">
+        <div className="mx-auto max-w-5xl px-10 pb-20 md:pb-0">
           <AccessCheck>
             <TermsProvider>{children}</TermsProvider>
           </AccessCheck>

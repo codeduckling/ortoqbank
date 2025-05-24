@@ -48,11 +48,35 @@ const THEME_ICONS: Record<
 };
 
 export default function ThemesPage() {
-  const themes = useQuery(api.themes.list) || [];
-  const presetQuizzes = useQuery(api.presetQuizzes.list) || [];
+  const themesQuery = useQuery(api.themes.list);
+  const themes = themesQuery || [];
+
+  const presetQuizzesQuery = useQuery(api.presetQuizzes.list);
+  const presetQuizzes = presetQuizzesQuery || [];
+
   const startSession = useMutation(api.quizSessions.startQuizSession);
   const { user } = useUser();
   const router = useRouter();
+
+  // Query to get incomplete sessions for the current user
+  const incompleteSessionsQuery = useQuery(
+    api.quizSessions.listIncompleteSessions,
+  );
+  const incompleteSessions = incompleteSessionsQuery || [];
+
+  // Query to get all completed sessions for the current user
+  const completedSessionsQuery = useQuery(
+    api.quizSessions.getAllCompletedSessions,
+  );
+  const completedSessions = completedSessionsQuery || [];
+
+  // Check if all data is loaded (queries return undefined while loading)
+  const isLoading =
+    themesQuery === undefined ||
+    presetQuizzesQuery === undefined ||
+    incompleteSessionsQuery === undefined ||
+    completedSessionsQuery === undefined ||
+    !user;
 
   // Sort themes by displayOrder (if available) or by name
   const sortedThemes = [...themes].sort((a, b) => {
@@ -94,14 +118,6 @@ export default function ThemesPage() {
     // If neither has displayOrder, sort by name
     return a.name.localeCompare(b.name);
   });
-
-  // Query to get incomplete sessions for the current user
-  const incompleteSessions =
-    useQuery(api.quizSessions.listIncompleteSessions) || [];
-
-  // Query to get all completed sessions for the current user
-  const completedSessions =
-    useQuery(api.quizSessions.getAllCompletedSessions) || [];
 
   // Create a map of quizId to sessionId for incomplete sessions
   const incompleteSessionMap = incompleteSessions.reduce(
@@ -152,11 +168,22 @@ export default function ThemesPage() {
     }
   };
 
-  if (!themes || !user) {
-    return <div>Carregando trilhas...</div>;
+  // Show loading state while any data is still loading
+  if (isLoading) {
+    return (
+      <div className="container mx-auto mt-10 rounded-lg border bg-white p-6">
+        <h1 className="mb-8 text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+          Trilhas
+        </h1>
+        <div className="p-8 text-center">
+          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-blue-500"></div>
+          <p className="text-gray-600">Carregando trilhas...</p>
+        </div>
+      </div>
+    );
   }
 
-  // If there are no trilhas for any theme
+  // If there are no trilhas for any theme (only show this after everything is loaded)
   if (Object.keys(trilhasByTheme).length === 0) {
     return (
       <div className="container mx-auto p-0 md:p-6">
@@ -216,12 +243,12 @@ export default function ThemesPage() {
                             <div className="flex flex-wrap items-center gap-2">
                               <h3 className="font-medium">{exam.name}</h3>
                               {hasIncompleteSession ? (
-                                <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+                                <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 hover:text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 dark:hover:bg-amber-900/30 dark:hover:text-amber-400">
                                   <Clock className="mr-1 h-3 w-3" />
                                   Em andamento
                                 </Badge>
                               ) : (
-                                <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                                <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 hover:text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/30 dark:hover:text-blue-400">
                                   <BookOpen className="mr-1 h-3 w-3" />
                                   Não iniciado
                                 </Badge>
@@ -244,16 +271,17 @@ export default function ThemesPage() {
                                 ? 'Retomar Teste'
                                 : 'Iniciar Teste'}
                             </Button>
-                            {hasCompletedSessionMap[exam._id] && (
-                              <Link
-                                href={`/quiz-results/${exam._id}`}
-                                className="flex-1 md:flex-none"
-                              >
-                                <Button variant="outline" className="w-full">
-                                  Ver Resultados
-                                </Button>
-                              </Link>
-                            )}
+                            {hasIncompleteSession &&
+                              hasCompletedSessionMap[exam._id] && (
+                                <Link
+                                  href={`/quiz-results/${exam._id}`}
+                                  className="flex-1 md:flex-none"
+                                >
+                                  <Button variant="outline" className="w-full">
+                                    Ver Resultados
+                                  </Button>
+                                </Link>
+                              )}
                           </div>
                         </div>
                       </div>
