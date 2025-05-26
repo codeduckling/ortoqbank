@@ -2,7 +2,6 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from 'convex/react';
-import { GenericQueryCtx } from 'convex/server';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
@@ -10,7 +9,7 @@ import { api } from '../../../../../../convex/_generated/api';
 import { Id } from '../../../../../../convex/_generated/dataModel';
 import { type TestFormData, testFormSchema } from '../schema';
 
-// Map UI question modes to API question modes
+// Map UI question modes to API question modes for the new filtering logic
 export const mapQuestionMode = (
   mode: string,
 ): 'all' | 'unanswered' | 'incorrect' | 'bookmarked' => {
@@ -58,25 +57,22 @@ export function useTestFormState() {
   const questionMode = watch('questionMode');
   const numQuestions = watch('numQuestions');
 
-  // Query the count of available questions based on current selection
-  const countQuestions = useQuery(
-    api.questionAnalytics.countSelectedQuestions,
-    {
-      questionMode: mapQuestionMode(questionMode || 'all'),
-      selectedThemes: selectedThemes as Id<'themes'>[],
-      selectedSubthemes: selectedSubthemes as Id<'subthemes'>[],
-      selectedGroups: selectedGroups as Id<'groups'>[],
-    },
-  );
+  // Query the count of available questions using the NEW filtering logic
+  const countQuestions = useQuery(api.questionFiltering.getLiveQuestionCount, {
+    questionMode: mapQuestionMode(questionMode || 'all'),
+    selectedThemes: selectedThemes || [],
+    selectedSubthemes: selectedSubthemes || [],
+    selectedGroups: selectedGroups || [],
+  });
 
   // Update available question count when Convex query result changes
   useEffect(() => {
-    setAvailableQuestionCount(countQuestions?.count);
+    setAvailableQuestionCount(countQuestions);
     setIsCountLoading(countQuestions === undefined);
   }, [countQuestions]);
 
   // Fetch hierarchical data
-  const hierarchicalData = useQuery(api.themes.getHierarchicalData);
+  const hierarchicalData = useQuery(api.themes.getHierarchicalData, {});
 
   return {
     form,

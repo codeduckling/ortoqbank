@@ -45,6 +45,8 @@ export default defineSchema({
     title: v.string(),
     normalizedTitle: v.string(),
     questionCode: v.optional(v.string()),
+    orderedNumberId: v.optional(v.number()),
+    randomKey: v.optional(v.string()),
     questionText: v.optional(v.any()),
     explanationText: v.optional(v.any()),
     questionTextString: v.string(),
@@ -62,6 +64,7 @@ export default defineSchema({
     .index('by_theme', ['themeId'])
     .index('by_subtheme', ['subthemeId'])
     .index('by_group', ['groupId'])
+    .index('by_group_randomKey', ['groupId', 'randomKey'])
     .searchIndex('search_by_title', { searchField: 'title' })
     .searchIndex('search_by_code', { searchField: 'questionCode' }),
 
