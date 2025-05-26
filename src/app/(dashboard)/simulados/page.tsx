@@ -67,7 +67,7 @@ function getStatusBadge(status: 'not_started' | 'in_progress' | 'completed') {
   switch (status) {
     case 'completed': {
       return (
-        <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+        <Badge className="bg-green-100 text-green-800 hover:bg-green-100 hover:text-green-800 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/30 dark:hover:text-green-400">
           <CheckCircle className="mr-1 h-3 w-3" />
           Concluído
         </Badge>
@@ -75,7 +75,7 @@ function getStatusBadge(status: 'not_started' | 'in_progress' | 'completed') {
     }
     case 'in_progress': {
       return (
-        <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+        <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 hover:text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 dark:hover:bg-amber-900/30 dark:hover:text-amber-400">
           <Clock className="mr-1 h-3 w-3" />
           Em andamento
         </Badge>
@@ -83,7 +83,7 @@ function getStatusBadge(status: 'not_started' | 'in_progress' | 'completed') {
     }
     case 'not_started': {
       return (
-        <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+        <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 hover:text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/30 dark:hover:text-blue-400">
           <BookOpen className="mr-1 h-3 w-3" />
           Não iniciado
         </Badge>
@@ -97,7 +97,23 @@ export default function SimuladoPage() {
   const router = useRouter();
 
   // Fetch all presetQuizzes
-  const presetQuizzes = useQuery(api.presetQuizzes.list) || [];
+  const presetQuizzesQuery = useQuery(api.presetQuizzes.list);
+  const presetQuizzes = presetQuizzesQuery || [];
+
+  // Query to get incomplete sessions for the current user
+  const incompleteSessionsQuery = useQuery(
+    api.quizSessions.listIncompleteSessions,
+  );
+  const incompleteSessions = incompleteSessionsQuery || [];
+
+  // Start session mutation
+  const startSession = useMutation(api.quizSessions.startQuizSession);
+
+  // Check if all data is loaded (queries return undefined while loading)
+  const isLoading =
+    presetQuizzesQuery === undefined ||
+    incompleteSessionsQuery === undefined ||
+    !user;
 
   // Filter to only show simulados (category = "simulado")
   const simulados = presetQuizzes.filter(quiz => quiz.category === 'simulado');
@@ -148,13 +164,6 @@ export default function SimuladoPage() {
     ),
   ];
 
-  // Query to get incomplete sessions for the current user
-  const incompleteSessions =
-    useQuery(api.quizSessions.listIncompleteSessions) || [];
-
-  // Start session mutation
-  const startSession = useMutation(api.quizSessions.startQuizSession);
-
   // Create a map of quizId to sessionId for incomplete sessions
   const incompleteSessionMap = incompleteSessions.reduce(
     (map: Record<string, Id<'quizSessions'>>, session) => {
@@ -180,15 +189,28 @@ export default function SimuladoPage() {
     }
   };
 
-  if (!user) {
-    return <div>Carregando simulados...</div>;
+  // Show loading state while any data is still loading
+  if (isLoading) {
+    return (
+      <div className="container mx-auto mt-10 rounded-lg border bg-white p-6">
+        <h1 className="mb-8 text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+          Simulados
+        </h1>
+        <div className="p-8 text-center">
+          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-blue-500"></div>
+          <p className="text-gray-600">Carregando simulados...</p>
+        </div>
+      </div>
+    );
   }
 
-  // If there are no simulados
+  // If there are no simulados (only show this after everything is loaded)
   if (Object.keys(simuladosBySubcategory).length === 0) {
     return (
-      <div className="container mx-auto p-6">
-        <h1 className="mb-6 text-2xl font-bold">Simulados</h1>
+      <div className="container mx-auto mt-10 rounded-lg border bg-white p-6">
+        <h1 className="mb-8 text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+          Simulados
+        </h1>
         <div className="rounded-lg border p-8 text-center">
           <p className="text-muted-foreground">
             Nenhum simulado disponível no momento.
@@ -199,7 +221,7 @@ export default function SimuladoPage() {
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto pt-4 md:p-6">
       <h1 className="mb-8 text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
         Simulados
       </h1>
@@ -275,14 +297,16 @@ export default function SimuladoPage() {
                                 : 'Iniciar Simulado'}
                             </Button>
 
-                            <Link href={`/quiz-results/${simulado._id}`}>
-                              <Button
-                                variant="outline"
-                                className="flex-1 md:flex-none"
-                              >
-                                Ver Resultados
-                              </Button>
-                            </Link>
+                            {hasIncompleteSession && (
+                              <Link href={`/quiz-results/${simulado._id}`}>
+                                <Button
+                                  variant="outline"
+                                  className="flex-1 md:flex-none"
+                                >
+                                  Ver Resultados
+                                </Button>
+                              </Link>
+                            )}
                           </div>
                         </div>
                       </div>

@@ -9,7 +9,6 @@ import {
   ChevronRight,
   XCircle,
 } from 'lucide-react';
-import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -107,17 +106,8 @@ export default function UniversalQuizResultsPage() {
   const getReturnLink = () => (isCustom ? '/criar-teste' : '/trilhas');
 
   return (
-    <div className="container mx-auto max-w-3xl p-6">
-      {/* <div className="mb-4">
-        <Link href={getReturnLink()}>
-          <Button variant="ghost" size="sm" className="gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Voltar
-          </Button>
-        </Link>
-      </div> */}
-
-      <div className="mb-4">
+    <div className="container mx-auto max-w-3xl rounded-lg border bg-white p-6">
+      <div className="mb-4 flex flex-col items-center justify-center">
         <h1 className="text-2xl font-bold">{quiz.name}</h1>
         <p className="text-muted-foreground mt-1 text-sm">
           Completado em {formatDate(session._creationTime)}
@@ -142,7 +132,7 @@ export default function UniversalQuizResultsPage() {
           </div>
 
           <div className="flex flex-col items-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 font-bold">
+            <div className="flex items-center justify-center rounded-full text-2xl font-bold">
               {score}%
             </div>
             <span className="mt-1">&nbsp;</span>
@@ -163,8 +153,8 @@ export default function UniversalQuizResultsPage() {
       </div>
 
       {/* Question content */}
-      <div className="mb-6 rounded-lg border p-4">
-        <h3 className="text-md mb-4 font-medium">
+      <div className="my-6 border-t p-4">
+        <h3 className="text-md my-4 font-medium">
           Questão {currentQuestionIndex + 1}
         </h3>
 
@@ -199,10 +189,14 @@ export default function UniversalQuizResultsPage() {
           })}
         </div>
 
+        {/* Feedback */}
+
         {feedback && (
           <div
             className={`mt-4 rounded-md p-3 ${
-              feedback.isCorrect ? 'bg-green-50' : 'bg-red-50'
+              feedback.isCorrect
+                ? 'border-green-500 bg-green-50'
+                : 'border-red-500 bg-red-50'
             }`}
           >
             <div className="font-medium">

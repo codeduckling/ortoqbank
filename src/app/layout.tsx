@@ -1,8 +1,10 @@
 import './globals.css';
 
+import { Analytics } from '@vercel/analytics/next';
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import localFont from 'next/font/local';
+import NextTopLoader from 'nextjs-toploader';
 
 import { Toaster } from '@/components/ui/toaster';
 
@@ -39,7 +41,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${sifonn.variable} antialiased`}
       >
         <ConvexClientProvider>
+          <NextTopLoader />
           {children}
+          <Analytics />
+
           <Toaster />
         </ConvexClientProvider>
       </body>
