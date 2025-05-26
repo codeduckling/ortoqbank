@@ -6,7 +6,7 @@ export const testFormSchema = z.object({
     .min(3, 'Nome precisa ter no mínimo 3 caracteres')
     .default('Personalizado'),
   testMode: z.enum(['study', 'exam']),
-  questionMode: z.enum(['unanswered', 'incorrect', 'bookmarked', 'all']),
+  questionMode: z.enum(['all', 'unanswered', 'incorrect', 'bookmarked']),
   numQuestions: z.number().min(1).max(120).default(30),
   selectedThemes: z.array(z.string()),
   selectedSubthemes: z.array(z.string()),

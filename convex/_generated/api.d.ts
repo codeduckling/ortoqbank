@@ -20,6 +20,7 @@ import type * as migrations from "../migrations.js";
 import type * as presetQuizzes from "../presetQuizzes.js";
 import type * as questionAnalytics from "../questionAnalytics.js";
 import type * as questionCountByTheme from "../questionCountByTheme.js";
+import type * as questionFiltering from "../questionFiltering.js";
 import type * as questionStats from "../questionStats.js";
 import type * as questions from "../questions.js";
 import type * as quiz from "../quiz.js";
@@ -59,6 +60,7 @@ declare const fullApi: ApiFromModules<{
   presetQuizzes: typeof presetQuizzes;
   questionAnalytics: typeof questionAnalytics;
   questionCountByTheme: typeof questionCountByTheme;
+  questionFiltering: typeof questionFiltering;
   questionStats: typeof questionStats;
   questions: typeof questions;
   quiz: typeof quiz;

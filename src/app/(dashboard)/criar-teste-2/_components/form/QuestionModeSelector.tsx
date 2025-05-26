@@ -12,7 +12,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 type QuestionModeSelectorProps = {
   value: string;
-  onChange: (value: 'all' | 'incorrect' | 'unanswered' | 'bookmarked') => void;
+  onChange: (value: 'all' | 'incorrect' | 'unused' | 'marked') => void;
   error?: string;
 };
 
@@ -32,7 +32,7 @@ export function QuestionModeSelector({
           <PopoverContent className="max-w-xs border border-black">
             <p>
               Filtre as questões por status: Todas, Não respondidas, Incorretas
-              ou Marcadas.
+              ou Marcadas (Nova Lógica de Filtragem).
             </p>
           </PopoverContent>
         </Popover>
@@ -45,12 +45,12 @@ export function QuestionModeSelector({
         {[
           { id: 'all', label: 'Todas', apiKey: 'all' },
           {
-            id: 'unanswered',
+            id: 'unused',
             label: 'Não respondidas',
-            apiKey: 'unanswered',
+            apiKey: 'unused',
           },
           { id: 'incorrect', label: 'Incorretas', apiKey: 'incorrect' },
-          { id: 'bookmarked', label: 'Marcadas', apiKey: 'bookmarked' },
+          { id: 'marked', label: 'Marcadas', apiKey: 'marked' },
         ].map(({ id, label, apiKey }) => {
           return (
             <div key={id} className="flex items-center gap-2">

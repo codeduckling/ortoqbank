@@ -2,7 +2,7 @@
 export type FormData = {
   name: string;
   testMode: 'study' | 'exam';
-  questionMode: 'all' | 'incorrect' | 'unused' | 'marked';
+  questionMode: 'all' | 'incorrect' | 'unanswered' | 'bookmarked';
   numQuestions: number;
   selectedThemes: string[];
   selectedSubthemes: string[];
