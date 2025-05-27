@@ -63,7 +63,6 @@ export function QuestionDisplay({
           <p>Tema: {question.theme?.name}</p>
           {question.subtheme && <p>Subtema: {question.subtheme.name}</p>}
           <p>Status: {question.isPublic ? 'Publicada' : 'Rascunho'}</p>
-          <p>Migrado: {question.contentMigrated ? 'Sim' : 'Não'}</p>
         </div>
       </div>
     </div>

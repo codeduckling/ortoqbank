@@ -48,7 +48,10 @@ export function Explanation({
           <FormLabel>Explicação</FormLabel>
           <FormControl>
             <RichTextEditor
-              onChange={field.onChange}
+              onChange={content => {
+                const stringifiedContent = JSON.stringify(content);
+                field.onChange(stringifiedContent);
+              }}
               initialContent={parsedInitialContent}
               onEditorReady={onEditorReady}
             />
