@@ -49,7 +49,6 @@ export function QuestionText({
           <FormControl>
             <RichTextEditor
               onChange={content => {
-                // Stringify the TipTap content before setting it in the form
                 const stringifiedContent = JSON.stringify(content);
                 field.onChange(stringifiedContent);
               }}
