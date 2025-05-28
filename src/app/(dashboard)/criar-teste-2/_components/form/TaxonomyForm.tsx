@@ -489,18 +489,11 @@ export default function TaxonomyForm() {
                     <Label className="text-muted-foreground text-sm">
                       {theme.name}
                     </Label>
-                    <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <div className="mb-4 flex flex-wrap gap-2">
                       {subthemes.map(subtheme => (
                         <div
                           key={subtheme._id}
-                          className={cn(
-                            'relative flex cursor-pointer items-center space-x-3 rounded-lg border p-3 transition-colors',
-                            selectedSubthemes.has(subtheme._id)
-                              ? 'bg-primary/10 border-primary'
-                              : 'hover:bg-muted border-border',
-                            isSubthemeFilter(subtheme._id) &&
-                              'ring-2 ring-green-300',
-                          )}
+                          className="flex cursor-pointer items-center space-x-2"
                           onClick={() => toggleSubtheme(subtheme._id)}
                         >
                           <Checkbox
@@ -508,17 +501,19 @@ export default function TaxonomyForm() {
                             onCheckedChange={() => toggleSubtheme(subtheme._id)}
                             className="pointer-events-none"
                           />
-                          <span className="flex-1 text-sm font-medium">
-                            {subtheme.name}
-                          </span>
-                          {isSubthemeFilter(subtheme._id) && (
-                            <Badge
-                              variant="secondary"
-                              className="bg-green-100 text-xs text-green-800"
-                            >
-                              Filter
-                            </Badge>
-                          )}
+                          <div className="flex items-center gap-1">
+                            <span className="text-sm font-medium">
+                              {subtheme.name}
+                            </span>
+                            {isSubthemeFilter(subtheme._id) && (
+                              <Badge
+                                variant="secondary"
+                                className="bg-green-100 text-xs text-green-800"
+                              >
+                                Filtro
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -563,16 +558,11 @@ export default function TaxonomyForm() {
                           <Label className="text-muted-foreground text-sm">
                             {theme.name} → {subtheme.name}
                           </Label>
-                          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                          <div className="flex flex-wrap gap-2">
                             {groups.map(group => (
                               <div
                                 key={`${themeId}-${subtheme._id}-${group._id}`}
-                                className={cn(
-                                  'relative flex cursor-pointer items-center space-x-3 rounded-lg border p-3 transition-colors',
-                                  selectedGroups.has(group._id)
-                                    ? 'bg-primary/10 border-primary ring-2 ring-purple-300'
-                                    : 'hover:bg-muted border-border',
-                                )}
+                                className="flex cursor-pointer items-center space-x-2"
                                 onClick={() => toggleGroup(group._id)}
                               >
                                 <Checkbox
@@ -580,17 +570,19 @@ export default function TaxonomyForm() {
                                   onCheckedChange={() => toggleGroup(group._id)}
                                   className="pointer-events-none"
                                 />
-                                <span className="flex-1 text-sm font-medium">
-                                  {group.name}
-                                </span>
-                                {isGroupFilter(group._id) && (
-                                  <Badge
-                                    variant="secondary"
-                                    className="bg-purple-100 text-xs text-purple-800"
-                                  >
-                                    Filter
-                                  </Badge>
-                                )}
+                                <div className="flex items-center gap-1">
+                                  <span className="text-sm font-medium">
+                                    {group.name}
+                                  </span>
+                                  {isGroupFilter(group._id) && (
+                                    <Badge
+                                      variant="secondary"
+                                      className="bg-purple-100 text-xs text-purple-800"
+                                    >
+                                      Filtro
+                                    </Badge>
+                                  )}
+                                </div>
                               </div>
                             ))}
                           </div>
