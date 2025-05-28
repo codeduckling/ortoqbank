@@ -89,12 +89,16 @@ export default function TaxonomyForm() {
     isLoading,
   } = useTaxonomyData();
 
+  // Get current user for user-specific filtering
+  const currentUser = useQuery(api.users.current);
+
   // Get live question count using applied filters (only the actual filters, not all selections)
   const questionCount = useQuery(
     api.taxonomyAggregates.getLiveQuestionCountByTaxonomy,
     {
       questionMode: mapQuestionMode(questionMode),
       taxonomyIds: appliedFilters.map(filter => filter.id) as Id<'taxonomy'>[],
+      userId: currentUser?._id,
     },
   );
 

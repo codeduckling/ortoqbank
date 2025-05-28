@@ -162,7 +162,7 @@ export const populateTaxonomyWithGroups = migrations.define({
   },
 });
 
-// Step 4: Update questions with taxonomy references
+// Step 4: Update questions with taxonomy references and names
 export const updateQuestionsWithTaxonomyReferences = migrations.define({
   table: 'questions',
   migrateOne: async (ctx, question) => {
@@ -173,7 +173,7 @@ export const updateQuestionsWithTaxonomyReferences = migrations.define({
 
     let updates: any = {};
 
-    // Find theme taxonomy
+    // Find theme and theme taxonomy
     const theme = await ctx.db.get(question.themeId);
     if (theme) {
       const themeTaxonomy = await ctx.db
@@ -184,10 +184,11 @@ export const updateQuestionsWithTaxonomyReferences = migrations.define({
 
       if (themeTaxonomy) {
         updates.TaxThemeId = themeTaxonomy._id;
+        updates.TaxThemeName = theme.name;
       }
     }
 
-    // Find subtheme taxonomy
+    // Find subtheme and subtheme taxonomy
     if (question.subthemeId) {
       const subtheme = await ctx.db.get(question.subthemeId);
       if (subtheme) {
@@ -199,11 +200,12 @@ export const updateQuestionsWithTaxonomyReferences = migrations.define({
 
         if (subthemeTaxonomy) {
           updates.TaxSubthemeId = subthemeTaxonomy._id;
+          updates.TaxSubthemeName = subtheme.name;
         }
       }
     }
 
-    // Find group taxonomy
+    // Find group and group taxonomy
     if (question.groupId) {
       const group = await ctx.db.get(question.groupId);
       if (group) {
@@ -215,6 +217,7 @@ export const updateQuestionsWithTaxonomyReferences = migrations.define({
 
         if (groupTaxonomy) {
           updates.TaxGroupId = groupTaxonomy._id;
+          updates.TaxGroupName = group.name;
         }
       }
     }
@@ -222,7 +225,7 @@ export const updateQuestionsWithTaxonomyReferences = migrations.define({
     // Apply updates if any
     if (Object.keys(updates).length > 0) {
       console.log(
-        `Updating question ${question._id} with taxonomy references:`,
+        `Updating question ${question._id} with taxonomy references and names:`,
         updates,
       );
       return updates;
