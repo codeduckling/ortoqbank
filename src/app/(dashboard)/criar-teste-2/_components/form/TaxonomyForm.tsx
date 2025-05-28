@@ -40,6 +40,188 @@ interface FilterType {
   path: string[];
 }
 
+// Component for individual theme with question count
+interface ThemeItemProps {
+  theme: { _id: string; name: string };
+  isSelected: boolean;
+  isFilter: boolean;
+  questionMode: 'all' | 'unanswered' | 'incorrect' | 'bookmarked';
+  currentUserId?: string;
+  onToggle: (themeId: string) => void;
+}
+
+function ThemeItem({
+  theme,
+  isSelected,
+  isFilter,
+  questionMode,
+  currentUserId,
+  onToggle,
+}: ThemeItemProps) {
+  const themeCount = useQuery(
+    api.taxonomyAggregates.getLiveQuestionCountByTaxonomy,
+    currentUserId
+      ? {
+          questionMode: questionMode,
+          taxonomyIds: [theme._id] as Id<'taxonomy'>[],
+          userId: currentUserId as Id<'users'>,
+        }
+      : 'skip',
+  );
+
+  return (
+    <div
+      className={cn(
+        'relative flex cursor-pointer items-center space-x-3 rounded-lg border p-3 transition-colors',
+        isSelected
+          ? 'bg-primary/10 border-primary'
+          : 'hover:bg-muted border-border',
+        isFilter && 'ring-2 ring-blue-300',
+      )}
+      onClick={() => onToggle(theme._id)}
+    >
+      <Checkbox
+        checked={isSelected}
+        onCheckedChange={() => onToggle(theme._id)}
+        className="pointer-events-none"
+      />
+      <div className="flex flex-1 items-center justify-between">
+        <span className="font-medium">{theme.name}</span>
+        <div className="flex items-center gap-2">
+          <Badge
+            variant="outline"
+            className="bg-gray-100 text-xs text-gray-600"
+          >
+            {themeCount === undefined ? '...' : themeCount}
+          </Badge>
+          {isFilter && (
+            <Badge
+              variant="secondary"
+              className="bg-blue-100 text-xs text-blue-800"
+            >
+              Filtro
+            </Badge>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Component for individual subtheme with question count
+interface SubthemeItemProps {
+  subtheme: { _id: string; name: string };
+  isSelected: boolean;
+  isFilter: boolean;
+  questionMode: 'all' | 'unanswered' | 'incorrect' | 'bookmarked';
+  currentUserId?: string;
+  onToggle: (subthemeId: string) => void;
+}
+
+function SubthemeItem({
+  subtheme,
+  isSelected,
+  isFilter,
+  questionMode,
+  currentUserId,
+  onToggle,
+}: SubthemeItemProps) {
+  const subthemeCount = useQuery(
+    api.taxonomyAggregates.getLiveQuestionCountByTaxonomy,
+    currentUserId
+      ? {
+          questionMode: questionMode,
+          taxonomyIds: [subtheme._id] as Id<'taxonomy'>[],
+          userId: currentUserId as Id<'users'>,
+        }
+      : 'skip',
+  );
+
+  return (
+    <div
+      className="flex cursor-pointer items-center space-x-2"
+      onClick={() => onToggle(subtheme._id)}
+    >
+      <Checkbox
+        checked={isSelected}
+        onCheckedChange={() => onToggle(subtheme._id)}
+        className="pointer-events-none"
+      />
+      <div className="flex items-center gap-1">
+        <span className="text-sm font-medium">{subtheme.name}</span>
+        <Badge variant="outline" className="bg-gray-100 text-xs text-gray-600">
+          {subthemeCount === undefined ? '...' : subthemeCount}
+        </Badge>
+        {isFilter && (
+          <Badge
+            variant="secondary"
+            className="bg-green-100 text-xs text-green-800"
+          >
+            Filtro
+          </Badge>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Component for individual group with question count
+interface GroupItemProps {
+  group: { _id: string; name: string };
+  isSelected: boolean;
+  isFilter: boolean;
+  questionMode: 'all' | 'unanswered' | 'incorrect' | 'bookmarked';
+  currentUserId?: string;
+  onToggle: (groupId: string) => void;
+}
+
+function GroupItem({
+  group,
+  isSelected,
+  isFilter,
+  questionMode,
+  currentUserId,
+  onToggle,
+}: GroupItemProps) {
+  const groupCount = useQuery(
+    api.taxonomyAggregates.getLiveQuestionCountByTaxonomy,
+    currentUserId
+      ? {
+          questionMode: questionMode,
+          taxonomyIds: [group._id] as Id<'taxonomy'>[],
+          userId: currentUserId as Id<'users'>,
+        }
+      : 'skip',
+  );
+
+  return (
+    <div
+      className="flex cursor-pointer items-center space-x-2"
+      onClick={() => onToggle(group._id)}
+    >
+      <Checkbox
+        checked={isSelected}
+        onCheckedChange={() => onToggle(group._id)}
+        className="pointer-events-none"
+      />
+      <div className="flex items-center gap-1">
+        <span className="text-sm font-medium">{group.name}</span>
+        <Badge variant="outline" className="bg-gray-100 text-xs text-gray-600">
+          {groupCount === undefined ? '...' : groupCount}
+        </Badge>
+        {isFilter && (
+          <Badge
+            variant="secondary"
+            className="bg-purple-100 text-xs text-purple-800"
+          >
+            Filtro
+          </Badge>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // Map UI question modes to API question modes
 const mapQuestionMode = (
   mode: string,
@@ -440,32 +622,15 @@ export default function TaxonomyForm() {
             <Label className="text-base font-semibold">Temas</Label>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               {hierarchicalData?.themes?.map(theme => (
-                <div
+                <ThemeItem
                   key={theme._id}
-                  className={cn(
-                    'relative flex cursor-pointer items-center space-x-3 rounded-lg border p-3 transition-colors',
-                    selectedThemes.has(theme._id)
-                      ? 'bg-primary/10 border-primary'
-                      : 'hover:bg-muted border-border',
-                    isThemeFilter(theme._id) && 'ring-2 ring-blue-300',
-                  )}
-                  onClick={() => toggleTheme(theme._id)}
-                >
-                  <Checkbox
-                    checked={selectedThemes.has(theme._id)}
-                    onCheckedChange={() => toggleTheme(theme._id)}
-                    className="pointer-events-none"
-                  />
-                  <span className="flex-1 font-medium">{theme.name}</span>
-                  {isThemeFilter(theme._id) && (
-                    <Badge
-                      variant="secondary"
-                      className="bg-blue-100 text-xs text-blue-800"
-                    >
-                      Filtro
-                    </Badge>
-                  )}
-                </div>
+                  theme={theme}
+                  isSelected={selectedThemes.has(theme._id)}
+                  isFilter={isThemeFilter(theme._id)}
+                  questionMode={mapQuestionMode(questionMode)}
+                  currentUserId={currentUser?._id}
+                  onToggle={toggleTheme}
+                />
               ))}
             </div>
           </div>
@@ -491,30 +656,15 @@ export default function TaxonomyForm() {
                     </Label>
                     <div className="mb-4 flex flex-wrap gap-2">
                       {subthemes.map(subtheme => (
-                        <div
+                        <SubthemeItem
                           key={subtheme._id}
-                          className="flex cursor-pointer items-center space-x-2"
-                          onClick={() => toggleSubtheme(subtheme._id)}
-                        >
-                          <Checkbox
-                            checked={selectedSubthemes.has(subtheme._id)}
-                            onCheckedChange={() => toggleSubtheme(subtheme._id)}
-                            className="pointer-events-none"
-                          />
-                          <div className="flex items-center gap-1">
-                            <span className="text-sm font-medium">
-                              {subtheme.name}
-                            </span>
-                            {isSubthemeFilter(subtheme._id) && (
-                              <Badge
-                                variant="secondary"
-                                className="bg-green-100 text-xs text-green-800"
-                              >
-                                Filtro
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
+                          subtheme={subtheme}
+                          isSelected={selectedSubthemes.has(subtheme._id)}
+                          isFilter={isSubthemeFilter(subtheme._id)}
+                          questionMode={mapQuestionMode(questionMode)}
+                          currentUserId={currentUser?._id}
+                          onToggle={toggleSubtheme}
+                        />
                       ))}
                     </div>
                   </div>
@@ -560,30 +710,15 @@ export default function TaxonomyForm() {
                           </Label>
                           <div className="flex flex-wrap gap-2">
                             {groups.map(group => (
-                              <div
+                              <GroupItem
                                 key={`${themeId}-${subtheme._id}-${group._id}`}
-                                className="flex cursor-pointer items-center space-x-2"
-                                onClick={() => toggleGroup(group._id)}
-                              >
-                                <Checkbox
-                                  checked={selectedGroups.has(group._id)}
-                                  onCheckedChange={() => toggleGroup(group._id)}
-                                  className="pointer-events-none"
-                                />
-                                <div className="flex items-center gap-1">
-                                  <span className="text-sm font-medium">
-                                    {group.name}
-                                  </span>
-                                  {isGroupFilter(group._id) && (
-                                    <Badge
-                                      variant="secondary"
-                                      className="bg-purple-100 text-xs text-purple-800"
-                                    >
-                                      Filtro
-                                    </Badge>
-                                  )}
-                                </div>
-                              </div>
+                                group={group}
+                                isSelected={selectedGroups.has(group._id)}
+                                isFilter={isGroupFilter(group._id)}
+                                questionMode={mapQuestionMode(questionMode)}
+                                currentUserId={currentUser?._id}
+                                onToggle={toggleGroup}
+                              />
                             ))}
                           </div>
                         </div>
