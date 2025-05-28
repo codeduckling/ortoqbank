@@ -27,6 +27,7 @@ import type * as quiz from "../quiz.js";
 import type * as quizSessions from "../quizSessions.js";
 import type * as subthemes from "../subthemes.js";
 import type * as tags from "../tags.js";
+import type * as taxonomyAggregates from "../taxonomyAggregates.js";
 import type * as themes from "../themes.js";
 import type * as triggers from "../triggers.js";
 import type * as userStats from "../userStats.js";
@@ -67,6 +68,7 @@ declare const fullApi: ApiFromModules<{
   quizSessions: typeof quizSessions;
   subthemes: typeof subthemes;
   tags: typeof tags;
+  taxonomyAggregates: typeof taxonomyAggregates;
   themes: typeof themes;
   triggers: typeof triggers;
   userStats: typeof userStats;
