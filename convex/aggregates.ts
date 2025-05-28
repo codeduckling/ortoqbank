@@ -48,3 +48,14 @@ export const questionCountByTheme = new TableAggregate<{
   namespace: (d: unknown) => (d as { themeId: Id<'themes'> }).themeId,
   sortKey: (d: unknown) => 'question',
 });
+
+// Track total question count globally
+export const totalQuestionCount = new TableAggregate<{
+  Namespace: string;
+  Key: string;
+  DataModel: DataModel;
+  TableName: 'questions';
+}>(components.questionStats, {
+  namespace: () => 'global',
+  sortKey: () => 'question',
+});

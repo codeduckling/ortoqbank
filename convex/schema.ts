@@ -54,9 +54,20 @@ export default defineSchema({
     contentMigrated: v.optional(v.boolean()),
     alternatives: v.array(v.string()),
     correctAlternativeIndex: v.number(),
+
+    // Legacy fields
     themeId: v.id('themes'),
     subthemeId: v.optional(v.id('subthemes')),
     groupId: v.optional(v.id('groups')),
+
+    // Taxonomy fields
+    TaxThemeId: v.optional(v.id('taxonomy')),
+    TaxSubthemeId: v.optional(v.id('taxonomy')),
+    TaxGroupId: v.optional(v.id('taxonomy')),
+    TaxThemeName: v.optional(v.string()),
+    TaxSubthemeName: v.optional(v.string()),
+    TaxGroupName: v.optional(v.string()),
+
     authorId: v.optional(v.id('users')),
     isPublic: v.optional(v.boolean()),
   })
@@ -64,6 +75,10 @@ export default defineSchema({
     .index('by_theme', ['themeId'])
     .index('by_subtheme', ['subthemeId'])
     .index('by_group', ['groupId'])
+    .index('by_taxonomy', ['TaxThemeId', 'TaxSubthemeId', 'TaxGroupId'])
+    .index('by_taxonomy_theme', ['TaxThemeId'])
+    .index('by_taxonomy_subtheme', ['TaxSubthemeId'])
+    .index('by_taxonomy_group', ['TaxGroupId'])
     .index('by_group_randomKey', ['groupId', 'randomKey'])
     .searchIndex('search_by_title', { searchField: 'title' })
     .searchIndex('search_by_code', { searchField: 'questionCode' }),
@@ -142,4 +157,19 @@ export default defineSchema({
     .index('by_user', ['userId'])
     .index('by_user_incorrect', ['userId', 'isIncorrect'])
     .index('by_user_answered', ['userId', 'hasAnswered']),
+
+  taxonomy: defineTable({
+    name: v.string(),
+    type: v.union(
+      v.literal('theme'),
+      v.literal('subtheme'),
+      v.literal('group'),
+    ),
+    parentId: v.optional(v.id('taxonomy')),
+    pathIds: v.optional(v.array(v.id('taxonomy'))),
+    pathNames: v.optional(v.array(v.string())),
+  })
+    .index('by_parent', ['parentId'])
+    .index('by_type', ['type'])
+    .index('by_name', ['name']),
 });
