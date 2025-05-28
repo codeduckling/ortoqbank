@@ -1,3 +1,5 @@
+/* eslint-disable unicorn/no-null */
+
 import { v } from 'convex/values';
 
 import { api } from './_generated/api';
@@ -237,6 +239,218 @@ export const repairAllAggregates = mutation({
     await ctx.runMutation(api.aggregateHelpers.repairQuestionCountByTheme);
 
     console.log('All aggregate repairs completed!');
+    return;
+  },
+});
+
+// Paginated repair function for totalQuestionCount aggregate (production-safe)
+export const repairTotalQuestionCountPaginated = mutation({
+  args: {
+    batchSize: v.optional(v.number()),
+    cursor: v.optional(v.string()),
+    clearFirst: v.optional(v.boolean()),
+  },
+  returns: v.object({
+    processed: v.number(),
+    continueCursor: v.optional(v.string()),
+    isDone: v.boolean(),
+    totalProcessed: v.number(),
+  }),
+  handler: async (ctx, args) => {
+    const batchSize = args.batchSize || 50; // Process 50 questions at a time
+    const isFirstRun = args.clearFirst === true;
+
+    console.log(`Processing batch of ${batchSize} questions...`);
+
+    // Clear the aggregate only on first run
+    if (isFirstRun) {
+      console.log('Clearing totalQuestionCount aggregate...');
+      await totalQuestionCount.clear(ctx, { namespace: 'global' });
+      console.log('Aggregate cleared successfully');
+    }
+
+    // Get a batch of questions
+    const result = await ctx.db.query('questions').paginate({
+      cursor: args.cursor ?? null,
+      numItems: batchSize,
+    });
+
+    // Process each question in this batch
+    let processed = 0;
+    for (const question of result.page) {
+      await totalQuestionCount.insertIfDoesNotExist(ctx, question);
+      processed++;
+    }
+
+    console.log(`Processed ${processed} questions in this batch`);
+
+    return {
+      processed,
+      continueCursor: result.continueCursor,
+      isDone: result.isDone,
+      totalProcessed: processed, // This will be accumulated by the caller
+    };
+  },
+});
+
+// Paginated repair function for questionCountByTheme aggregate (production-safe)
+export const repairQuestionCountByThemePaginated = mutation({
+  args: {
+    batchSize: v.optional(v.number()),
+    cursor: v.optional(v.string()),
+  },
+  returns: v.object({
+    processed: v.number(),
+    continueCursor: v.optional(v.string()),
+    isDone: v.boolean(),
+    totalProcessed: v.number(),
+  }),
+  handler: async (ctx, args) => {
+    const batchSize = args.batchSize || 50; // Process 50 questions at a time
+
+    console.log(
+      `Processing batch of ${batchSize} questions for theme aggregate...`,
+    );
+
+    // Get a batch of questions
+    const result = await ctx.db.query('questions').paginate({
+      cursor: args.cursor ?? null,
+      numItems: batchSize,
+    });
+
+    // Process each question in this batch (only those with themeId)
+    let processed = 0;
+    for (const question of result.page) {
+      if (question.themeId) {
+        await questionCountByTheme.insertIfDoesNotExist(ctx, question);
+        processed++;
+      }
+    }
+
+    console.log(`Processed ${processed} questions with themes in this batch`);
+
+    return {
+      processed,
+      continueCursor: result.continueCursor,
+      isDone: result.isDone,
+      totalProcessed: processed,
+    };
+  },
+});
+
+// Orchestrator function to run paginated repair for totalQuestionCount
+export const runTotalQuestionCountRepair = mutation({
+  args: {},
+  returns: v.null(),
+  handler: async ctx => {
+    console.log('Starting paginated totalQuestionCount repair...');
+
+    let cursor: string | undefined;
+    let totalProcessed = 0;
+    let batchCount = 0;
+    let isFirstRun = true;
+
+    while (true) {
+      const result = await ctx.runMutation(
+        api.aggregateHelpers.repairTotalQuestionCountPaginated,
+        {
+          batchSize: 50,
+          cursor,
+          clearFirst: isFirstRun,
+        },
+      );
+
+      totalProcessed += result.processed;
+      batchCount++;
+      isFirstRun = false;
+
+      console.log(
+        `Batch ${batchCount} completed. Total processed: ${totalProcessed}`,
+      );
+
+      if (result.isDone) {
+        break;
+      }
+
+      cursor = result.continueCursor;
+
+      // Add a small delay to prevent overwhelming the system
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    // Verify the final count
+    const finalCount = await totalQuestionCount.count(ctx, {
+      namespace: 'global',
+      bounds: {},
+    });
+
+    console.log(
+      `Repair completed! Processed ${totalProcessed} questions in ${batchCount} batches. Final count: ${finalCount}`,
+    );
+    return;
+  },
+});
+
+// Orchestrator function to run paginated repair for questionCountByTheme
+export const runQuestionCountByThemeRepair = mutation({
+  args: {},
+  returns: v.null(),
+  handler: async ctx => {
+    console.log('Starting paginated questionCountByTheme repair...');
+
+    let cursor: string | undefined;
+    let totalProcessed = 0;
+    let batchCount = 0;
+
+    while (true) {
+      const result = await ctx.runMutation(
+        api.aggregateHelpers.repairQuestionCountByThemePaginated,
+        {
+          batchSize: 50,
+          cursor,
+        },
+      );
+
+      totalProcessed += result.processed;
+      batchCount++;
+
+      console.log(
+        `Batch ${batchCount} completed. Total processed: ${totalProcessed}`,
+      );
+
+      if (result.isDone) {
+        break;
+      }
+
+      cursor = result.continueCursor;
+
+      // Add a small delay to prevent overwhelming the system
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    console.log(
+      `Theme repair completed! Processed ${totalProcessed} questions with themes in ${batchCount} batches.`,
+    );
+    return;
+  },
+});
+
+// Production-safe combined repair function
+export const repairAllAggregatesProduction = mutation({
+  args: {},
+  returns: v.null(),
+  handler: async ctx => {
+    console.log(
+      'Starting production-safe repair of all question-related aggregates...',
+    );
+
+    // Repair totalQuestionCount with pagination
+    await ctx.runMutation(api.aggregateHelpers.runTotalQuestionCountRepair);
+
+    // Repair questionCountByTheme with pagination
+    await ctx.runMutation(api.aggregateHelpers.runQuestionCountByThemeRepair);
+
+    console.log('All aggregate repairs completed successfully!');
     return;
   },
 });
