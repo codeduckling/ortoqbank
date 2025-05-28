@@ -288,7 +288,7 @@ export default function TaxonomyForm() {
 
       const result = await createCustomQuiz({
         name: testName,
-        description: `Teste criado em ${new Date().toLocaleDateString()} (v2 - Nova Taxonomia)`,
+        description: `Teste criado em ${new Date().toLocaleDateString()}`,
         testMode: testMode,
         questionMode: mapQuestionMode(questionMode),
         numQuestions: numQuestions,
@@ -311,7 +311,7 @@ export default function TaxonomyForm() {
     return (
       <Card>
         <CardContent className="p-6">
-          <div className="text-center">Carregando taxonomia...</div>
+          <div className="text-center">Carregando filtros...</div>
         </CardContent>
       </Card>
     );
@@ -407,7 +407,7 @@ export default function TaxonomyForm() {
                 <PopoverContent className="max-w-xs border border-black">
                   <p>
                     Filtre as questões por status: Todas, Não respondidas,
-                    Incorretas ou Marcadas (Nova Taxonomia).
+                    Incorretas ou Marcadas.
                   </p>
                 </PopoverContent>
               </Popover>
@@ -462,7 +462,7 @@ export default function TaxonomyForm() {
                       variant="secondary"
                       className="bg-blue-100 text-xs text-blue-800"
                     >
-                      Filter
+                      Filtro
                     </Badge>
                   )}
                 </div>
@@ -660,7 +660,7 @@ export default function TaxonomyForm() {
           {/* Available Questions Info */}
           <div className="rounded-lg bg-blue-50 p-4">
             <h4 className="mb-2 font-medium text-blue-700">
-              Questões Disponíveis (Nova Taxonomia)
+              Questões Disponíveis
             </h4>
             <div className="text-blue-600">
               Há{' '}
@@ -683,9 +683,7 @@ export default function TaxonomyForm() {
             className="w-full bg-blue-500 hover:bg-blue-600"
             disabled={isSubmitting || !questionCount || questionCount === 0}
           >
-            {isSubmitting
-              ? 'Gerando seu teste...'
-              : 'Gerar Teste (Nova Taxonomia)'}
+            {isSubmitting ? 'Gerando seu teste...' : 'Gerar Teste'}
           </Button>
         </CardContent>
       </Card>
