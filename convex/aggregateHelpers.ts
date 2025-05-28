@@ -373,9 +373,6 @@ export const runTotalQuestionCountRepair = mutation({
       }
 
       cursor = result.continueCursor;
-
-      // Add a small delay to prevent overwhelming the system
-      await new Promise(resolve => setTimeout(resolve, 100));
     }
 
     // Verify the final count
