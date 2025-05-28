@@ -1,7 +1,7 @@
 import { v } from 'convex/values';
 
 import { api } from './_generated/api';
-import { query } from './_generated/server';
+import { mutation, query } from './_generated/server';
 import { questionCountByTheme, totalQuestionCount } from './aggregates';
 
 /**
@@ -166,3 +166,77 @@ export async function getUserBookmarksCount(
     userId,
   });
 }
+
+// Repair function for totalQuestionCount aggregate
+export const repairTotalQuestionCount = mutation({
+  args: {},
+  returns: v.null(),
+  handler: async ctx => {
+    console.log('Starting totalQuestionCount aggregate repair...');
+
+    // Clear and rebuild the aggregate
+    await totalQuestionCount.clear(ctx, { namespace: 'global' });
+    console.log('Cleared existing totalQuestionCount aggregate');
+
+    // Get all questions and insert them into the aggregate
+    const allQuestions = await ctx.db.query('questions').collect();
+    console.log(`Found ${allQuestions.length} questions to process`);
+
+    for (const question of allQuestions) {
+      await totalQuestionCount.insertIfDoesNotExist(ctx, question);
+    }
+
+    // Verify the count
+    const finalCount = await totalQuestionCount.count(ctx, {
+      namespace: 'global',
+      bounds: {},
+    });
+
+    console.log(`Repair completed! Final aggregate count: ${finalCount}`);
+    return;
+  },
+});
+
+// Repair function for questionCountByTheme aggregate
+export const repairQuestionCountByTheme = mutation({
+  args: {},
+  returns: v.null(),
+  handler: async ctx => {
+    console.log('Starting questionCountByTheme aggregate repair...');
+
+    // Note: We skip clearing the aggregate since it requires a specific namespace
+    // Instead we'll just ensure all questions are properly inserted
+    console.log('Rebuilding questionCountByTheme aggregate...');
+
+    // Get all questions with themes and insert them
+    const allQuestions = await ctx.db.query('questions').collect();
+    let processedCount = 0;
+
+    for (const question of allQuestions) {
+      if (question.themeId) {
+        await questionCountByTheme.insertIfDoesNotExist(ctx, question);
+        processedCount++;
+      }
+    }
+
+    console.log(
+      `Repair completed! Processed ${processedCount} questions with themes.`,
+    );
+    return;
+  },
+});
+
+// Combined repair function for all aggregates
+export const repairAllAggregates = mutation({
+  args: {},
+  returns: v.null(),
+  handler: async ctx => {
+    console.log('Starting repair of all question-related aggregates...');
+
+    await ctx.runMutation(api.aggregateHelpers.repairTotalQuestionCount);
+    await ctx.runMutation(api.aggregateHelpers.repairQuestionCountByTheme);
+
+    console.log('All aggregate repairs completed!');
+    return;
+  },
+});
